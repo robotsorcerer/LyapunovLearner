@@ -4,6 +4,7 @@
 %Reference paper:
 % S.M. Khansari-Zadeh and A. Billard (2014), "Learning Control Lyapunov Function to Ensure Stability 
 % of Dynamical System-based Robot Reaching Motions." Robotics and Autonomous Systems, vol. 62, num 6, p. 752-765.
+
 %%
 %The following example demos are provided
 modelNames = {'w','Sshape'};
