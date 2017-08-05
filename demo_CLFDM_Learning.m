@@ -8,7 +8,7 @@
 %%
 %The following example demos are provided
 modelNames = {'w','Sshape'};
-modelNumber = 1; %choose either 1 or 2 to select a different example
+modelNumber = 2; %choose either 1 or 2 to select a different example
 
 %% Putting CLFDM and GMR library in the MATLAB Path
 if isempty(regexp(path,['CLFDM_lib' pathsep], 'once'))
