@@ -1,62 +1,62 @@
 def computeEnergy(X,Xd,Vxf):
-"""
-% Syntax:
-%
-%       [V Vdot] = computeEnergy(X,Xd,Vxf)
-%
-% This function computes the energy value at query point(s) X, given the energy
-% (Lyapunov) function Vxf. When Xd is passed as an empty variable, it also
-% provides the energy gradient (i.e. Vdot = dV). Otherwise, it computes the
-% rate of change in energy by moving along Xd.
-%
-% Inputs -----------------------------------------------------------------
-%   o X:       d x N matrix representing N different query point(s)
-%
-%   o Xd:      d x N matrix representing the velocities at the query points.
-%              Note that Xd could also be passed as an empty variable.
-%              Xd is used to compute the rate of change in the energy by
-%              moving along the velocity vector, i.e. Vdot = dV/dx . dx/dt.
-%              If Xd = [], then Vdot = dV/dx is given as the output
-%
-%   o Vxf:     A structure variable representing the energy function. This
-%              structure should follow the format explained in learnEnergy.m
-%
-% Outputs ----------------------------------------------------------------
-%
-%   o V:       A 1 x N array representing the energy values at the query points.
-%
-%   o Vdot:    A 1 x N array representing the rate of change in energy at
-%              the query points by moving along the velocity vector Xd.
-%              When Xd is passed as an empty variable, then it is d x N
-%              matrix, where each column corresponds to the energy gradient
-%              (i.e. Vdot = dV) at each query point.
-%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%         Copyright (c) 2014 Mohammad Khansari, LASA Lab, EPFL,       %%%
-%%%          CH-1015 Lausanne, Switzerland, http://lasa.epfl.ch         %%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%
-% The program is free for non-commercial academic use. Please contact the
-% author if you are interested in using the software for commercial purposes.
-% The software must not be modified or distributed without prior permission
-% of the authors. Please acknowledge the authors in any academic publications
-% that have made use of this code or part of it. Please use this BibTex
-% reference:
-%
-% S.M. Khansari-Zadeh and A. Billard (2014), "Learning Control Lyapunov Function
-% to Ensure Stability of Dynamical System-based Robot Reaching Motions."
-% Robotics and Autonomous Systems, vol. 62, num 6, p. 752-765.
-%
-% To get latest update of the software please visit
-%                          http://cs.stanford.edu/people/khansari/
-%
-% Please send your feedbacks or questions to:
-%                          khansari_at_cs.stanford.edu
+    """
+    % Syntax:
+    %
+    %       [V Vdot] = computeEnergy(X,Xd,Vxf)
+    %
+    % This function computes the energy value at query point(s) X, given the energy
+    % (Lyapunov) function Vxf. When Xd is passed as an empty variable, it also
+    % provides the energy gradient (i.e. Vdot = dV). Otherwise, it computes the
+    % rate of change in energy by moving along Xd.
+    %
+    % Inputs -----------------------------------------------------------------
+    %   o X:       d x N matrix representing N different query point(s)
+    %
+    %   o Xd:      d x N matrix representing the velocities at the query points.
+    %              Note that Xd could also be passed as an empty variable.
+    %              Xd is used to compute the rate of change in the energy by
+    %              moving along the velocity vector, i.e. Vdot = dV/dx . dx/dt.
+    %              If Xd = [], then Vdot = dV/dx is given as the output
+    %
+    %   o Vxf:     A structure variable representing the energy function. This
+    %              structure should follow the format explained in learnEnergy.m
+    %
+    % Outputs ----------------------------------------------------------------
+    %
+    %   o V:       A 1 x N array representing the energy values at the query points.
+    %
+    %   o Vdot:    A 1 x N array representing the rate of change in energy at
+    %              the query points by moving along the velocity vector Xd.
+    %              When Xd is passed as an empty variable, then it is d x N
+    %              matrix, where each column corresponds to the energy gradient
+    %              (i.e. Vdot = dV) at each query point.
+    %
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %%%         Copyright (c) 2014 Mohammad Khansari, LASA Lab, EPFL,       %%%
+    %%%          CH-1015 Lausanne, Switzerland, http://lasa.epfl.ch         %%%
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %
+    % The program is free for non-commercial academic use. Please contact the
+    % author if you are interested in using the software for commercial purposes.
+    % The software must not be modified or distributed without prior permission
+    % of the authors. Please acknowledge the authors in any academic publications
+    % that have made use of this code or part of it. Please use this BibTex
+    % reference:
+    %
+    % S.M. Khansari-Zadeh and A. Billard (2014), "Learning Control Lyapunov Function
+    % to Ensure Stability of Dynamical System-based Robot Reaching Motions."
+    % Robotics and Autonomous Systems, vol. 62, num 6, p. 752-765.
+    %
+    % To get latest update of the software please visit
+    %                          http://cs.stanford.edu/people/khansari/
+    %
+    % Please send your feedbacks or questions to:
+    %                          khansari_at_cs.stanford.edu
 
-Ported to Python by Lekan Ogunmolu
-                    August 2017
-                    patlekano@gmail.com
-"""
+    Ported to Python by Lekan Ogunmolu
+                        August 2017
+                        patlekano@gmail.com
+    """
 
 d = X.shape[0]
 nDemo = X.shape[2]
