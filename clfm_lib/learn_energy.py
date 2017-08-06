@@ -4,11 +4,147 @@ import scipy as sp
 import numpy.random as npr
 import scipy.linalg as linalg
 
+import cvxopt as cvx
+
 
 from .compute_energy import computeEnergy
 
 def matVecNorm(x):
     return np.sqrt(np.sum(x**2, axis=0))
+
+def matlength(x):
+  # find the max of a numpy matrix dims
+  return np.max(x.shape)
+
+def obj(p,x,xd,d,L,w,options):
+  # This function computes the derivative of the likelihood objective function
+  # w.r.t. optimization parameters.
+
+  if L == -1:
+      Vxf['n']    = np.sqrt(matlength(p)/d**2);
+      Vxf['d']    = d;
+      Vxf['P']    = p.reshape(Vxf['n']*d,Vxf['n']*d);
+      Vxf['SOS']  = 1;
+  else:
+      Vxf = shape_DS(p,d,L,options);
+
+  Vx = computeEnergy(x,np.array(()),Vxf, nargout=1)
+  Vdot = np.sum(Vx*xd,axis=0); #derivative of J w.r.t. xd
+  norm_Vx = np.sqrt(np.sum(Vx*Vx, axis=0))
+  norm_xd = np.sqrt(np.sum(xd*xd, axis=0))
+  J = Vdot /(norm_Vx * norm_xd)
+
+  J[norm_xd==0] = 0
+  J[norm_Vx==0] = 0
+  J[Vdot>0]     = J[Vdot>0]**2
+  J[Vdot<0]     = -w*J[Vdot<0]**2
+  J = np.sum(J)
+  dJ = np.array(())
+
+  return J, dJ
+
+def ctr_eigenvalue(p,d,L,options):
+  # This function computes the derivative of the constrains w.r.t.
+  # optimization parameters.
+
+  if L == -1: # SOS
+      Vxf['d'] = d
+      Vxf['n'] = np.sqrt(matlength(p)/d**2)
+      Vxf['P'] = p.reshape(Vxf['n']*d,Vxf['n']*d)
+      Vxf['SOS'] = 1
+      c  = np.zeros(Vxf['n']*d,1)
+      ceq = np.array(())
+  else:
+      Vxf = shape_DS(p,d,L,options)
+      if L > 0:
+          c  = np.zeros(((L+1)*d+(L+1)*options['optimizePriors'],1))  #+options.variableSwitch
+          if options['upperBoundEigenValue']:
+              ceq = np.zeros((L+1,1))
+          else:
+              ceq = np.array(()) # zeros(L+1,1);
+      else:
+          c  = np.zeros((d,1))
+          ceq = (np.ravel(Vxf['P']).T).dot(np.ravel(Vxf['P'])) -2
+
+  dc = np.array(())
+  dceq = np.array(())
+
+  if L == -1:  # SOS
+      c = -np.linalg.eigVals(Vxf['P'] + Vxf['P'].T - np.eye(Vxf['n']*d)*options['tol_mat_bias'])
+  else:
+  #     ceq = 1;
+      for k in range(L):
+          lambder = np.linalg.eigVals(Vxf['P'][:,:,k+1] + Vxf['P'][:,:,k+1].T)/2;
+          c[k*d+1:(k+1)*d] = -lambder + options['tol_mat_bias']
+          if options['upperBoundEigenValue']:
+              ceq[k+1] = 1.0 - np.sum(lambder) # + Vxf.P(:,:,k+1)'
+
+  if L > 0 and options['optimizePriors']:
+      c[(L+1)*d+1:(L+1)*d+L+1] = -Vxf['Priors']
+
+  return c, ceq, dc, dceq
+
+
+def shape_DS(p,d,L,options):
+
+  # transforming the column of parameters into Priors, Mu, and P
+  P = np.zeros((d,d,L+1))
+
+  if L == 0:
+      Priors = 1
+      Mu = np.zeros((d,1))
+      i_c = 1
+  else:
+      if options['optimizePriors']:
+          Priors = p[1:L+1]
+          i_c = L+1
+      else:
+          Priors = np.ones((L+1,1))
+          i_c = 0
+
+      Priors = Priors/np.sum(Priors)
+      Mu = np.concatenate((np.zeros((d,1)), p[i_c+[0:d*L]].reshape(d,L)), axis=1)
+      i_c = i_c+d*L+1
+
+  for k in range(L):
+      P[:,:,k+1] = p[(i_c+k*(d**2):i_c+(k+1)*(d**2)-1)].reshape(d,d)
+
+  Vxf['Priors'] = Priors
+  Vxf['Mu']     = Mu
+  Vxf['P']      = P
+  Vxf['SOS']    = 0
+
+  return Vxf
+
+def gmm_2_parameters(Vxf, options):
+  # transforming optimization parameters into a column vector
+  d = Vxf['d']
+  if Vxf['L'] > 0:
+      if options['optimizePriors']:
+          p0 = np.vstack(( 
+                           np.ravel(Vxf['Priors']), 
+                           Vxf['Mu'][:,1:].reshape(Vxf['L']*d,1)
+                        ))
+      else:
+          p0 = Vxf['Mu'][:,2:].reshape(Vxf['L']*d, 1)
+  else:
+      p0 = np.array(())
+
+  for k in range(Vxf['L']):
+
+      p0 = np.vstack((
+                      p0, 
+                      Vxf['P'][:,:,k+1].reshape(d**2,1)
+                    ))
+
+  return p0
+
+def parameters_2_gmm(popt, d, L, options):
+  # transforming the column of parameters into Priors, Mu, and P
+  Vxf = shape_DS(popt, d, L, options);
+
+  return Vxf
+
 
 def check_options(*args):
     options = args[0] if args else None
@@ -34,128 +170,6 @@ def check_options(*args):
 
     return options
 
-def obj(p,x,xd,d,L,w,options):
-  # This function computes the derivative of the likelihood objective function
-  # w.r.t. optimization parameters.
-
-  if L == -1:
-      Vxf['n']    = np.sqrt(p.shape[0]/d**2);
-      Vxf['d']    = d;
-      Vxf['P']    = p.reshape(Vxf['n']*d,Vxf['n']*d);
-      Vxf['SOS']  = 1;
-  else:
-      Vxf = shape_DS(p,d,L,options);
-
-  Vx = computeEnergy(x,np.array(()),Vxf)
-  Vdot = np.sum(Vx*xd,axis=0); #derivative of J w.r.t. xd
-  norm_Vx = np.sqrt(np.sum(Vx*Vx, axis=0))
-  norm_xd = np.sqrt(np.sum(xd*xd, axis=0))
-  J = Vdot /(norm_Vx * norm_xd)
-
-  J[norm_xd==0] = 0
-  J[norm_Vx==0] = 0
-  J[Vdot>0]     = J[Vdot>0]**2
-  J[Vdot<0]     = -w*J[Vdot<0]**2
-  J = np.sum(J)
-  dJ = np.array(())
-
-  return J, dJ
-
-def ctr_eigenvalue(p,d,L,options):
-  # This function computes the derivative of the constrains w.r.t.
-  # optimization parameters.
-
-  if L == -1: # SOS
-      Vxf['d'] = d
-      Vxf['n'] = np.sqrt(p.shape[0]/d**2)
-      Vxf['P'] = p.reshape(Vxf.n*d,Vxf.n*d)
-      Vxf['SOS'] = 1
-      c  = np.zeros(Vxf.n*d,1)
-      ceq = np.array(())
-  else:
-      Vxf = shape_DS(p,d,L,options)
-      if L > 0:
-          c  = np.zeros(((L+1)*d+(L+1)*options['optimizePriors'],1))  #+options.variableSwitch
-          if options['upperBoundEigenValue']:
-              ceq = np.zeros((L+1,1))
-          else:
-              ceq = np.array(()) # zeros(L+1,1);
-      else:
-          c  = np.zeros((d,1))
-          ceq = (np.ravel(Vxf['P']).T).dot(np.ravel(Vxf['P'])) -2
-  dc = np.array(())
-  dceq = np.array(())
-
-  if L == -1:  # SOS
-      c = -np.linalg.eigVals(Vxf['P'] + Vxf['P'].T - np.eye(Vxf['n']*d)*options['tol_mat_bias'])
-  else:
-  #     ceq = 1;
-      for k in range(L):
-          lambder = np.linalg.eigVals(Vxf['P'](:,:,k+1) + Vxf['P'][:,:,k+1].T)/2;
-          c[k*d+1:(k+1)*d] = -lambder + options['tol_mat_bias']
-          if options['upperBoundEigenValue']:
-              ceq[k+1] = 1.0 - np.sum(lambder) # + Vxf.P(:,:,k+1)'
-
-  #         ceq(k+1] = 2.0 - sum(sum(Vxf.P(:,:,k+1).^2));
-  if L > 0 and options['optimizePriors']:
-      c[(L+1)*d+1:(L+1)*d+L+1] = -Vxf['Priors']
-
-  return c, ceq, dc, dceq
-
-
-def shape_DS(p,d,L,options):
-
-  # transforming the column of parameters into Priors, Mu, and P
-  P = np.zeros((d,d,L+1))
-
-  if L == 0:
-      Priors = 1
-      Mu = np.zeros((d,1))
-      i_c = 1
-  else:
-      if options['optimizePriors']:
-          Priors = p[1:L+1]
-          i_c = L+1
-      else:
-          Priors = np.ones((L+1,1))
-          i_c = 0
-
-      Priors = Priors/np.sum(Priors)
-      Mu = np.concatenate((np.zeros((d,1)), p[i_c+(1:d*L)].reshape(d,L)), axis=1)
-      i_c = i_c+d*L+1
-
-  for k in range(L):
-      P[:,:,k+1] = p[(i_c+k*(d**2)):(i_c+(k+1)*(d**2)-1)].reshape(d,d)
-
-  Vxf['Priors'] = Priors;
-  Vxf['Mu'] = Mu;
-  Vxf['P'] = P;
-  Vxf['SOS'] = 0;
-
-  return Vxf
-
-def GMM_2_Parameters(Vxf,options):
-  # transforming optimization parameters into a column vector
-  d = Vxf['d']
-  if Vxf['L'] > 0:
-      if options['optimizePriors']:
-          p0 = np.concatenate((np.ravel(Vxf['Priors']), Vxf['Mu'][:,1:].reshape(Vxf['L']*d,1)), axis=0);
-      else:
-          p0 = Vxf['Mu'][:,2:].reshape(Vxf['L']*d,1)
-  else:
-      p0=np.array(())
-
-  for k in range(Vxf['L']):
-      p0 = np.stack((p0, Vxf['P'][:,:,k+1].reshape(d**2,1), axis=0));
-
-  return p0
-
-def Parameters_2_GMM(popt,d,L,options):
-  # transforming the column of parameters into Priors, Mu, and P
-  Vxf = shape_DS(popt,d,L,options);
-
-return Vxf
-
 
 def check_constraints(p,ctr_handle,d,L,options):
 # checking if every thing goes well here. Sometimes if the parameter
@@ -165,50 +179,52 @@ def check_constraints(p,ctr_handle,d,L,options):
   c = -ctr_handle[p]
 
   if L > 0:
-      c_P = np.transpose(np.reshape(c[0:L*d],(d,L)))
+      c_P = c[0:L*d].reshape(d,L).T
   else
       c_P = c
 
   idx = np.nonzero(c_P<=0)
   bool_success = True;
-  if idx.size == 0
+  if idx.size != 0
       idx = np.sort(idx);
-      err = np.concatenate((idx.reshape(idx.size), c_P[idx,:]), axis=1)
-      sys.stdout.write('Error in the constraints on P!')
-      sys.stdout.write('Eigenvalues of the P^k that violates the constraints:')
-      sys.stdout.write(err)
+      err = np.concatenate((np.ravel(idx), c_P[idx,:]), axis=1)
+      sys.stdout.write('Error in the constraints on P!\n')
+      sys.stdout.write('Eigenvalues of the P^k that violates the constraints:\n')
+      sys.stdout.write(err)      
+      sys.stdout.flush()
       bool_success = False;
 
 
   if L>1:
-      if options['optimizePriors']
+      if options['optimizePriors']:
           c_Priors = c[L*d+1:L*d+L]
           idx = c_Priors[c_Priors<0]
           if idx.size==0:
-              err = np.concatenate((idx.reshape(idx.size), c_Priors[idx]), axis=1);
-              disp('Error in the constraints on Priors!')
-              disp('Values of the Priors that violates the constraints:')
-              disp(err)
+              err = np.concatenate((np.ravel(idx), c_Priors[idx]), axis=1);
+              sys.stdout.write('Error in the constraints on Priors!')
+              sys.stdout.write('Values of the Priors that violates the constraints:')
+              sys.stdout.write(err)    
+              sys.stdout.flush()
               bool_success = False;
 
-      if c.shape[0]>L*d+L:
-          c_x_sw = c[L*d+L+1]
-          if c_x_sw<=0:
-              disp('Error in the constraints on x_sw!')
-              print('x_sw = ',c_x_sw)
+      if matlength(c) > L*d + L:
+          c_x_sw = c[L * d + L + 1]
+          if c_x_sw <= 0:
+              sys.stdout.write('Error in the constraints on x_sw!')
+              sys.stdout.write('x_sw = %f',c_x_sw)
               bool_success = False;
 
   if bool_success:
-      disp('Optimization finished successfully.')
-      disp(' ')
-      disp(' ')
+      sys.stdout.write('Optimization finished successfully.')
+      sys.stdout.write(' ')
+      sys.stdout.write(' ')
   else:
-      disp('Optimization did not reach to an optimal point.')
-      disp('Some constraints were slightly violated.')
-      disp('Re-run the optimization with different initial guess to handle this issue.')
-      disp('Increasing the number of P could be also helpful.')
-      disp(' ')
-      disp(' ')
+      sys.stdout.write('Optimization did not reach to an optimal point.')
+      sys.stdout.write('Some constraints were slightly violated.')
+      sys.stdout.write('Re-run the optimization with different initial guess to handle this issue.')
+      sys.stdout.write('Increasing the number of P could be also helpful.')
+      sys.stdout.write(' ')
+      sys.stdout.write(' ')
 
 def learnEnergy(Vxf0, Data, options):
     """
@@ -298,28 +314,48 @@ def learnEnergy(Vxf0, Data, options):
     Ported to Python by Olalekan Ogunmolu
             August 5, 2017
     """
-
+    # augment undefined options by updating the options dict
     options = check_options() if not options else options = check_options(options)
 
     d = int(Data.shape[0]/2)  # dimension of model
-    x = Data[0:d,:]
-    xd = Data[d+1:2*d,:]
+    x = Data[:d,:]     # state space
+    xd = Data[d:,:]    # derivatives of the state space
     Vxf0['SOS'] = False
 
     # Optimization
     # Transform the Lyapunov model to a vector of optimization parameters
     if Vxf0['SOS']:
         p0 = npr.randn(d*Vxf0['n'], d*Vxf0['n']);
-        p0 = p0 * p0.T;
-        p0 = p0.reshape(p0.size, 1);
+        p0 = p0.dot(p0.T)
+        p0 = np.ravel(p0)
         Vxf0['L'] = -1; # to distinguish sos from other methods
     else:
-        for l in range(Vxf0['L'])
+        # allocate Vxf0['P'] and Vxf0['Mu']
+        Vxf0['P']   =  np.zeros(( Vxf0['d'], Vxf0['d'], Vxf0['L']+1)) # wil be 2x2x3
+        Vxf0['Mu']  =  np.zeros(( Vxf0['d'], Vxf0['L']+1 ))
+
+        for l in range(Vxf0['L']):
             Vxf0['P'][:,:,l+1] = sp.linalg.solve( Vxf0['P'][:,:,l+1], np.eye(d)) )
 
         # in order to set the first component to be the closest Gaussian to origin
         to_sort = matVecNorm(Vxf0['Mu'])
         idx = np.argsort(to_sort, kind='mergesort');
-        Vxf0['Mu'] = Vxf0['Mu'](:,idx);
-        Vxf0['P']  = Vxf0['P'](:,:,idx);
-        p0 = GMM_2_Parameters(Vxf0,options);
+        Vxf0['Mu'] = Vxf0['Mu'][:,idx];
+        Vxf0['P']  = Vxf0['P'][:,:,idx];
+        p0 = gmm_2_parameters(Vxf0,options);
+
+        obj_handle = @(p) obj(p,x,xd,d,Vxf0['L'],Vxf0['w'],options);
+        ctr_handle = @(p) ctr_eigenvalue(p,d,Vxf0['L'],options);
+
+        # Running the optimization
+        if options['display']:
+            str = 'iter'
+        else:
+            str = 'off'
+
+        # Options for NLP Solvers
+        optNLP = optimset( 'Algorithm', 'interior-point', 'LargeScale', 'off',...
+            'GradObj', 'off', 'GradConstr', 'off', 'DerivativeCheck', 'on', ...
+            'Display', 'iter', 'TolX', options.tol_stopping, 'TolFun', options.tol_stopping, 'TolCon', 1e-12, ...
+            'MaxFunEval', 200000, 'MaxIter', options.max_iter, 'DiffMinChange', ...
+            1e-4, 'Hessian','off','display',str);

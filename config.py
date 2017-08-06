@@ -8,10 +8,10 @@ Vxf0 = {
     'P': np.array(()),
 }
 
-Options = {
+options = {
     'tol_mat_bias': 1e-1,
     'display': 1,
-    'tol_stopping': 1e10,
+    'tol_stopping': 1e-10,
     'max_iter': 500,
     'optimizePriors': True,
     'upperBoundEigenValue': True,

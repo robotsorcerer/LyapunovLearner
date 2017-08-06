@@ -18,18 +18,18 @@ import sys
 import argparse
 import numpy as np
 import scipy as sp
-import scipy.io as sio
 import scipy.linalg as LA
 
-from config import Vxf0, Options
-from .. clfm_lib import learnEnergy
+from config import Vxf0, options
+from clfm_lib.learn_energy import learnEnergy
+from clfm_lib.compute_energy import computeEnergy
 
 # path imports
-sys.path.insert(0, "CLFM_lib")
-sys.path.insert(1, "GMR_lib")
+# sys.path.insert(0, "CLFM_lib")
+# sys.path.insert(1, "GMR_lib")
 
 def loadSavedMatFile(x):
-    matFile = sio.loadmat(x)
+    matFile = sp.io.loadmat(x)
 
     # print(matFile)
     data = matFile['Data']
@@ -37,17 +37,16 @@ def loadSavedMatFile(x):
 
     return data, demoIdx
 
-def guess_init_lyap(data, Vxf0):
+def guess_init_lyap(data, Vxf0, b_initRandom=True):
     """
     This function guesses the initial lyapunov function
     """
-    b_initRandom = False
-
+    
     if b_initRandom:
-        temp = np.transpose(data[0:Vxf0['d'],:])
+        temp = data[0:Vxf0['d'],:].T
         tempvar = np.var(temp, axis=0)
         lengthScale = np.sqrt(tempvar)
-        lengthScale = lengthScale.reshape(lengthScale.size, 1)
+        lengthScale = np.ravel(lengthScale)
         '''
          If `rowvar` is True (default), then each row represents a
         variable, with observations in the columns. Otherwise, the relationship
@@ -65,11 +64,12 @@ def guess_init_lyap(data, Vxf0):
         for l in range(Vxf0['L']+1):
             tempMat = np.random.randn(Vxf0['d'], Vxf0['d'])
             Vxf0['Mu'][:,l] = np.random.randn(Vxf0['d'],1) * lengthScale
-            Vxf0['P'][:,:,l] = lengthScaleMatrix * (tempMat * np.transpose(tempMat)) * lengthScaleMatrix
+            Vxf0['P'][:,:,l] = lengthScaleMatrix * (tempMat * tempMat.T) * lengthScaleMatrix
     else:
         Vxf0['Priors'] = np.ones((Vxf0['L']+1, 1))
-        Vxf0['Priors'] = Vxf0['Priors']/sum(Vxf0['Priors'])
+        Vxf0['Priors'] = Vxf0['Priors']/np.sum(Vxf0['Priors'])
         Vxf0['Mu'] = np.zeros((Vxf0['d'],Vxf0['L']+1))
+        
         # allocate Vxf0['P']
         Vxf0['P']   =  np.zeros(( Vxf0['d'], Vxf0['d'], Vxf0['L']+1)) # wil be 2x2x3
         for l in range(Vxf0['L']+1):
@@ -93,6 +93,10 @@ def main():
     Vxf0['d'] = int(data.shape[0]/2)
 
     Vxf0 = guess_init_lyap(data, Vxf0)
+
+    Vxf = learnEnergy(Vxf0, data, options)
+
+    # plot the result
 
     if args.verbose:
         print('demoIdx: ', demoIdx)
