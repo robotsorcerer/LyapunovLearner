@@ -5,7 +5,7 @@ import numpy.random as npr
 import scipy.linalg as linalg
 
 
-from computeEnergy import *
+from .compute_energy import computeEnergy
 
 def matVecNorm(x):
     return np.sqrt(np.sum(x**2, axis=0))
@@ -20,16 +20,16 @@ def check_options(*args):
         options['max_iter'] = 1000
     if not 'display' in options:
         options['display'] = 1
-    else 
+    else
         options.['display'] = options['display'] > 0
     if not 'optimizePriors' in options:
         options['optimizePriors'] = True
-    else 
+    else
         options['optimizePriors'] = options['optimizePriors'] > 0
-    
+
     if not 'upperBoundEigenValue' in options:
         options['upperBoundEigenValue'] = True
-    else 
+    else
         options['upperBoundEigenValue'] = options['upperBoundEigenValue'] > 0
 
     return options
@@ -95,7 +95,7 @@ def ctr_eigenvalue(p,d,L,options):
           c[k*d+1:(k+1)*d] = -lambder + options['tol_mat_bias']
           if options['upperBoundEigenValue']:
               ceq[k+1] = 1.0 - np.sum(lambder) # + Vxf.P(:,:,k+1)'
-          
+
   #         ceq(k+1] = 2.0 - sum(sum(Vxf.P(:,:,k+1).^2));
   if L > 0 and options['optimizePriors']:
       c[(L+1)*d+1:(L+1)*d+L+1] = -Vxf['Priors']
@@ -126,12 +126,12 @@ def shape_DS(p,d,L,options):
 
   for k in range(L):
       P[:,:,k+1] = p[(i_c+k*(d**2)):(i_c+(k+1)*(d**2)-1)].reshape(d,d)
-  
+
   Vxf['Priors'] = Priors;
   Vxf['Mu'] = Mu;
   Vxf['P'] = P;
   Vxf['SOS'] = 0;
-  
+
   return Vxf
 
 def GMM_2_Parameters(Vxf,options):
@@ -146,7 +146,7 @@ def GMM_2_Parameters(Vxf,options):
       p0=np.array(())
 
   for k in range(Vxf['L']):
-      p0 = np.stack((p0, Vxf['P'][:,:,k+1].reshape(d**2,1), axis=0)); 
+      p0 = np.stack((p0, Vxf['P'][:,:,k+1].reshape(d**2,1), axis=0));
 
   return p0
 
@@ -178,7 +178,7 @@ def check_constraints(p,ctr_handle,d,L,options):
       sys.stdout.write('Eigenvalues of the P^k that violates the constraints:')
       sys.stdout.write(err)
       bool_success = False;
-  
+
 
   if L>1:
       if options['optimizePriors']
@@ -190,14 +190,14 @@ def check_constraints(p,ctr_handle,d,L,options):
               disp('Values of the Priors that violates the constraints:')
               disp(err)
               bool_success = False;
-      
+
       if c.shape[0]>L*d+L:
           c_x_sw = c[L*d+L+1]
           if c_x_sw<=0:
               disp('Error in the constraints on x_sw!')
               print('x_sw = ',c_x_sw)
               bool_success = False;
-  
+
   if bool_success:
       disp('Optimization finished successfully.')
       disp(' ')
@@ -316,7 +316,7 @@ def learnEnergy(Vxf0, Data, options):
     else:
         for l in range(Vxf0['L'])
             Vxf0['P'][:,:,l+1] = sp.linalg.solve( Vxf0['P'][:,:,l+1], np.eye(d)) )
-   
+
         # in order to set the first component to be the closest Gaussian to origin
         to_sort = matVecNorm(Vxf0['Mu'])
         idx = np.argsort(to_sort, kind='mergesort');

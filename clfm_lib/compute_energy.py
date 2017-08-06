@@ -1,5 +1,5 @@
 def computeEnergy(X,Xd,Vxf):
-"""    
+"""
 % Syntax:
 %
 %       [V Vdot] = computeEnergy(X,Xd,Vxf)
@@ -23,7 +23,7 @@ def computeEnergy(X,Xd,Vxf):
 %
 % Outputs ----------------------------------------------------------------
 %
-%   o V:       A 1 x N array representing the energy values at the query points. 
+%   o V:       A 1 x N array representing the energy values at the query points.
 %
 %   o Vdot:    A 1 x N array representing the rate of change in energy at
 %              the query points by moving along the velocity vector Xd.
@@ -42,9 +42,9 @@ def computeEnergy(X,Xd,Vxf):
 % of the authors. Please acknowledge the authors in any academic publications
 % that have made use of this code or part of it. Please use this BibTex
 % reference:
-% 
+%
 % S.M. Khansari-Zadeh and A. Billard (2014), "Learning Control Lyapunov Function
-% to Ensure Stability of Dynamical System-based Robot Reaching Motions." 
+% to Ensure Stability of Dynamical System-based Robot Reaching Motions."
 % Robotics and Autonomous Systems, vol. 62, num 6, p. 752-765.
 %
 % To get latest update of the software please visit
@@ -118,11 +118,11 @@ for k = 0:L
 %         beta(ind_1) = -0.5*sin(-tau*V_k(ind_1)+pi/2)+0.5;
 %         beta(ind_2) = 1;
 %         dbeta(ind_1) = 0.5*tau*cos(-tau*V_k(ind_1)+pi/2);
-% 
+%
 %         V = V + Priors(k+1)*beta.*(V_k).^2;%alpha.*w.*V_k;
 %         Vx = Vx + repmat(2*Priors(k+1)*beta.*V_k,d,1).*(invP*x+ invP'*x_tmp);
 %         Vx(:,ind_1) = Vx(:,ind_1) + repmat(Priors(k+1)*dbeta(ind_1).*V_k(ind_1).^2,d,1).*(invP*x(:,ind_1)+ invP'*x_tmp(:,ind_1));
-% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%       
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %         PP_k = 2*(x'*invP*x)*invP + 2*(x_tmp'*invP*x_tmp)*invP + ...
 %                4*invP*(x_tmp*x' + x*x_tmp')*invP + ...
 %                2*d_alpha_d_sc*invP*(V_k*(x_tmp*(x_tmp + x)' + (x_tmp + x)*x_tmp') +...

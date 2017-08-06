@@ -15,14 +15,14 @@ Date:     August 04, 2017
 """
 
 import sys
-import math
-import numpy as np
 import argparse
+import numpy as np
 import scipy as sp
 import scipy.io as sio
-import scipy.linalg as spla
+import scipy.linalg as LA
 
 from config import Vxf0, Options
+from .. clfm_lib import learnEnergy
 
 # path imports
 sys.path.insert(0, "CLFM_lib")
@@ -55,7 +55,7 @@ def guess_init_lyap(data, Vxf0):
         contain observations.
         '''
         tempcov = np.cov(temp, rowvar=False)
-        lengthScaleMatrix = spla.sqrtm(tempcov)
+        lengthScaleMatrix = LA.sqrtm(tempcov)
         Vxf0['Priors'] = np.random.rand(Vxf0['L']+1,1);
 
         # allocate spaces for incoming arrays
