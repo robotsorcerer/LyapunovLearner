@@ -4,7 +4,7 @@ import scipy as sp
 import numpy.random as npr
 import scipy.linalg as linalg
 
-import cvxopt as cvx
+from cvxopt.solvers import cp # to solve convex problems
 
 
 from .compute_energy import computeEnergy
@@ -311,7 +311,7 @@ def learnEnergy(Vxf0, Data, options):
     ##          CH-1015 Lausanne, Switzerland, http://lasa.epfl.ch           ##
     ###########################################################################
 
-    Ported to Python by Olalekan Ogunmolu
+    Ported to Python by Lekan Ogunmolu
             August 5, 2017
     """
     # augment undefined options by updating the options dict
