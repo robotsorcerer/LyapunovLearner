@@ -349,13 +349,27 @@ def learnEnergy(Vxf0, Data, options):
 
         # Running the optimization
         if options['display']:
-            str = 'iter'
+            string = 'iter'
         else:
-            str = 'off'
+            string = 'off'
 
         # Options for NLP Solvers
-        optNLP = optimset( 'Algorithm', 'interior-point', 'LargeScale', 'off',...
-            'GradObj', 'off', 'GradConstr', 'off', 'DerivativeCheck', 'on', ...
-            'Display', 'iter', 'TolX', options.tol_stopping, 'TolFun', options.tol_stopping, 'TolCon', 1e-12, ...
-            'MaxFunEval', 200000, 'MaxIter', options.max_iter, 'DiffMinChange', ...
-            1e-4, 'Hessian','off','display',str);
+        optNLP = {
+          'Algorithm': 'interior-point', 
+          'LargeScale': 'off',
+          'GradObj': 'off',
+          'GradConstr': 'off',
+          'DerivativeCheck': 'on',
+          'Display': 'iter',
+          'TolX': options.tol_stopping,
+          'TolFun': options.tol_stopping,
+          'TolCon': 1e-12,
+          'MaxFunEval': 200000,
+          'MaxIter': options.max_iter,
+          'DiffMinChange': 1e-4,
+          'Hessian',: 'off',
+          'display': string,
+            }
+
+        e = np.array(())
+        popt, J = fmincon(obj_handle, p0, ctr_handle, optNLP, e, e, e, e, e, e )

@@ -184,7 +184,7 @@ def equalFloat(v1,v2,tolerance):
                  tolerance * np.max( 1, np.max([np.abs(np.ravel(v1)), np.abs(np.ravel(v2))]) ))
   return isEqual_idx
 
-def fmincon(FUN,X,A,B,Aeq,Beq,LB,UB,NONLCON,options,*args):
+def fmincon(FUN,X,NONLCON,options,*args):
   #
   # FMINCON finds a constrained minimum of a function of several variables.
   #   FMINCON attempts to solve problems of the form:
@@ -301,6 +301,15 @@ def fmincon(FUN,X,A,B,Aeq,Beq,LB,UB,NONLCON,options,*args):
   # ported to python by Lekan Ogunmolu
   # Date: August 06, 2017
 
+  def check(x, idx):
+    if x[idx]:
+      return x[idx]
+    else:
+      return None
+
+  A,B,Aeq,Beq,LB,UB = check(args, 0), check(args, 1), check(args, 2), \
+                      check(args, 3), check(args, 4), check(args, 5)
+
   numberOfVariables = 1 # default. To be overidden
   numberOfEqualities = 1
   numberOfBounds = 1
@@ -313,27 +322,27 @@ def fmincon(FUN,X,A,B,Aeq,Beq,LB,UB,NONLCON,options,*args):
       'DiffMaxChange': np.inf, 
       'DiffMinChange': 0, 
       'Display': 'final', 
-      'FinDiffRelStep': : np.inf,
+      'FinDiffRelStep': np.array(()),
       'FinDiffType': 'forward', 
       'FunValCheck': 'off', 
       'GradConstr': 'off', 
       'GradObj': 'off', 
-      'HessFcn': np.inf,
-      'Hessian': np.inf,
-      'HessMult': np.inf,
+      'HessFcn': np.array(()),
+      'Hessian': np.array(()),
+      'HessMult': np.array(()),
       'HessPattern': spr.csr_matrix(np.ones((numberOfVariables, numberOfVariables))), 
       'InitBarrierParam': 0.1, 
       'InitTrustRegionRadius': np.sqrt(numberOfVariables), 
-      'MaxFunEvals': np.inf,...
-      'MaxIter': np.inf,...
+      'MaxFunEvals': np.array(()),...
+      'MaxIter': np.array(()),...
       'MaxPCGIter': np.max([1, np.floor(numberOfVariables/2)]),
       'MaxProjCGIter': 2*(numberOfVariables-numberOfEqualities), 
       'MaxSQPIter': 10*np.max([numberOfVariables,numberOfInequalities+numberOfBounds]),
       'ObjectiveLimit': -1e20,
-      'OutputFcn': np.inf,
-      'PlotFcns': np.inf,
+      'OutputFcn': np.array(()),
+      'PlotFcns': np.array(()),
       'PrecondBandWidth',0,
-      'RelLineSrchBnd': np.inf,
+      'RelLineSrchBnd': np.array(()),
       'RelLineSrchBndDuration': 1, 
       'ScaleProblem': None, 
       'SubproblemAlgorithm': 'ldl-factorization', 
@@ -344,9 +353,9 @@ def fmincon(FUN,X,A,B,Aeq,Beq,LB,UB,NONLCON,options,*args):
       'TolPCG': 0.1, 
       'TolProjCG': 1e-2, 
       'TolProjCGAbs': 1e-10, 
-      'TolX': np.inf,
-      'TypicalX': np.ones(numberOfVariables,1), 
-      'UseParallel': False 
+      'TolX': np.array(()),
+      'TypicalX': np.ones((numberOfVariables,1)), 
+      'UseParallel': False ,
       }
 
   # If just 'defaults' passed in, return the default options in X
@@ -485,7 +494,7 @@ def fmincon(FUN,X,A,B,Aeq,Beq,LB,UB,NONLCON,options,*args):
      OUTPUT['firstorderopt'] = np.array(())
      OUTPUT['message'] = msg
      
-     np.ravel(X) = XOUT
+     X = XOUT
      # if verbosity > 0
      #    disp(msg)
      # end
@@ -621,7 +630,7 @@ def fmincon(FUN,X,A,B,Aeq,Beq,LB,UB,NONLCON,options,*args):
          finiteUbIdx = np.nonzero(finDiffFlags['hasUBs'])
          XOUT[finiteLbIdx[violatedLowerBnds_idx]] = l[finiteLbIdx[violatedLowerBnds_idx]];
          XOUT[finiteUbIdx[violatedUpperBnds_idx]] = u[finiteUbIdx[violatedUpperBnds_idx]];
-         np.ravel(X) = XOUT
+         X = XOUT
          shiftedX0 = True
   elif OUTPUT['algorithm']=='trustRegionReflective':
      #
@@ -636,12 +645,12 @@ def fmincon(FUN,X,A,B,Aeq,Beq,LB,UB,NONLCON,options,*args):
          if np.any(xinitOutOfBounds_idx):
              shiftedX0 = True
              XOUT = startx(u,l,XOUT,xinitOutOfBounds_idx);
-             np.ravel(X) = XOUT
+             X = XOUT
      else:
         # Phase-1 for sfminle nearest feas. pt. to XOUT. Don't print a
         # message for this change in X0 for sfminle. 
          XOUT = NotImplemented #feasibl(Aeq,Beq,XOUT)
-         np.ravel(X) = XOUT
+         X = XOUT
     
   elif OUTPUT['algorithm'] == 'interiorPoint':
       # Variables: fixed, finite lower bounds, finite upper bounds
@@ -655,100 +664,73 @@ def fmincon(FUN,X,A,B,Aeq,Beq,LB,UB,NONLCON,options,*args):
         violatedLowerBnds_idx = XOUT[xIndices['finiteLb'] <= l[xIndices['finiteLb']]
         violatedUpperBnds_idx = XOUT[xIndices['finiteUb'] >= u[xIndices['finiteUb']]
         if np.any(violatedLowerBnds_idx) or np.any(violatedUpperBnds_idx) or np.any(violatedFixedBnds_idx):
-          XOUT = shiftInitPtToInterior(sizes['nVar'], XOUT, l, u, np.inf);
-          np.ravel(X) = XOUT;
+          XOUT = NotImplemented #shiftInitPtToInterior(sizes['nVar'], XOUT, l, u, np.inf);
+          X = XOUT;
           shiftedX0 = True;
 
-  % Display that x0 was shifted in order to honor bounds
-  if shiftedX0
-      if verbosity >= 3
-          if strcmpi(OUTPUT.algorithm,interiorPoint) 
-              fprintf(getString(message('optimlib:fmincon:ShiftX0StrictInterior')));
-              fprintf('\n');
-          else
-              fprintf(getString(message('optimlib:fmincon:ShiftX0ToBnds')));
-              fprintf('\n');
-          end
-      end
-  end
+  # Display that x0 was shifted in order to honor bounds
+  # if shiftedX0
+  #     if verbosity >= 3
+  #         if strcmpi(OUTPUT.algorithm,interiorPoint) 
+  #             fprintf(getString(message('optimlib:fmincon:ShiftX0StrictInterior')));
+  #             fprintf('\n');
+  #         else
+  #             fprintf(getString(message('optimlib:fmincon:ShiftX0ToBnds')));
+  #             fprintf('\n');
+  #         end
+  #     end
+  # end
       
-  % Evaluate function
-  initVals.g = zeros(sizes.nVar,1);
-  HESSIAN = []; 
+  # Evaluate function
+  initVals['g'] = np.zeros((sizes['nVar'],1))
+  HESSIAN = np.any(()) 
 
-  switch funfcn{1}
-  case 'fun'
-     try
-        initVals.f = feval(funfcn{3},X,varargin{:});
-     catch userFcn_ME
-          optim_ME = MException('optimlib:fmincon:ObjectiveError', ...
-              getString(message('optimlib:fmincon:ObjectiveError')));
-          userFcn_ME = addCause(userFcn_ME,optim_ME);
-          rethrow(userFcn_ME)
-     end
-  case 'fungrad'
-     try
-        [initVals.f,initVals.g] = feval(funfcn{3},X,varargin{:});
-     catch userFcn_ME
-          optim_ME = MException('optimlib:fmincon:ObjectiveError', ...
-              getString(message('optimlib:fmincon:ObjectiveError')));
-          userFcn_ME = addCause(userFcn_ME,optim_ME);
-          rethrow(userFcn_ME)
-     end
-  case 'fungradhess'
-     try
-        [initVals.f,initVals.g,HESSIAN] = feval(funfcn{3},X,varargin{:});
-     catch userFcn_ME
-          optim_ME = MException('optimlib:fmincon:ObjectiveError', ...
-              getString(message('optimlib:fmincon:ObjectiveError')));
-          userFcn_ME = addCause(userFcn_ME,optim_ME);
-          rethrow(userFcn_ME)
-     end
-  case 'fun_then_grad'
-     try
-        initVals.f = feval(funfcn{3},X,varargin{:});
-     catch userFcn_ME
-          optim_ME = MException('optimlib:fmincon:ObjectiveError', ...
-              getString(message('optimlib:fmincon:ObjectiveError')));
-          userFcn_ME = addCause(userFcn_ME,optim_ME);
-          rethrow(userFcn_ME)
-     end
-     try
-        initVals.g = feval(funfcn{4},X,varargin{:});
-     catch userFcn_ME
-          optim_ME = MException('optimlib:fmincon:GradientError', ...
-              getString(message('optimlib:fmincon:GradientError')));
-          userFcn_ME = addCause(userFcn_ME,optim_ME);
-          rethrow(userFcn_ME)
-     end
-  case 'fun_then_grad_then_hess'
-     try
-        initVals.f = feval(funfcn{3},X,varargin{:});
-     catch userFcn_ME
-          optim_ME = MException('optimlib:fmincon:ObjectiveError', ...
-              getString(message('optimlib:fmincon:ObjectiveError')));
-          userFcn_ME = addCause(userFcn_ME,optim_ME);
-          rethrow(userFcn_ME)
-     end
-     try
-        initVals.g = feval(funfcn{4},X,varargin{:});
-     catch userFcn_ME
-          optim_ME = MException('optimlib:fmincon:GradientError', ...
-              getString(message('optimlib:fmincon:GradientError')));
-          userFcn_ME = addCause(userFcn_ME,optim_ME);
-          rethrow(userFcn_ME)
-     end
-     try
-        HESSIAN = feval(funfcn{5},X,varargin{:});
-     catch userFcn_ME
-          optim_ME = MException('optimlib:fmincon:HessianError', ...
-              getString(message('optimlib:fmincon:HessianError')));            
-          userFcn_ME = addCause(userFcn_ME,optim_ME);
-          rethrow(userFcn_ME)
-     end
-  otherwise
-     error(message('optimlib:fmincon:UndefinedCallType'));
-  end
+  if FUN['fun']: # calltype==fmincon, interiorPoint
+    initVals['f'] = FUN(X, args)
+
+  if FUN['fungrad']:
+    initVals['f'], initVals['g'] = FUN(X, args)
+  
+  if FUN['fungradhess']:
+    initVals['f'], initVals['g'], HESSIAN = FUN(X, args)
+
+  # if FUN['fun_then_grad']:
+  #    initVals['f'] = FUN(X, args)
+  #    initVals['g'] = feval(funfcn{4},X, args);
+  #    catch userFcn_ME
+  #         optim_ME = MException('optimlib:fmincon:GradientError', ...
+  #             getString(message('optimlib:fmincon:GradientError')));
+  #         userFcn_ME = addCause(userFcn_ME,optim_ME);
+  #         rethrow(userFcn_ME)
+  #    end
+  # case 'fun_then_grad_then_hess'
+  #    try
+  #       initVals.f = feval(funfcn{3},X,varargin{:});
+  #    catch userFcn_ME
+  #         optim_ME = MException('optimlib:fmincon:ObjectiveError', ...
+  #             getString(message('optimlib:fmincon:ObjectiveError')));
+  #         userFcn_ME = addCause(userFcn_ME,optim_ME);
+  #         rethrow(userFcn_ME)
+  #    end
+  #    try
+  #       initVals.g = feval(funfcn{4},X,varargin{:});
+  #    catch userFcn_ME
+  #         optim_ME = MException('optimlib:fmincon:GradientError', ...
+  #             getString(message('optimlib:fmincon:GradientError')));
+  #         userFcn_ME = addCause(userFcn_ME,optim_ME);
+  #         rethrow(userFcn_ME)
+  #    end
+  #    try
+  #       HESSIAN = feval(funfcn{5},X,varargin{:});
+  #    catch userFcn_ME
+  #         optim_ME = MException('optimlib:fmincon:HessianError', ...
+  #             getString(message('optimlib:fmincon:HessianError')));            
+  #         userFcn_ME = addCause(userFcn_ME,optim_ME);
+  #         rethrow(userFcn_ME)
+  #    end
+  # otherwise
+  #    error(message('optimlib:fmincon:UndefinedCallType'));
+  # end
 
   % Check that the objective value is a scalar
   if numel(initVals.f) ~= 1
