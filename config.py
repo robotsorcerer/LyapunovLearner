@@ -16,3 +16,8 @@ options = {
     'optimizePriors': True,
     'upperBoundEigenValue': True,
 }
+
+
+hyperparams = {
+    'use_cvxopt': True, #whether to use cvxopt package, fmincon or otherwise
+}

@@ -4,10 +4,16 @@ import scipy as sp
 import numpy.random as npr
 import scipy.linalg as linalg
 
-from cvxopt.solvers import cp # to solve convex problems
+from cvxopt import solvers, matrix, spdiag, div # to solve convex problems
 
 
 from .compute_energy import computeEnergy
+from .. config import hyperparams
+
+# global vars
+p,x,xd,d,Vxf0['L'],Vxf0['w'],options = (None for _ in range(7))
+
+use_convex = hyperparams['use_cvxopt']
 
 def matVecNorm(x):
     return np.sqrt(np.sum(x**2, axis=0))
@@ -16,20 +22,24 @@ def matlength(x):
   # find the max of a numpy matrix dims
   return np.max(x.shape)
 
-def obj(p,x,xd,d,L,w,options):
+
+def obj(x=None, z=None):
   # This function computes the derivative of the likelihood objective function
   # w.r.t. optimization parameters.
+  global p,x,xd,d,Vxf0['L'],Vxf0['w'],options
 
   if L == -1:
-      Vxf['n']    = np.sqrt(matlength(p)/d**2);
-      Vxf['d']    = d;
-      Vxf['P']    = p.reshape(Vxf['n']*d,Vxf['n']*d);
-      Vxf['SOS']  = 1;
+      Vxf['n']    = np.sqrt(matlength(p)/d**2)
+      Vxf['d']    = d
+      Vxf['P']    = p.reshape(Vxf['n']*d,Vxf['n']*d)
+      Vxf['SOS']  = 1
   else:
-      Vxf = shape_DS(p,d,L,options);
+      Vxf = shape_DS(p,d,L,options)
+      
+  if x is None: return 0, matrix(0.0, (Vxf['d'], Vxf['n']))
 
-  Vx = computeEnergy(x,np.array(()),Vxf, nargout=1)
-  Vdot = np.sum(Vx*xd,axis=0); #derivative of J w.r.t. xd
+  Vx = computeEnergy(x,np.array(()), Vxf, nargout=1)
+  Vdot = np.sum(Vx*xd, axis=0)  #derivative of J w.r.t. xd
   norm_Vx = np.sqrt(np.sum(Vx*Vx, axis=0))
   norm_xd = np.sqrt(np.sum(xd*xd, axis=0))
   J = Vdot /(norm_Vx * norm_xd)
@@ -41,7 +51,12 @@ def obj(p,x,xd,d,L,w,options):
   J = np.sum(J)
   dJ = np.array(())
 
-  return J, dJ
+  H = spdiag(2 * z[0] * )
+  # translate to cvxopt-like dense matrices
+  if use_convex:
+    return matrix(J), matrix(dJ)
+  else:
+    return J, dJ
 
 def ctr_eigenvalue(p,d,L,options):
   # This function computes the derivative of the constrains w.r.t.
@@ -226,6 +241,7 @@ def check_constraints(p,ctr_handle,d,L,options):
       sys.stdout.write(' ')
       sys.stdout.write(' ')
 
+
 def learnEnergy(Vxf0, Data, options):
     """
 
@@ -372,4 +388,9 @@ def learnEnergy(Vxf0, Data, options):
             }
 
         e = np.array(())
+
+        """
+          popt is value of minimization
+          J is value of cost at the optimal solution
+        """ 
         popt, J = fmincon(obj_handle, p0, ctr_handle, optNLP, e, e, e, e, e, e )
