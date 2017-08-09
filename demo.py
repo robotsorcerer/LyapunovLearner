@@ -17,19 +17,21 @@ Date:     August 04, 2017
 import sys
 import argparse
 import numpy as np
-import scipy as sp
+# import scipy as sp
+import scipy.io as sio
 import scipy.linalg as LA
+
+# path imports
+from os.path import dirname, abspath#, join, sep
+lyap = dirname(dirname(abspath(__file__))) + '/' + 'LyapunovLearner'
+sys.path.append(lyap)
 
 from config import Vxf0, options
 from clfm_lib.learn_energy import learnEnergy
 from clfm_lib.compute_energy import computeEnergy
 
-# path imports
-# sys.path.insert(0, "CLFM_lib")
-# sys.path.insert(1, "GMR_lib")
-
 def loadSavedMatFile(x):
-    matFile = sp.io.loadmat(x)
+    matFile = sio.loadmat(x)
 
     # print(matFile)
     data = matFile['Data']
@@ -37,11 +39,15 @@ def loadSavedMatFile(x):
 
     return data, demoIdx
 
-def guess_init_lyap(data, Vxf0, b_initRandom=True):
+def guess_init_lyap(data, Vxf0, b_initRandom=False):
     """
     This function guesses the initial lyapunov function
     """
-    
+
+    # allocate spaces for incoming arrays
+    Vxf0['Mu']  =  np.zeros(( Vxf0['d'], Vxf0['L']+1 )) # will be 2x2
+    Vxf0['P']   =  np.zeros(( Vxf0['d'], Vxf0['d'], Vxf0['L']+1)) # wil be 2x2x3
+
     if b_initRandom:
         temp = data[0:Vxf0['d'],:].T
         tempvar = np.var(temp, axis=0)
@@ -57,21 +63,19 @@ def guess_init_lyap(data, Vxf0, b_initRandom=True):
         lengthScaleMatrix = LA.sqrtm(tempcov)
         Vxf0['Priors'] = np.random.rand(Vxf0['L']+1,1);
 
-        # allocate spaces for incoming arrays
-        Vxf0['Mu']  =  np.zeros(( Vxf0['d'], Vxf0['L']+1 )) #will be 2x2
-        Vxf0['P']   =  np.zeros(( Vxf0['d'], Vxf0['d'], Vxf0['L']+1)) # wil be 2x2x3
-
         for l in range(Vxf0['L']+1):
             tempMat = np.random.randn(Vxf0['d'], Vxf0['d'])
-            Vxf0['Mu'][:,l] = np.random.randn(Vxf0['d'],1) * lengthScale
-            Vxf0['P'][:,:,l] = lengthScaleMatrix * (tempMat * tempMat.T) * lengthScaleMatrix
+            # print(np.random.randn(Vxf0['d'],1).shape, 'ls: ', lengthScale.shape, 'Vxf0[\'Mu\']: ', Vxf0['Mu'].shape)
+            Vxf0['Mu'][:,l] = np.multiply(np.random.randn(Vxf0['d'],1), lengthScale)
+            # print('tempMat: ', tempMat.shape, 'lSM: ', lengthScaleMatrix.shape)
+            Vxf0['P'][:,:,l] = lengthScaleMatrix.dot((tempMat * tempMat.T)).dot(lengthScaleMatrix)
     else:
         Vxf0['Priors'] = np.ones((Vxf0['L']+1, 1))
         Vxf0['Priors'] = Vxf0['Priors']/np.sum(Vxf0['Priors'])
-        Vxf0['Mu'] = np.zeros((Vxf0['d'],Vxf0['L']+1))
-        
+        # Vxf0['Mu'] = np.zeros((Vxf0['d'], Vxf0['d'], Vxf0['L']+1))
+
         # allocate Vxf0['P']
-        Vxf0['P']   =  np.zeros(( Vxf0['d'], Vxf0['d'], Vxf0['L']+1)) # wil be 2x2x3
+        # Vxf0['P']   =  np.zeros(( Vxf0['d'], Vxf0['d'], Vxf0['L']+1)) # wil be 2x2x3
         for l in range(Vxf0['L']+1):
             Vxf0['P'][:,:,l] = np.eye((Vxf0['d']))
 
@@ -86,14 +90,15 @@ def main():
     modelNames = ['w.mat', 'Sshape.mat']   # Two example models provided by Khansari
     modelNumber = args.modelNumber  # could be zero or one depending on the experiment the user is running
 
-    data, demoIdx = loadSavedMatFile('ExampleModels/' + modelNames[modelNumber])
+    data, demoIdx = loadSavedMatFile(lyap + '/' + 'example_models/' + modelNames[modelNumber])
 
     global Vxf0
     Vxf0['L'] = modelNumber
     Vxf0['d'] = int(data.shape[0]/2)
 
     Vxf0 = guess_init_lyap(data, Vxf0)
-
+    # for k, v in Vxf0.items():
+    #     print(k, v)
     Vxf = learnEnergy(Vxf0, data, options)
 
     # plot the result

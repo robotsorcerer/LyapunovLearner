@@ -1,17 +1,22 @@
 import sys
+import logging
 import numpy as np
 import scipy as sp
 import numpy.random as npr
 import scipy.linalg as linalg
 
+from inspect import currentframe, getframeinfo
 from cvxopt import solvers, matrix, spdiag, div # to solve convex problems
 
 
 from .compute_energy import computeEnergy
-from .. config import hyperparams
+from config import hyperparams # config is in the sys path since demo is launched from root package
+
+frameinfo = getframeinfo(currentframe())
+LOGGER = logging.getLogger(__name__)
 
 # global vars
-p,x,xd,d,Vxf0['L'],Vxf0['w'],options = (None for _ in range(7))
+p,x,xd,d,Vxf0,options = (None for _ in range(6))
 
 use_convex = hyperparams['use_cvxopt']
 
@@ -22,46 +27,45 @@ def matlength(x):
   # find the max of a numpy matrix dims
   return np.max(x.shape)
 
+def shape_DS(p,d,L,options):
+  # transforming the column of parameters into Priors, Mu, and P
+  P = np.zeros((d,d,L+1))
 
-def obj(x=None, z=None):
-  # This function computes the derivative of the likelihood objective function
-  # w.r.t. optimization parameters.
-  global p,x,xd,d,Vxf0['L'],Vxf0['w'],options
-
-  if L == -1:
-      Vxf['n']    = np.sqrt(matlength(p)/d**2)
-      Vxf['d']    = d
-      Vxf['P']    = p.reshape(Vxf['n']*d,Vxf['n']*d)
-      Vxf['SOS']  = 1
+  if L == 0:
+      Priors = 1
+      Mu = np.zeros((d,1))
+      i_c = 1
   else:
-      Vxf = shape_DS(p,d,L,options)
-      
-  if x is None: return 0, matrix(0.0, (Vxf['d'], Vxf['n']))
+      if options['optimizePriors']:
+          Priors = p[:L+1]
+          i_c = L+1
+      else:
+          Priors = np.ones((L+1,1))
+          i_c = 0
 
-  Vx = computeEnergy(x,np.array(()), Vxf, nargout=1)
-  Vdot = np.sum(Vx*xd, axis=0)  #derivative of J w.r.t. xd
-  norm_Vx = np.sqrt(np.sum(Vx*Vx, axis=0))
-  norm_xd = np.sqrt(np.sum(xd*xd, axis=0))
-  J = Vdot /(norm_Vx * norm_xd)
+      Priors = np.divide(Priors, np.sum(Priors))
+      Mu = np.hstack((np.zeros((d,1)), p[[i_c+ x for x in range(d*L)]].reshape(d,L)))
+      i_c = i_c+d*L+1
 
-  J[norm_xd==0] = 0
-  J[norm_Vx==0] = 0
-  J[Vdot>0]     = J[Vdot>0]**2
-  J[Vdot<0]     = -w*J[Vdot<0]**2
-  J = np.sum(J)
-  dJ = np.array(())
+  for k in range(L):
+    # print('p shape: ', p.shape)
+    # print('i_c: {}, k: {}, d: {}, '.format(i_c, k, d))
+    # print('range: ', range(i_c+k*(d**2),i_c+(k+1)*(d**2)-1))
+    # print('p range: \n', p[range(i_c+k*(d**2),i_c+(k+1)*(d**2)-1)])
+    P[:,:,k+1] = p[range(i_c+k*(d**2)-1,i_c+(k+1)*(d**2)-1)].reshape(d,d)
 
-  H = spdiag(2 * z[0] * )
-  # translate to cvxopt-like dense matrices
-  if use_convex:
-    return matrix(J), matrix(dJ)
-  else:
-    return J, dJ
+  Vxf           = dict()
+  Vxf['Priors'] = Priors
+  Vxf['Mu']     = Mu
+  Vxf['P']      = P
+  Vxf['SOS']    = 0
+
+  return Vxf
 
 def ctr_eigenvalue(p,d,L,options):
   # This function computes the derivative of the constrains w.r.t.
   # optimization parameters.
-
+  Vxf = dict()
   if L == -1: # SOS
       Vxf['d'] = d
       Vxf['n'] = np.sqrt(matlength(p)/d**2)
@@ -85,70 +89,45 @@ def ctr_eigenvalue(p,d,L,options):
   dceq = np.array(())
 
   if L == -1:  # SOS
-      c = -np.linalg.eigVals(Vxf['P'] + Vxf['P'].T - np.eye(Vxf['n']*d)*options['tol_mat_bias'])
+    c = -np.linalg.eigvals(Vxf['P'] + Vxf['P'].T - np.eye(Vxf['n']*d)*options['tol_mat_bias'])
   else:
-  #     ceq = 1;
-      for k in range(L):
-          lambder = np.linalg.eigVals(Vxf['P'][:,:,k+1] + Vxf['P'][:,:,k+1].T)/2;
-          c[k*d+1:(k+1)*d] = -lambder + options['tol_mat_bias']
-          if options['upperBoundEigenValue']:
-              ceq[k+1] = 1.0 - np.sum(lambder) # + Vxf.P(:,:,k+1)'
+    for k in range(L):
+      lambder = sp.linalg.eigvals(Vxf['P'][:,:,k+1] + (Vxf['P'][:,:,k+1]).T)
+      #   print("check that div 2 works in line %d in file %s ".format(frameinfo.lineno, frameinfo.filename))
+      lambder = np.divide(lambder, 2.0)
+      lambder = np.expand_dims(lambder/2.0, axis=1)
+      # print('lambder: ', lambder.shape, c[k*d:(k+1)*d].shape)
+      c[k*d:(k+1)*d] = -lambder.real + options['tol_mat_bias']
+      if options['upperBoundEigenValue']:
+        ceq[k+1] = 1.0 - np.sum(lambder.real) # + Vxf.P(:,:,k+1)'
 
   if L > 0 and options['optimizePriors']:
-      c[(L+1)*d+1:(L+1)*d+L+1] = -Vxf['Priors']
+    #   print(Vxf['Priors'].shape)
+    #   print(c.shape)
+    #   print(c[(L+1)*d:(L+1)*d+L+1].shape)
+      c[(L+1)*d:(L+1)*d+L+1] = -Vxf['Priors']
+      #   was: c[(L+1)*d+1:(L+1)*d+L+1] = -Vxf['Priors']
 
   return c, ceq, dc, dceq
-
-
-def shape_DS(p,d,L,options):
-
-  # transforming the column of parameters into Priors, Mu, and P
-  P = np.zeros((d,d,L+1))
-
-  if L == 0:
-      Priors = 1
-      Mu = np.zeros((d,1))
-      i_c = 1
-  else:
-      if options['optimizePriors']:
-          Priors = p[1:L+1]
-          i_c = L+1
-      else:
-          Priors = np.ones((L+1,1))
-          i_c = 0
-
-      Priors = Priors/np.sum(Priors)
-      Mu = np.concatenate((np.zeros((d,1)), p[i_c+[0:d*L]].reshape(d,L)), axis=1)
-      i_c = i_c+d*L+1
-
-  for k in range(L):
-      P[:,:,k+1] = p[(i_c+k*(d**2):i_c+(k+1)*(d**2)-1)].reshape(d,d)
-
-  Vxf['Priors'] = Priors
-  Vxf['Mu']     = Mu
-  Vxf['P']      = P
-  Vxf['SOS']    = 0
-
-  return Vxf
 
 def gmm_2_parameters(Vxf, options):
   # transforming optimization parameters into a column vector
   d = Vxf['d']
   if Vxf['L'] > 0:
       if options['optimizePriors']:
-          p0 = np.vstack(( 
-                           np.ravel(Vxf['Priors']), 
-                           Vxf['Mu'][:,1:].reshape(Vxf['L']*d,1)
+          p0 = np.vstack((
+                           np.expand_dims(np.ravel(Vxf['Priors']), axis=1), # will be a x 1
+                           np.expand_dims(Vxf['Mu'][:,1:], axis=1).reshape(Vxf['L']*d,1)
                         ))
       else:
-          p0 = Vxf['Mu'][:,2:].reshape(Vxf['L']*d, 1)
+          p0 = Vxf['Mu'][:,2:].reshape(Vxf['L']*d, 1) #print(p0) # p0 will be 4x1
   else:
       p0 = np.array(())
 
   for k in range(Vxf['L']):
 
       p0 = np.vstack((
-                      p0, 
+                      p0,
                       Vxf['P'][:,:,k+1].reshape(d**2,1)
                     ))
 
@@ -171,16 +150,16 @@ def check_options(*args):
         options['max_iter'] = 1000
     if not 'display' in options:
         options['display'] = 1
-    else
-        options.['display'] = options['display'] > 0
+    else:
+        options['display'] = options['display'] > 0
     if not 'optimizePriors' in options:
         options['optimizePriors'] = True
-    else
+    else:
         options['optimizePriors'] = options['optimizePriors'] > 0
 
     if not 'upperBoundEigenValue' in options:
         options['upperBoundEigenValue'] = True
-    else
+    else:
         options['upperBoundEigenValue'] = options['upperBoundEigenValue'] > 0
 
     return options
@@ -195,19 +174,19 @@ def check_constraints(p,ctr_handle,d,L,options):
 
   if L > 0:
       c_P = c[0:L*d].reshape(d,L).T
-  else
+  else:
       c_P = c
 
   idx = np.nonzero(c_P<=0)
-  bool_success = True;
-  if idx.size != 0
+  bool_success = True
+  if idx.size != 0:
       idx = np.sort(idx);
       err = np.concatenate((np.ravel(idx), c_P[idx,:]), axis=1)
       sys.stdout.write('Error in the constraints on P!\n')
       sys.stdout.write('Eigenvalues of the P^k that violates the constraints:\n')
-      sys.stdout.write(err)      
+      sys.stdout.write(err)
       sys.stdout.flush()
-      bool_success = False;
+      bool_success = False
 
 
   if L>1:
@@ -218,7 +197,7 @@ def check_constraints(p,ctr_handle,d,L,options):
               err = np.concatenate((np.ravel(idx), c_Priors[idx]), axis=1);
               sys.stdout.write('Error in the constraints on Priors!')
               sys.stdout.write('Values of the Priors that violates the constraints:')
-              sys.stdout.write(err)    
+              sys.stdout.write(err)
               sys.stdout.flush()
               bool_success = False;
 
@@ -243,154 +222,240 @@ def check_constraints(p,ctr_handle,d,L,options):
 
 
 def learnEnergy(Vxf0, Data, options):
-    """
+  """
 
-    This function builds an estimate of a Lyapunov (energy) function from
-    demonstrations.
+  This function builds an estimate of a Lyapunov (energy) function from
+  demonstrations.
 
-     Syntax:
-           [Vxf J] = learnEnergy(Vxf0,Data,options)
+   Syntax:
+         [Vxf J] = learnEnergy(Vxf0,Data,options)
 
-     to also pass a structure of desired options.
+   to also pass a structure of desired options.
 
-     Important NOTE: Both the demonstration data, and the model estimation
-     should be in the target frame of reference. In other words, this codes
-     assumes that the target is at the origin!
+   Important NOTE: Both the demonstration data, and the model estimation
+   should be in the target frame of reference. In other words, this codes
+   assumes that the target is at the origin!
 
-     Inputs -----------------------------------------------------------------
+   Inputs -----------------------------------------------------------------
 
-       o Vxf_0:     A structure variable representing the initial guess for the
-                    energy function. Please refer to the Output variable for
-                    further details about its fields.
+     o Vxf_0:     A structure variable representing the initial guess for the
+                  energy function. Please refer to the Output variable for
+                  further details about its fields.
 
-       o Data:      A 2d x N_Total matrix containing all demonstration data points.
-                    Rows 1:d corresponds to trajectories and the rows d+1:2d
-                    are their first time derivatives. Each column of Data stands
-                    for a datapoint. All demonstrations are put next to each other
-                    along the second dimension. For example, if we have 3 demos
-                    D1, D2, and D3, then the matrix Data is:
-                                     Data = [[D1] [D2] [D3]]
+     o Data:      A 2d x N_Total matrix containing all demonstration data points.
+                  Rows 1:d corresponds to trajectories and the rows d+1:2d
+                  are their first time derivatives. Each column of Data stands
+                  for a datapoint. All demonstrations are put next to each other
+                  along the second dimension. For example, if we have 3 demos
+                  D1, D2, and D3, then the matrix Data is:
+                                   Data = [[D1] [D2] [D3]]
 
-       o options: A structure to set the optional parameters of the solver.
-                  The following parameters can be set in the options:
-           - .tol_mat_bias:     a very small positive scalar to avoid
-                                having a zero eigen value in matrices P^l [default: 10^-15]
+     o options: A structure to set the optional parameters of the solver.
+                The following parameters can be set in the options:
+         - .tol_mat_bias:     a very small positive scalar to avoid
+                              having a zero eigen value in matrices P^l [default: 10^-15]
 
-           - .tol_stopping:     A small positive scalar defining the stoppping
-                                tolerance for the optimization solver [default: 10^-10]
+         - .tol_stopping:     A small positive scalar defining the stoppping
+                              tolerance for the optimization solver [default: 10^-10]
 
-           - .i_max:            maximum number of iteration for the solver [default: i_max=1000]
+         - .i_max:            maximum number of iteration for the solver [default: i_max=1000]
 
-           - .display:          An option to control whether the algorithm
-                                displays the output of each iterations [default: true]
+         - .display:          An option to control whether the algorithm
+                              displays the output of each iterations [default: true]
 
-           - .optimizePriors    This is an added feature that is not reported in the paper. In fact
-                                the new CLFDM model now allows to add a prior weight to each quadratic
-                                energy term. IF optimizePriors sets to false, unifrom weight is considered;
-                                otherwise, it will be optimized by the sovler. [default: true]
+         - .optimizePriors    This is an added feature that is not reported in the paper. In fact
+                              the new CLFDM model now allows to add a prior weight to each quadratic
+                              energy term. IF optimizePriors sets to false, unifrom weight is considered;
+                              otherwise, it will be optimized by the sovler. [default: true]
 
-           - .upperBoundEigenValue     This is also another added feature that is impelemnted recently.
-                                       When set to true, it forces the sum of eigenvalues of each P^l
-                                       matrix to be equal one. [default: true]
+         - .upperBoundEigenValue     This is also another added feature that is impelemnted recently.
+                                     When set to true, it forces the sum of eigenvalues of each P^l
+                                     matrix to be equal one. [default: true]
 
 
-     Outputs ----------------------------------------------------------------
+   Outputs ----------------------------------------------------------------
 
-       o Vxf:      A structure variable representing the energy function. It
-                   is composed of the following fields:
+     o Vxf:      A structure variable representing the energy function. It
+                 is composed of the following fields:
 
-           - .d:       Dimension of the state space, d>0.
+         - .d:       Dimension of the state space, d>0.
 
-           - .L:       The number of asymmetric quadratic components L>=0.
+         - .L:       The number of asymmetric quadratic components L>=0.
 
-           - .Priors:  1 x K array representing the prior weight of each energy
-                      component. Prioris are positive scalars between 0 and 1.
+         - .Priors:  1 x K array representing the prior weight of each energy
+                    component. Prioris are positive scalars between 0 and 1.
 
-           - .Mu:      Each Mu(:,i) is a vector of R^d and represent the center of
-                      the energy component i. Note that by construction Mu(:,1)=0!
+         - .Mu:      Each Mu(:,i) is a vector of R^d and represent the center of
+                    the energy component i. Note that by construction Mu(:,1)=0!
 
-           - .P:       Each P(:,:,i), i=1:L+1, is a d x d positive definite matrix.
-                      P(:,:,1) corresponds to the symmetric energy component P^0.
-                      P^1 to P^{L+1} are asymmetric quadratic terms. Note that the
-                      matrices P^i are not necessarily symmetric.
+         - .P:       Each P(:,:,i), i=1:L+1, is a d x d positive definite matrix.
+                    P(:,:,1) corresponds to the symmetric energy component P^0.
+                    P^1 to P^{L+1} are asymmetric quadratic terms. Note that the
+                    matrices P^i are not necessarily symmetric.
 
-           - .w:      A positive scalar weight regulating the priority between the
-                      two objectives of the opitmization. Please refer to the
-                      page 7 of the paper for further information.
+         - .w:      A positive scalar weight regulating the priority between the
+                    two objectives of the opitmization. Please refer to the
+                    page 7 of the paper for further information.
 
-           - .SOS:    This is an internal variable, and is automatically set to false
+         - .SOS:    This is an internal variable, and is automatically set to false
 
-       o J:      The value of the objective function at the optimized point
+     o J:      The value of the objective function at the optimized point
 
-    ###########################################################################
-    ##         Copyright (c) 2014 Mohammad Khansari, LASA Lab, EPFL,         ##
-    ##          CH-1015 Lausanne, Switzerland, http://lasa.epfl.ch           ##
-    ###########################################################################
+  ###########################################################################
+  ##         Copyright (c) 2014 Mohammad Khansari, LASA Lab, EPFL,         ##
+  ##          CH-1015 Lausanne, Switzerland, http://lasa.epfl.ch           ##
+  ###########################################################################
 
-    Ported to Python by Lekan Ogunmolu
-            August 5, 2017
-    """
-    # augment undefined options by updating the options dict
-    options = check_options() if not options else options = check_options(options)
+  Ported to Python by Lekan Ogunmolu
+          August 5, 2017
+  """
+  # augment undefined options by updating the options dict
+  if not options:
+    options = check_options()
+  else:
+    options = check_options(options)
+  # for k, v in Vxf0.items():
+  #     print(k, v)
+  d = int(Data.shape[0]/2)  # dimension of model
+  x = Data[:d,:]     # state space
+  xd = Data[d:,:]    # derivatives of the state space
+  Vxf0['SOS'] = False
 
-    d = int(Data.shape[0]/2)  # dimension of model
-    x = Data[:d,:]     # state space
-    xd = Data[d:,:]    # derivatives of the state space
-    Vxf0['SOS'] = False
+  # Optimization
+  # Transform the Lyapunov model to a vector of optimization parameters
+  if Vxf0['SOS']:
+    p0 = npr.randn(d*Vxf0['n'], d*Vxf0['n']);
+    p0 = p0.dot(p0.T)
+    p0 = np.ravel(p0)
+    Vxf0['L'] = -1; # to distinguish sos from other methods
+  else:
+    for l in range(Vxf0['L']):
+      try:
+        Vxf0['P'][:,:,l+1] = sp.linalg.solve( Vxf0['P'][:,:,l+1], sp.eye(d))
+      except sp.linalg.LinAlgError as e:
+        LOGGER.debug('LinAlgError: %s', e)
 
-    # Optimization
-    # Transform the Lyapunov model to a vector of optimization parameters
-    if Vxf0['SOS']:
-        p0 = npr.randn(d*Vxf0['n'], d*Vxf0['n']);
-        p0 = p0.dot(p0.T)
-        p0 = np.ravel(p0)
-        Vxf0['L'] = -1; # to distinguish sos from other methods
+    # in order to set the first component to be the closest Gaussian to origin
+    to_sort = matVecNorm(Vxf0['Mu'])
+    idx = np.argsort(to_sort, kind='mergesort')
+    Vxf0['Mu'] = Vxf0['Mu'][:,idx]
+    Vxf0['P']  = Vxf0['P'][:,:,idx]
+    p0 = gmm_2_parameters(Vxf0,options)
+
+  # obj_handle = @(p) obj(p,x,xd,d,Vxf0['L'],Vxf0['w'],options);
+  # ctr_handle = @(p) ctr_eigenvalue(p,d,Vxf0['L'],options);
+
+  # # Running the optimization
+  # if options['display']:
+  #     string = 'iter'
+  # else:
+  #     string = 'off'
+
+  # # Options for NLP Solvers
+  # optNLP = {
+  #   'Algorithm': 'interior-point',
+  #   'LargeScale': 'off',
+  #   'GradObj': 'off',
+  #   'GradConstr': 'off',
+  #   'DerivativeCheck': 'on',
+  #   'Display': 'iter',
+  #   'TolX': options.tol_stopping,
+  #   'TolFun': options.tol_stopping,
+  #   'TolCon': 1e-12,
+  #   'MaxFunEval': 200000,
+  #   'MaxIter': options.max_iter,
+  #   'DiffMinChange': 1e-4,
+  #   'Hessian',: 'off',
+  #   'display': string,
+  #     }
+
+  c,ceq, dc, dceq = ctr_eigenvalue(p0,d,Vxf0['L'],options)
+
+  """
+    popt is value of minimization
+    J is value of cost at the optimal solution
+    c are the ineq constraints
+    ceq are the equality constraints
+    dc and dceq are the corresponding derivatives
+  """
+
+  def obj(a=None, z=None):
+    # This function computes the derivative of the likelihood objective function
+    # w.r.t. optimization parameters.
+    # global p, x, xd, d, Vxf0, options
+
+    w = Vxf0['w']
+    L = Vxf0['L']
+
+    Vxf = dict()
+    if L == -1: #SOS
+        Vxf['n']    = np.sqrt(matlength(p)/d**2)
+        Vxf['d']    = d
+        Vxf['P']    = p.reshape(Vxf['n']*d,Vxf['n']*d)
+        Vxf['SOS']  = 1
     else:
-        # allocate Vxf0['P'] and Vxf0['Mu']
-        Vxf0['P']   =  np.zeros(( Vxf0['d'], Vxf0['d'], Vxf0['L']+1)) # wil be 2x2x3
-        Vxf0['Mu']  =  np.zeros(( Vxf0['d'], Vxf0['L']+1 ))
+        Vxf = shape_DS(p0,d,L,options)
 
-        for l in range(Vxf0['L']):
-            Vxf0['P'][:,:,l+1] = sp.linalg.solve( Vxf0['P'][:,:,l+1], np.eye(d)) )
+    if x is None: return 0, matrix(0.0, (Vxf['d'], Vxf['n']))
+    # print('x', x)
+    _, Vx         = computeEnergy(x,np.array(()), Vxf, nargout=2)
+    Vdot          = np.sum(Vx*xd.T, axis=0)  #derivative of J w.r.t. xd
+    norm_Vx       = np.sqrt(np.sum(Vx*Vx, axis=0))
+    norm_xd       = np.sqrt(np.sum(xd*xd, axis=0))
+    print('norm_Vx, {} norm_Vd, {}, xd: {}'.format(Vdot.shape, norm_Vx.shape, norm_xd.shape) )
+    J             = Vdot /(norm_Vx * np.expand_dims(norm_xd, axis=1))
+    print(J.shape)
+    J[norm_xd==0] = 0
+    J[norm_Vx==0] = 0
+    J[Vdot>0]     = J[Vdot>0]**2      # solves psi(t,n)**2
+    J[Vdot<0]     = -w*J[Vdot<0]**2   # solves second component in J term
+    J             = np.sum(J)
+    dJ            = np.array(())
 
-        # in order to set the first component to be the closest Gaussian to origin
-        to_sort = matVecNorm(Vxf0['Mu'])
-        idx = np.argsort(to_sort, kind='mergesort');
-        Vxf0['Mu'] = Vxf0['Mu'][:,idx];
-        Vxf0['P']  = Vxf0['P'][:,:,idx];
-        p0 = gmm_2_parameters(Vxf0,options);
+    # H is actually                           1
+    #               --------------------------------------------------------[nabla_{\zeta,\theta} V(\zeta^{t,n}; \theta)]
+    #               || \nabla_\zeta V(\zeta^{t,n}; \theta)|| ||\zeta^{t,n}||
+    H = spdiag(2 * z[0] * J)   # approximate the Hessian for now
+    # translate to cvxopt-like dense matrices
+    if use_convex:
+      return matrix(J), matrix(dJ)
+    else:
+      return J, dJ, H
 
-        obj_handle = @(p) obj(p,x,xd,d,Vxf0['L'],Vxf0['w'],options);
-        ctr_handle = @(p) ctr_eigenvalue(p,d,Vxf0['L'],options);
+  # popt, J = fmincon(obj_handle, p0, ctr_handle, optNLP, e, e, e, e, e, e )
+  G     = matrix(c)
+  h     = matrix(0, (d,1))  # h has to be column major
+  dims  = {
+            'l': 0, # l is h.size[0]
+            'q': [], # a list with the dimensions of the second-order cones (positive integers).
+            's': [], # a list with the dimensions of the positive semidefinite cones (nonnegative integers)
+          }
 
-        # Running the optimization
-        if options['display']:
-            string = 'iter'
-        else:
-            string = 'off'
+  sol   = solvers.cp(obj, G, h, dims)
+  print('sol: ', sol)
+  popt, J = sol['x'], sol['primal objective']
 
-        # Options for NLP Solvers
-        optNLP = {
-          'Algorithm': 'interior-point', 
-          'LargeScale': 'off',
-          'GradObj': 'off',
-          'GradConstr': 'off',
-          'DerivativeCheck': 'on',
-          'Display': 'iter',
-          'TolX': options.tol_stopping,
-          'TolFun': options.tol_stopping,
-          'TolCon': 1e-12,
-          'MaxFunEval': 200000,
-          'MaxIter': options.max_iter,
-          'DiffMinChange': 1e-4,
-          'Hessian',: 'off',
-          'display': string,
-            }
+  if Vxf0['SOS']:
+    Vxf['d'] = d
+    Vxf['n'] = Vxf0['n']
+    Vxf['P'] = reshape(popt,Vxf['n']*d,Vxf['n']*d)
+    Vxf['SOS'] = 1
+    Vxf['p0'] = compute_Energy(zeros(d,1),[],Vxf)
+    check_constraints(popt,ctr_handle,d,0,options)
+  else:
+    # transforming back the optimization parameters into the GMM model
+    Vxf = parameters_2_gmm(popt,d,Vxf0['L'],options)
+    Vxf['Mu'][:,0]  = 0
+    Vxf['L']        = Vxf0['L']
+    Vxf['d']        = Vxf0['d']
+    Vxf['w']        = Vxf0['w']
+    check_constraints(popt,ctr_handle,d,Vxf['L'],options)
 
-        e = np.array(())
+  sumDet = 0
+  for l in range(Vxf['L']+1):
+      sumDet += np.linalg.det(Vxf['P'][:,:,l])
+  end
+  Vxf['P'][:,:,0] = Vxf['P'][:,:,0]/sumDet
+  Vxf['P'][:,:,1:] = Vxf['P'][:,:,1:]/np.sqrt(sumDet)
 
-        """
-          popt is value of minimization
-          J is value of cost at the optimal solution
-        """ 
-        popt, J = fmincon(obj_handle, p0, ctr_handle, optNLP, e, e, e, e, e, e )
+  return Vxf, J

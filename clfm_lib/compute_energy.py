@@ -1,3 +1,5 @@
+import numpy as np
+
 def computeEnergy(X,Xd,Vxf, nargout=2):
     """
      Syntax:
@@ -57,13 +59,13 @@ def computeEnergy(X,Xd,Vxf, nargout=2):
                         August 2017
                         patlekano@gmail.com
     """
-
+    # print(X.shape)
     d = X.shape[0]
-    nDemo = X.shape[2]
-
+    nDemo = X.shape[-1]
+    # print('nDemo: ', nDemo)
     if nDemo>1:
-        X = X.reshape[d,-1]
-        Xd = Xd.reshape[d,-1]
+        X = X.reshape(d,-1)
+        Xd = Xd.reshape(d,-1)
 
     if Vxf['SOS']:
         V, dV = sos_lyapunov(X, Vxf['P'], Vxf['d'], Vxf['n'])
@@ -72,8 +74,9 @@ def computeEnergy(X,Xd,Vxf, nargout=2):
     else:
         V, dV = gmr_lyapunov(X, Vxf['Priors'], Vxf['Mu'], Vxf['P'])
 
+    # print('nargout: ', nargout, nDemo)
     if nargout > 1:
-        if Xd.size:
+        if not Xd.size:
             Vdot = dV
         else:
             Vdot = np.sum(Xd*dV, axis=0)
@@ -95,14 +98,16 @@ def gmr_lyapunov(x, Priors, Mu, P):
         P_cur               = P[:,:,k+1]
         if k                == 0:
             V_k             = np.sum(x * (P_cur.dot(x)), axis=0)
-            V               = Priors[k+1].dot(V_k)
-            Vx              = Priors[k+1].dot((P_cur+P_cur.T).dot(x))
+            # print('Priors[k+1]: ', Priors, Priors[k+1])
+            # print('P_cur: ', P_cur, x.shape)
+            V               = Priors[k+1] * (V_k)
+            Vx              = Priors[k+1] * ((P_cur+P_cur.T).dot(x))
         else:
             x_tmp           = x - np.tile(Mu[:,k+1], [1,nbData])
             V_k             = np.sum(P_cur.dot(x_tmp)*x, axis=0)
             V_k[V_k < 0]    = 0
             V               = V + Priors[k+1].dot(V_k ** 2)
-            Vx              = Vx + np.tile(2.dot(Priors[k+1]).dot(V_k), [d,1])*(P_cur.dot(x_tmp) + P_cur.T.dot(x))
+            Vx              = Vx + np.tile((2*Priors[k+1]).dot(V_k), [d,1])*(P_cur.dot(x_tmp) + P_cur.T.dot(x))
 
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     #These lines are for adding some spaces between the contour lines

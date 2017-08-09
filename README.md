@@ -19,11 +19,10 @@ from the root directory of this package.
 
 ### Code Structure
 
-This code was ported from [bitbucket](https://bitbucket.org/khansari/clfdm) matlab package.
+This package was ported from Khansari's [bitbucket](https://bitbucket.org/khansari/clfdm) matlab to python. It includes the python functions:
+`demo.py`, 'config.py' and 4 subdirectories: `clfm_lib`, `gmr_lib`, `example_models`, and `doc`.
 
-This package includes the python function:
-`demo.py`, and 4 subdirectories: `clfm_lib`, `gmr_lib`, `example_models`, and `doc`.
-
++ [config.py](/config.py): a python script that configures the general properties of the Lyapunov energy function.
 
 + [demo.py](/demo.py): a python script illustrating how to use `clfm_lib` to learn an arbitrary model from a set of demonstrations. `clfm_lib` contains code which implements clfdm. See the [slides](/doc/SEDS_Slides.pdf) for further details about this library.
 
