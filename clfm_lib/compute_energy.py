@@ -100,13 +100,15 @@ def gmr_lyapunov(x, Priors, Mu, P):
             V_k             = np.sum(x * (P_cur.dot(x)), axis=0)
             # print('Priors[k+1]: ', Priors, Priors[k+1])
             # print('P_cur: ', P_cur, x.shape)
-            V               = Priors[k+1] * (V_k)
+            V               = Priors[k+1] * V_k
+            # print('V: ', V)
             Vx              = Priors[k+1] * ((P_cur+P_cur.T).dot(x))
         else:
             x_tmp           = x - np.tile(Mu[:,k+1], [1,nbData])
             V_k             = np.sum(P_cur.dot(x_tmp)*x, axis=0)
             V_k[V_k < 0]    = 0
-            V               = V + Priors[k+1].dot(V_k ** 2)
+            # print('V_k: ', V_k)
+            V              += Priors[k+1].dot(V_k ** 2)
             Vx              = Vx + np.tile((2*Priors[k+1]).dot(V_k), [d,1])*(P_cur.dot(x_tmp) + P_cur.T.dot(x))
 
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

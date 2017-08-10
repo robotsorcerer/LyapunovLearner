@@ -94,8 +94,8 @@ def ctr_eigenvalue(p,d,L,options):
     for k in range(L):
       lambder = sp.linalg.eigvals(Vxf['P'][:,:,k+1] + (Vxf['P'][:,:,k+1]).T)
       #   print("check that div 2 works in line %d in file %s ".format(frameinfo.lineno, frameinfo.filename))
-      lambder = np.divide(lambder, 2.0)
-      lambder = np.expand_dims(lambder/2.0, axis=1)
+      lambder = np.divide(lambder.real, 2.0)
+      lambder = np.expand_dims(lambder, axis=1)
       # print('lambder: ', lambder.shape, c[k*d:(k+1)*d].shape)
       c[k*d:(k+1)*d] = -lambder.real + options['tol_mat_bias']
       if options['upperBoundEigenValue']:
@@ -399,19 +399,22 @@ def learnEnergy(Vxf0, Data, options):
     if x is None: return 0, matrix(0.0, (Vxf['d'], Vxf['n']))
     # print('x', x)
     _, Vx         = computeEnergy(x,np.array(()), Vxf, nargout=2)
-    Vdot          = np.sum(Vx*xd.T, axis=0)  #derivative of J w.r.t. xd
-    norm_Vx       = np.sqrt(np.sum(Vx*Vx, axis=0))
+    Vdot          = np.sum(Vx.T*xd, axis=0)  #derivative of J w.r.t. xd
+    norm_Vx       = np.sqrt(np.sum(Vx * Vx, axis=0))
+    # norm_Vx       = np.sqrt(np.sum(Vx*Vx, axis=0))
     norm_xd       = np.sqrt(np.sum(xd*xd, axis=0))
-    print('norm_Vx, {} norm_Vd, {}, xd: {}'.format(Vdot.shape, norm_Vx.shape, norm_xd.shape) )
-    J             = Vdot /(norm_Vx * np.expand_dims(norm_xd, axis=1))
-    print(J.shape)
-    J[norm_xd==0] = 0
+    butt          = norm_Vx * np.expand_dims(norm_xd, axis=1)
+    print('Vx: {}, Vdot, {} norm_Vx, {}, xd*xd: {}, norm_xd: {}, butt: {}'.format(Vx.shape, Vdot.shape,
+                    norm_Vx.shape, (xd*xd).shape, norm_xd.shape, butt.shape) )
+    # w was added by Lekan to regularize the invalid values in butt
+    J             = np.expand_dims(Vdot, axis=1) / (butt + w)
+    J[np.where(norm_xd==0)] = 0
     J[norm_Vx==0] = 0
     J[Vdot>0]     = J[Vdot>0]**2      # solves psi(t,n)**2
     J[Vdot<0]     = -w*J[Vdot<0]**2   # solves second component in J term
     J             = np.sum(J)
+    # print('J : ', J )
     dJ            = np.array(())
-
     # H is actually                           1
     #               --------------------------------------------------------[nabla_{\zeta,\theta} V(\zeta^{t,n}; \theta)]
     #               || \nabla_\zeta V(\zeta^{t,n}; \theta)|| ||\zeta^{t,n}||
