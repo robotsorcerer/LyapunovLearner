@@ -6,6 +6,7 @@ import numpy.random as npr
 import scipy.linalg as linalg
 
 from inspect import currentframe, getframeinfo
+# import cvxpy as cvx
 from cvxopt import solvers, matrix, spdiag, div # to solve convex problems
 
 
@@ -361,7 +362,7 @@ def learnEnergy(Vxf0, Data, options):
     # a = p0 if a==None else None
     # a = matrix(x) if a==None else None
     # z = matrix(np.empty((L+1, 1))) if a is None else None
-    print('a: ', a, ' z: ', z)
+    # print('a: ', a, ' z: ', z)
 
     Vxf = dict()
     if L == -1: #SOS
@@ -373,7 +374,6 @@ def learnEnergy(Vxf0, Data, options):
         Vxf = shape_DS(p0,d,L,options)
 
     _, Vx         = computeEnergy(x,np.array(()), Vxf, nargout=2)
-    # if a is None: return 0, matrix(0.0, (Vxf['d'], 1))
     # print('\nVxf[p]: \n', Vxf['P'])
     Vdot          = np.sum(Vx.T*xd, axis=0)  #derivative of J w.r.t. xd
     norm_Vx       = np.sqrt(np.sum(Vx * Vx, axis=0))
@@ -390,14 +390,28 @@ def learnEnergy(Vxf0, Data, options):
     J             = np.sum(J)
     dJ            = np.array(())
 
-    if z is None: return matrix(J), matrix(dJ)
+    """
+    F() returns a tuple (m, x0), where m is the number of nonlinear constraints
+    and x_0 is a point in the domain of f. x0 is a dense real matrix of size (n, 1)
+
+    F(x), with x a dense real matrix of size (n, 1), returns a tuple (f, Df).
+    f is a dense real matrix of size (m+1, 1),
+    Df is a dense or sparse real matrix of size (m + 1, n)
+
+    F(x,z), with x a dense real matrix of size (n, 1) and z a positive dense
+    real matrix of size (m + 1, 1) returns a tuple (f, Df, H).
+    H is a square dense or sparse real matrix of size (n, n)
+    """
+    m, n = Vx.shape[1]-1, 1
+    if a is None: return matrix(0.0, (m+1,1)), matrix(0.0, (m+1,n))
+    if z is None: return matrix(0.0, (m+1,1)), matrix(0.0, (m+1,n)), matrix(0.0, (n,n))
     # H is actually                           1
     #               --------------------------------------------------------[nabla_{\zeta,\theta} V(\zeta^{t,n}; \theta)]
     #               || \nabla_\zeta V(\zeta^{t,n}; \theta)|| ||\zeta^{t,n}||
     # H = spdiag(2 * z[0] * J)   # approximate the Hessian for now
     # translate to cvxopt-like dense matrices
     if use_convex:
-      return matrix(J), matrix(dJ)
+      return matrix(J), matrix(dJ), matrix(dJ)
     else:
       return J, dJ, dJ # approx hessian with dJ for now
 
@@ -407,7 +421,7 @@ def learnEnergy(Vxf0, Data, options):
   # print('L: ', L)
   # allocate sol for all data demos
   sol = np.zeros((L+1, 1))
-  print('c: ', c)
+  # print('c: ', c)
   for l in range(L):
     G     = matrix(-Vxf['P'][:,:,l], tc='d') #matrix(np.ones((6, d)))
     h     = matrix(0., (d, 1), tc='d')  # matrix(c, tc='d')
