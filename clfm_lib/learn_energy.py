@@ -318,7 +318,7 @@ def learnEnergy(Vxf0, Data, options):
   #     print(k, v)
   d = int(Data.shape[0]/2)  # dimension of model
   x = Data[:d,:]     # state space
-  xd = Data[d:,:]    # derivatives of the state space
+  xd = Data[d:2*d,:]    # derivatives of the state space
   Vxf0['SOS'] = False
 
   # Optimization
@@ -342,33 +342,6 @@ def learnEnergy(Vxf0, Data, options):
     Vxf0['P']  = Vxf0['P'][:,:,idx]
     p0 = gmm_2_parameters(Vxf0,options)
 
-  # obj_handle = @(p) obj(p,x,xd,d,Vxf0['L'],Vxf0['w'],options);
-  # ctr_handle = @(p) ctr_eigenvalue(p,d,Vxf0['L'],options);
-
-  # # Running the optimization
-  # if options['display']:
-  #     string = 'iter'
-  # else:
-  #     string = 'off'
-
-  # # Options for NLP Solvers
-  # optNLP = {
-  #   'Algorithm': 'interior-point',
-  #   'LargeScale': 'off',
-  #   'GradObj': 'off',
-  #   'GradConstr': 'off',
-  #   'DerivativeCheck': 'on',
-  #   'Display': 'iter',
-  #   'TolX': options.tol_stopping,
-  #   'TolFun': options.tol_stopping,
-  #   'TolCon': 1e-12,
-  #   'MaxFunEval': 200000,
-  #   'MaxIter': options.max_iter,
-  #   'DiffMinChange': 1e-4,
-  #   'Hessian',: 'off',
-  #   'display': string,
-  #     }
-
   c,ceq, dc, dceq = ctr_eigenvalue(p0,d,Vxf0['L'],options)
 
   """
@@ -379,13 +352,16 @@ def learnEnergy(Vxf0, Data, options):
     dc and dceq are the corresponding derivatives
   """
 
-  def obj(a=None, z=None):
+  w = Vxf0['w']
+  L = Vxf0['L']
+  # am = matrix(x)
+  def obj(a=None, z=None): # z is positive d mat (mnl+1, 1)
     # This function computes the derivative of the likelihood objective function
     # w.r.t. optimization parameters.
-    # global p, x, xd, d, Vxf0, options
-
-    w = Vxf0['w']
-    L = Vxf0['L']
+    # a = p0 if a==None else None
+    # a = matrix(x) if a==None else None
+    # z = matrix(np.empty((L+1, 1))) if a is None else None
+    print('a: ', a, ' z: ', z)
 
     Vxf = dict()
     if L == -1: #SOS
@@ -396,12 +372,11 @@ def learnEnergy(Vxf0, Data, options):
     else:
         Vxf = shape_DS(p0,d,L,options)
 
-    if x is None: return 0, matrix(0.0, (Vxf['d'], Vxf['n']))
-    # print('x', x)
     _, Vx         = computeEnergy(x,np.array(()), Vxf, nargout=2)
+    # if a is None: return 0, matrix(0.0, (Vxf['d'], 1))
+    # print('\nVxf[p]: \n', Vxf['P'])
     Vdot          = np.sum(Vx.T*xd, axis=0)  #derivative of J w.r.t. xd
     norm_Vx       = np.sqrt(np.sum(Vx * Vx, axis=0))
-    # norm_Vx       = np.sqrt(np.sum(Vx*Vx, axis=0))
     norm_xd       = np.sqrt(np.sum(xd*xd, axis=0))
     butt          = norm_Vx * np.expand_dims(norm_xd, axis=1)
     print('Vx: {}, Vdot, {} norm_Vx, {}, xd*xd: {}, norm_xd: {}, butt: {}'.format(Vx.shape, Vdot.shape,
@@ -409,45 +384,54 @@ def learnEnergy(Vxf0, Data, options):
     # w was added by Lekan to regularize the invalid values in butt
     J             = np.expand_dims(Vdot, axis=1) / (butt + w)
     J[np.where(norm_xd==0)] = 0
-    J[norm_Vx==0] = 0
-    J[Vdot>0]     = J[Vdot>0]**2      # solves psi(t,n)**2
-    J[Vdot<0]     = -w*J[Vdot<0]**2   # solves second component in J term
+    J[np.where(norm_Vx==0)] = 0
+    J[np.where(Vdot>0)]     = J[np.where(Vdot>0)]**2      # solves psi(t,n)**2
+    J[np.where(Vdot<0)]     = -w*J[np.where(Vdot<0)]**2   # solves second component in J term
     J             = np.sum(J)
-    # print('J : ', J )
     dJ            = np.array(())
+
+    if z is None: return matrix(J), matrix(dJ)
     # H is actually                           1
     #               --------------------------------------------------------[nabla_{\zeta,\theta} V(\zeta^{t,n}; \theta)]
     #               || \nabla_\zeta V(\zeta^{t,n}; \theta)|| ||\zeta^{t,n}||
-    H = spdiag(2 * z[0] * J)   # approximate the Hessian for now
+    # H = spdiag(2 * z[0] * J)   # approximate the Hessian for now
     # translate to cvxopt-like dense matrices
     if use_convex:
       return matrix(J), matrix(dJ)
     else:
-      return J, dJ, H
+      return J, dJ, dJ # approx hessian with dJ for now
 
-  # popt, J = fmincon(obj_handle, p0, ctr_handle, optNLP, e, e, e, e, e, e )
-  G     = matrix(c)
-  h     = matrix(0, (d,1))  # h has to be column major
-  dims  = {
-            'l': 0, # l is h.size[0]
-            'q': [], # a list with the dimensions of the second-order cones (positive integers).
-            's': [], # a list with the dimensions of the positive semidefinite cones (nonnegative integers)
-          }
-
-  sol   = solvers.cp(obj, G, h, dims)
+  # mnl, x0 = obj()
+  # print('x0: {}, mnl: {}'.format(x.size, mnl.size))
+  Vxf = shape_DS(p0,d,L,options)
+  # print('L: ', L)
+  # allocate sol for all data demos
+  sol = np.zeros((L+1, 1))
+  print('c: ', c)
+  for l in range(L):
+    G     = matrix(-Vxf['P'][:,:,l], tc='d') #matrix(np.ones((6, d)))
+    h     = matrix(0., (d, 1), tc='d')  # matrix(c, tc='d')
+    print('G: \n', G, G.size)
+    print('h: \n', h, h.size)
+    dims  = {
+             'l': h.size[0], #0, # l is h.size[0]
+             'q': [], #[d], # a list with the dimensions of the second-order cones (positive integers).
+             's': [], # a list with the dimensions of the positive semidefinite cones (nonnegative integers)
+             }
+    sol   = solvers.cp(obj, G, h)#, dims)
   print('sol: ', sol)
   popt, J = sol['x'], sol['primal objective']
 
   if Vxf0['SOS']:
-    Vxf['d'] = d
-    Vxf['n'] = Vxf0['n']
-    Vxf['P'] = reshape(popt,Vxf['n']*d,Vxf['n']*d)
-    Vxf['SOS'] = 1
-    Vxf['p0'] = compute_Energy(zeros(d,1),[],Vxf)
+    Vxf['d']    = d
+    Vxf['n']    = Vxf0['n']
+    Vxf['P']    = popt.reshape(Vxf['n']*d,Vxf['n']*d)
+    Vxf['SOS']  = 1
+    Vxf['p0']   = compute_Energy(zeros(d,1),[],Vxf)
     check_constraints(popt,ctr_handle,d,0,options)
   else:
     # transforming back the optimization parameters into the GMM model
-    Vxf = parameters_2_gmm(popt,d,Vxf0['L'],options)
+    Vxf             = parameters_2_gmm(popt,d,Vxf0['L'],options)
     Vxf['Mu'][:,0]  = 0
     Vxf['L']        = Vxf0['L']
     Vxf['d']        = Vxf0['d']
@@ -457,7 +441,7 @@ def learnEnergy(Vxf0, Data, options):
   sumDet = 0
   for l in range(Vxf['L']+1):
       sumDet += np.linalg.det(Vxf['P'][:,:,l])
-  end
+
   Vxf['P'][:,:,0] = Vxf['P'][:,:,0]/sumDet
   Vxf['P'][:,:,1:] = Vxf['P'][:,:,1:]/np.sqrt(sumDet)
 
