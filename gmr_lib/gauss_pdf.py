@@ -17,7 +17,7 @@ def gaussPDF(data, mu, sigma):
      Copyright (c) 2006 Sylvain Calinon, LASA Lab, EPFL, CH-1015 Lausanne,
                    Switzerland, http://lasa.epfl.ch
 
-    Ported to python by Lekan Ogunmolu.
+    Ported to python by Lekan Ogunmolu & Rachel Thompson
                         patlekano@gmail.com
                         August 12, 2017
     """

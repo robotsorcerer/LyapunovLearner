@@ -2,7 +2,7 @@ import numpy as np
 from .gauss_pdf import gaussPDF
 from .. learn_energy import matlength
 
-def gmr(Priors, Mu, Sigma, x, inp, out, nargout=3):
+def GMR(Priors, Mu, Sigma, x, inp, out, nargout=3):
     """
      This function performs Gaussian Mixture Regression (GMR), using the
      parameters of a Gaussian Mixture Model (GMM). Given partial input data,
@@ -49,7 +49,7 @@ def gmr(Priors, Mu, Sigma, x, inp, out, nargout=3):
        volume="36",
        number="5"
      }
-     Ported to python by Lekan Ogunmolu
+     Ported to python by Lekan Ogunmolu & Rachel Thompson
                           patlekano@gmail.com
                           August 12, 2017
     """

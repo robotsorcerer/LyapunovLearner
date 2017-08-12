@@ -43,6 +43,8 @@ def EM(data, priors0, mu0, sigma0):
        volume="36",
        number="5"
      }
+
+     Ported to Python by Lekan Ogunmolu & Rachel Thompson
      """
     ## Criterion to stop the EM iterative update
     loglik_threshold = 1e-10;
