@@ -42,7 +42,7 @@ def checkbbounds(xin,lbin,ubin,nvars):
           sys.stdout.write('optimlib:checkbounds:PadLbWithMinusInf')
 
       lb = np.vstack(
-                      lb, 
+                      lb,
                       -np.inf*np.ones((nvars-lenlb,1))
                     )
       lenlb = nvars
@@ -58,12 +58,12 @@ def checkbbounds(xin,lbin,ubin,nvars):
       if lenub > 0:
           # ub is non-empty and length(ub) < nvars.
           sys.stdout.write('optimlib:checkbounds:PadUbWithInf')
-      
+
       ub = np.vstack(ub,
                      np.inf*np.ones((nvars-lenub,1))
                     )
       lenub = nvars
-  
+
 
   # Check feasibility of bounds
   length = np.min([lenlb,lenub]);
@@ -90,16 +90,16 @@ def prepareOptionsForSolver(options, solverName):
   # This portion of the code does not seem relevant to me
   if (isinstance(options, dict) and options['TolFun'] and options['TolFunValue'] ):
     options['TolFunValue'] = options['TolFun']
-  
+
 def startx( ub, lb, xstart=np.array(()), xstartOutOfBounds_idx=np.array(()) ):
-  
+
   #STARTX Box-centered start point.
   #
   # This is a helper function.
 
   # xstart = STARTX(ub,lb,xstart,xstartOutOfBounds_idx) sets the components
   # that violate the bounds to a centered value.
-      
+
   arg1 = np.logical_and( (ub < inf),  (lb == -inf) )
   arg2 = np.logical_and( (ub == inf), (lb > -inf)  )
   arg3 = np.logical_and( (ub < inf),  (lb > -inf)  )
@@ -116,10 +116,10 @@ def startx( ub, lb, xstart=np.array(()), xstartOutOfBounds_idx=np.array(()) ):
 
   w = np.max( [np.abs(ub),1] );
   xstart[arg1] = ub[arg1] - .5*w[arg1]
-  
+
   ww = np.max( [np.abs(lb),1] )
   xstart[arg2] = lb[arg2] + .5*ww[arg2]
-  
+
   xstart[arg3] = (ub[arg3] + lb[arg3])/2s
 
   xstart[arg4] = 1
@@ -128,7 +128,7 @@ def startx( ub, lb, xstart=np.array(()), xstartOutOfBounds_idx=np.array(()) ):
 
 def classifyBoundOnVars(lb,ub,nVar,findFixedVar):
   #classifyBoundsOnVars Helper function that identifies variables
-  # that are fixed, and that have finite bounds. 
+  # that are fixed, and that have finite bounds.
   # Set empty vector bounds to vectors of +Inf or -Inf
   if not lb.size:
       lb = -np.inf*np.ones((nVar,1))
@@ -161,12 +161,12 @@ def classifyBoundOnVars(lb,ub,nVar,findFixedVar):
 
   # Finite lower and upper bounds; exclude fixed variables
   xIndices['finiteLb'] = np.logical_not( np.logical_and(
-                               xIndices['fixed'], np.isfinite(np.ravel(lb)) 
-                            ) 
+                               xIndices['fixed'], np.isfinite(np.ravel(lb))
+                            )
                     )
   xIndices['finiteUb'] = np.logical_not( np.logical_and(
-                               xIndices['fixed'], np.isfinite(np.ravel(ub)) 
-                            ) 
+                               xIndices['fixed'], np.isfinite(np.ravel(ub))
+                            )
                     )
   return xIndices
 
@@ -178,7 +178,7 @@ def equalFloat(v1,v2,tolerance):
   # Indices for which both v1 and v2 are finite
   finiteRange_idx = np.logical_and(np.isfinite(np.ravel(v1)), np.isfinite(np.ravel(v2)))
 
-  # Indices at which v1 and v2 are (i) finite and (ii) equal in a 
+  # Indices at which v1 and v2 are (i) finite and (ii) equal in a
   # floating point sense
   isEqual_idx = np.logical_and(finiteRange_idx, np.abs( np.ravel(v1)- np.ravel(v2) ) <= \
                  tolerance * np.max( 1, np.max([np.abs(np.ravel(v1)), np.abs(np.ravel(v2))]) ))
@@ -191,29 +191,29 @@ def fmincon(FUN,X,NONLCON,options,*args):
   #    min F(X)  subject to:  A*X  <= B, Aeq*X  = Beq (linear constraints)
   #     X                     C(X) <= 0, Ceq(X) = 0   (nonlinear constraints)
   #                              LB <= X <= UB        (bounds)
-  #    
+  #
   #   FMINCON implements four different algorithms: interior point, SQP,
   #   active set, and trust region reflective. Choose one via the option
   #   Algorithm: for instance, to choose SQP, set OPTIONS =
   #   optimoptions('fmincon','Algorithm','sqp'), and then pass OPTIONS to
   #   FMINCON.
-  #                                                           
-  #   X = FMINCON(FUN,X0,A,B) starts at X0 and finds a minimum X to the 
-  #   function FUN, subject to the linear inequalities A*X <= B. FUN accepts 
+  #
+  #   X = FMINCON(FUN,X0,A,B) starts at X0 and finds a minimum X to the
+  #   function FUN, subject to the linear inequalities A*X <= B. FUN accepts
   #   input X and returns a scalar function value F evaluated at X. X0 may be
-  #   a scalar, vector, or matrix. 
-  #   #   X = FMINCON(FUN,X0,A,B,Aeq,Beq) minimizes FUN subject to the linear 
-  #   equalities Aeq*X = Beq as well as A*X <= B. (Set A=[] and B=[] if no 
+  #   a scalar, vector, or matrix.
+  #   #   X = FMINCON(FUN,X0,A,B,Aeq,Beq) minimizes FUN subject to the linear
+  #   equalities Aeq*X = Beq as well as A*X <= B. (Set A=[] and B=[] if no
   #   inequalities exist.)
   #   #   X = FMINCON(FUN,X0,A,B,Aeq,Beq,LB,UB) defines a set of lower and upper
-  #   bounds on the design variables, X, so that a solution is found in 
+  #   bounds on the design variables, X, so that a solution is found in
   #   the range LB <= X <= UB. Use empty matrices for LB and UB
-  #   if no bounds exist. Set LB(i) = -Inf if X(i) is unbounded below; 
+  #   if no bounds exist. Set LB(i) = -Inf if X(i) is unbounded below;
   #   set UB(i) = Inf if X(i) is unbounded above.
   #   #   X = FMINCON(FUN,X0,A,B,Aeq,Beq,LB,UB,NONLCON) subjects the minimization
-  #   to the constraints defined in NONLCON. The function NONLCON accepts X 
-  #   and returns the vectors C and Ceq, representing the nonlinear 
-  #   inequalities and equalities respectively. FMINCON minimizes FUN such 
+  #   to the constraints defined in NONLCON. The function NONLCON accepts X
+  #   and returns the vectors C and Ceq, representing the nonlinear
+  #   inequalities and equalities respectively. FMINCON minimizes FUN such
   #   that C(X) <= 0 and Ceq(X) = 0. (Set LB = [] and/or UB = [] if no bounds
   #   exist.)
   #   #   X = FMINCON(FUN,X0,A,B,Aeq,Beq,LB,UB,NONLCON,OPTIONS) minimizes with
@@ -221,23 +221,23 @@ def fmincon(FUN,X,NONLCON,options,*args):
   #   argument created with the OPTIMOPTIONS function. See OPTIMOPTIONS for
   #   details. For a list of options accepted by FMINCON refer to the
   #   documentation.
-  #  
+  #
   #   X = FMINCON(PROBLEM) finds the minimum for PROBLEM. PROBLEM is a
   #   structure with the function FUN in PROBLEM.objective, the start point
   #   in PROBLEM.x0, the linear inequality constraints in PROBLEM.Aineq
   #   and PROBLEM.bineq, the linear equality constraints in PROBLEM.Aeq and
-  #   PROBLEM.beq, the lower bounds in PROBLEM.lb, the upper bounds in 
+  #   PROBLEM.beq, the lower bounds in PROBLEM.lb, the upper bounds in
   #   PROBLEM.ub, the nonlinear constraint function in PROBLEM.nonlcon, the
   #   options structure in PROBLEM.options, and solver name 'fmincon' in
-  #   PROBLEM.solver. Use this syntax to solve at the command line a problem 
-  #   exported from OPTIMTOOL. 
-  #   #   [X,FVAL] = FMINCON(FUN,X0,...) returns the value of the objective 
+  #   PROBLEM.solver. Use this syntax to solve at the command line a problem
+  #   exported from OPTIMTOOL.
+  #   #   [X,FVAL] = FMINCON(FUN,X0,...) returns the value of the objective
   #   function FUN at the solution X.
   #   #   [X,FVAL,EXITFLAG] = FMINCON(FUN,X0,...) returns an EXITFLAG that
   #   describes the exit condition. Possible values of EXITFLAG and the
   #   corresponding exit conditions are listed below. See the documentation
   #   for a complete description.
-  #   
+  #
   #   All algorithms:
   #     1  First order optimality conditions satisfied.
   #     0  Too many function evaluations or iterations.
@@ -252,44 +252,44 @@ def fmincon(FUN,X,NONLCON,options,*args):
   #     5  Predicted change in objective function too small.
   #   Interior-point and sqp:
   #    -3  Problem seems unbounded.
-  #   #   [X,FVAL,EXITFLAG,OUTPUT] = FMINCON(FUN,X0,...) returns a dictionary 
-  #   OUTPUT with information such as total number of iterations, and final 
+  #   #   [X,FVAL,EXITFLAG,OUTPUT] = FMINCON(FUN,X0,...) returns a dictionary
+  #   OUTPUT with information such as total number of iterations, and final
   #   objective function value. See the documentation for a complete list.
-  #   #   [X,FVAL,EXITFLAG,OUTPUT,LAMBDA] = FMINCON(FUN,X0,...) returns the 
-  #   Lagrange multipliers at the solution X: LAMBDA.lower for LB, 
-  #   LAMBDA.upper for UB, LAMBDA.ineqlin is for the linear inequalities, 
+  #   #   [X,FVAL,EXITFLAG,OUTPUT,LAMBDA] = FMINCON(FUN,X0,...) returns the
+  #   Lagrange multipliers at the solution X: LAMBDA.lower for LB,
+  #   LAMBDA.upper for UB, LAMBDA.ineqlin is for the linear inequalities,
   #   LAMBDA.eqlin is for the linear equalities, LAMBDA.ineqnonlin is for the
-  #   nonlinear inequalities, and LAMBDA.eqnonlin is for the nonlinear 
+  #   nonlinear inequalities, and LAMBDA.eqnonlin is for the nonlinear
   #   equalities.
-  #   #   [X,FVAL,EXITFLAG,OUTPUT,LAMBDA,GRAD] = FMINCON(FUN,X0,...) returns the 
+  #   #   [X,FVAL,EXITFLAG,OUTPUT,LAMBDA,GRAD] = FMINCON(FUN,X0,...) returns the
   #   value of the gradient of FUN at the solution X.
-  #   #   [X,FVAL,EXITFLAG,OUTPUT,LAMBDA,GRAD,HESSIAN] = FMINCON(FUN,X0,...) 
+  #   #   [X,FVAL,EXITFLAG,OUTPUT,LAMBDA,GRAD,HESSIAN] = FMINCON(FUN,X0,...)
   #   returns the value of the exact or approximate Hessian of the Lagrangian
-  #   at X. 
+  #   at X.
   #   #   Examples
   #     FUN can be specified using @:
   #        X = fmincon(@humps,...)
-  #     In this case, F = humps(X) returns the scalar function value F of 
+  #     In this case, F = humps(X) returns the scalar function value F of
   #     the HUMPS function evaluated at X.
   #   #     FUN can also be an anonymous function:
   #        X = fmincon(@(x) 3*sin(x(1))+exp(x(2)),[1;1],[],[],[],[],[0 0])
   #     returns X = [0;0].
   #   #   If FUN or NONLCON are parameterized, you can use anonymous functions to
-  #   capture the problem-dependent parameters. Suppose you want to minimize 
-  #   the objective given in the function myfun, subject to the nonlinear 
-  #   constraint mycon, where these two functions are parameterized by their 
-  #   second argument a1 and a2, respectively. Here myfun and mycon are 
+  #   capture the problem-dependent parameters. Suppose you want to minimize
+  #   the objective given in the function myfun, subject to the nonlinear
+  #   constraint mycon, where these two functions are parameterized by their
+  #   second argument a1 and a2, respectively. Here myfun and mycon are
   #   MATLAB file functions such as
-  #   #        function f = myfun(x,a1)      
-  #        f = x(1)^2 + a1*x(2)^2;       
-  #                                      
+  #   #        function f = myfun(x,a1)
+  #        f = x(1)^2 + a1*x(2)^2;
+  #
   #        function [c,ceq] = mycon(x,a2)
   #        c = a2/x(1) - x(2);
   #        ceq = [];
-  #   #   To optimize for specific values of a1 and a2, first assign the values 
-  #   to these two parameters. Then create two one-argument anonymous 
-  #   functions that capture the values of a1 and a2, and call myfun and 
-  #   mycon with two arguments. Finally, pass these anonymous functions to 
+  #   #   To optimize for specific values of a1 and a2, first assign the values
+  #   to these two parameters. Then create two one-argument anonymous
+  #   functions that capture the values of a1 and a2, and call myfun and
+  #   mycon with two arguments. Finally, pass these anonymous functions to
   #   FMINCON:
   #   #        a1 = 2; a2 = 1.5; define parameters first
   #        options = optimoptions('fmincon','Algorithm','interior-point'); run interior-point algorithm
@@ -315,46 +315,46 @@ def fmincon(FUN,X,NONLCON,options,*args):
   numberOfBounds = 1
 
   defaultopt = {
-      'Algorithm': 'interior-point', 
-      'AlwaysHonorConstraints': 'bounds', 
-      'DerivativeCheck': 'off', 
-      'Diagnostics': 'off', 
-      'DiffMaxChange': np.inf, 
-      'DiffMinChange': 0, 
-      'Display': 'final', 
+      'Algorithm': 'interior-point',
+      'AlwaysHonorConstraints': 'bounds',
+      'DerivativeCheck': 'off',
+      'Diagnostics': 'off',
+      'DiffMaxChange': np.inf,
+      'DiffMinChange': 0,
+      'Display': 'final',
       'FinDiffRelStep': np.array(()),
-      'FinDiffType': 'forward', 
-      'FunValCheck': 'off', 
-      'GradConstr': 'off', 
-      'GradObj': 'off', 
+      'FinDiffType': 'forward',
+      'FunValCheck': 'off',
+      'GradConstr': 'off',
+      'GradObj': 'off',
       'HessFcn': np.array(()),
       'Hessian': np.array(()),
       'HessMult': np.array(()),
-      'HessPattern': spr.csr_matrix(np.ones((numberOfVariables, numberOfVariables))), 
-      'InitBarrierParam': 0.1, 
-      'InitTrustRegionRadius': np.sqrt(numberOfVariables), 
+      'HessPattern': spr.csr_matrix(np.ones((numberOfVariables, numberOfVariables))),
+      'InitBarrierParam': 0.1,
+      'InitTrustRegionRadius': np.sqrt(numberOfVariables),
       'MaxFunEvals': np.array(()),...
       'MaxIter': np.array(()),...
       'MaxPCGIter': np.max([1, np.floor(numberOfVariables/2)]),
-      'MaxProjCGIter': 2*(numberOfVariables-numberOfEqualities), 
+      'MaxProjCGIter': 2*(numberOfVariables-numberOfEqualities),
       'MaxSQPIter': 10*np.max([numberOfVariables,numberOfInequalities+numberOfBounds]),
       'ObjectiveLimit': -1e20,
       'OutputFcn': np.array(()),
       'PlotFcns': np.array(()),
       'PrecondBandWidth',0,
       'RelLineSrchBnd': np.array(()),
-      'RelLineSrchBndDuration': 1, 
-      'ScaleProblem': None, 
-      'SubproblemAlgorithm': 'ldl-factorization', 
-      'TolCon': 1e-6, 
-      'TolConSQP': 1e-6, 
-      'TolFun': 1e-6, 
-      'TolFunValue': 1e-6, 
-      'TolPCG': 0.1, 
-      'TolProjCG': 1e-2, 
-      'TolProjCGAbs': 1e-10, 
+      'RelLineSrchBndDuration': 1,
+      'ScaleProblem': None,
+      'SubproblemAlgorithm': 'ldl-factorization',
+      'TolCon': 1e-6,
+      'TolConSQP': 1e-6,
+      'TolFun': 1e-6,
+      'TolFunValue': 1e-6,
+      'TolPCG': 0.1,
+      'TolProjCG': 1e-2,
+      'TolProjCGAbs': 1e-10,
       'TolX': np.array(()),
-      'TypicalX': np.ones((numberOfVariables,1)), 
+      'TypicalX': np.ones((numberOfVariables,1)),
       'UseParallel': False ,
       }
 
@@ -385,10 +385,10 @@ def fmincon(FUN,X,NONLCON,options,*args):
 
   if nargin == 1:
       if isinstance(FUN, dict):
-          templist = [FUN,X,A,B,Aeq,Beq,LB,UB,NONLCON,options] 
+          templist = [FUN,X,A,B,Aeq,Beq,LB,UB,NONLCON,options]
           for i in range(len(templist)):
             templist[i] = Fun[str(templist[i])]
-      else: 
+      else:
           sys.stdout.write('optimlib:fmincon:InputArg')
 
   if nargout > 4:
@@ -412,7 +412,7 @@ def fmincon(FUN,X,NONLCON,options,*args):
 
   display = defaultopt['Display']
   # flags.detailedExitMsg = ~isempty(strfind(display,'detailed'));
-  # switcher {    
+  # switcher {
   #   'off',
   #   'none'    verbosity = 0;
   #   'notify','notify-detailed'
@@ -434,14 +434,14 @@ def fmincon(FUN,X,NONLCON,options,*args):
   Beq = np.ravel(Beq)
 
   # % Check for consistency of linear constraints, before evaluating
-  # % (potentially expensive) user functions 
+  # % (potentially expensive) user functions
 
   # % Set empty linear constraint matrices to the correct size, 0-by-n
   if not Aeq.size:
       Aeq = Aeq.reshape(0,sizes['nVar']);
 
   if not A.size:
-      A = A.reshape(sizes['nVar']);   
+      A = A.reshape(sizes['nVar']);
 
   lin_eq, Aeqcol = Aeq.shape
   lin_ineq, Acol = A.shape
@@ -460,25 +460,25 @@ def fmincon(FUN,X,NONLCON,options,*args):
 
   # End of linear constraint consistency check
 
-  Algorithm = defaultopt['Algorithm'] 
+  Algorithm = defaultopt['Algorithm']
 
   # Option needed for processing initial guess
-  AlwaysHonorConstraints = defaultopt['AlwaysHonorConstraints'] 
+  AlwaysHonorConstraints = defaultopt['AlwaysHonorConstraints']
 
   # Determine algorithm user chose via options. (We need this now
-  # to set OUTPUT['algorithm'] in case of early termination due to 
-  # inconsistent bounds.) 
+  # to set OUTPUT['algorithm'] in case of early termination due to
+  # inconsistent bounds.)
   if (Algorithm != ('activeSet' or 'sqp' or 'trustRegionReflective' or 'interiorPoint' or 'sqpLegacy')):
       sys.stdout.write('optimlib:fmincon:InvalidAlgorithm')
-  
+
   OUTPUT = dict()
   OUTPUT['algorithm'] = Algorithm
-    
+
   XOUT,l,u,msg = checkbounds(XOUT,LB,UB,sizes['nVar']);
   if not msg.size:
      EXITFLAG = -2
      FVAL,LAMBDA,GRAD,HESSIAN = (np.array(()) for _ in range(4))
-     
+
      OUTPUT['iterations'] = 0
      OUTPUT['funcCount'] = 0
      OUTPUT['stepsize'] = np.array(())
@@ -487,13 +487,13 @@ def fmincon(FUN,X,NONLCON,options,*args):
      else: #% trust-region-reflective, interior-point
          OUTPUT['cgiterations'] = np.array(())
 
-     if (OUTPUT['algorithm']=='interiorPoint' or OUTPUT['algorithm']=='activeSet' or 
+     if (OUTPUT['algorithm']=='interiorPoint' or OUTPUT['algorithm']=='activeSet' or
           OUTPUT['algorithm']=='sqp' or OUTPUT['algorithm']=='sqpLegacy' ):
           OUTPUT['constrviolation'] = np.array(())
 
      OUTPUT['firstorderopt'] = np.array(())
      OUTPUT['message'] = msg
-     
+
      X = XOUT
      # if verbosity > 0
      #    disp(msg)
@@ -513,9 +513,9 @@ def fmincon(FUN,X,NONLCON,options,*args):
   flags['meritFunction'] = 0;
   initVals['xOrigShape'] = X;
 
-  diagnostics = defaultopt['Diagnostics'] = 'on' 
-  funValCheck = defaultopt['FunValCheck'] = 'on' 
-  derivativeCheck = defaultopt['DerivativeCheck'] = 'on' 
+  diagnostics = defaultopt['Diagnostics'] = 'on'
+  funValCheck = defaultopt['FunValCheck'] = 'on'
+  derivativeCheck = defaultopt['DerivativeCheck'] = 'on'
 
   # Gather options needed for finite differences
   # Write checked DiffMaxChange, DiffMinChage, FinDiffType, FinDiffRelStep,
@@ -526,20 +526,20 @@ def fmincon(FUN,X,NONLCON,options,*args):
       sys.stdout.write('optimlib:fmincon:DiffChangesInconsistent %0.5g, %0.5g', options['DiffMinChange'], options['DiffMaxChange'] )
 
   # Read in and error check option TypicalX
-  typicalx = defaultopt['TypicalX'] = np.ones((sizes['nVar'], 1)) 
+  typicalx = defaultopt['TypicalX'] = np.ones((sizes['nVar'], 1))
 
   # checkoptionsize('TypicalX', size(typicalx), sizes.nVar);
   options['TypicalX'] = typicalx
   options['FinDiffType'] = defaultopt['FinDiffType'] #optimget(options,'FinDiffType',defaultopt,'fast');
   # options = validateFinDiffRelStep(sizes.nVar,options,defaultopt);
-  options['GradObj'] = defaultopt['GradObj'] 
+  options['GradObj'] = defaultopt['GradObj']
   options['GradConstr'] = defaultopt['GradConstr']
 
   flags['grad'] = options['GradObj'] = 'on'
 
   # Notice that defaultopt.Hessian = [], so the variable "hessian" can be empty
-  hessian = defaultopt['Hessian'] 
-  # If calling trust-region-reflective with an unavailable Hessian option value, 
+  hessian = defaultopt['Hessian']
+  # If calling trust-region-reflective with an unavailable Hessian option value,
   # issue informative error message
   if ((OUTPUT['algorithm']=='trustRegionReflective') and \
           not ( hessian.size ) or (hessian=='on') or (hessian=='user-supplied') or \
@@ -557,24 +557,23 @@ def fmincon(FUN,X,NONLCON,options,*args):
      flags['constr'] = True
 
   # Process objective function
-  # if FUN:  # will detect empty string, empty matrix, empty cell array
-  #    # constrflag in optimfcnchk set to false because we're checking the objective, not constraint
-  #    funfcn = optimfcnchk(FUN,'fmincon',length(varargin),funValCheck,flags['grad'],flags['hess'],False,Algorithm);
-  # else:
-  #    sys.stdout.write('optimlib:fmincon:InvalidFUN')
-  
+  if FUN:  # will detect empty string, empty matrix, empty cell array
+     # constrflag in optimfcnchk set to false because we're checking the objective, not constraint
+     funfcn = optimfcnchk(FUN,'fmincon',length(varargin),funValCheck,flags['grad'],flags['hess'],False,Algorithm);
+  else:
+     sys.stdout.write('optimlib:fmincon:InvalidFUN')
+
   # Process constraint function
-  # if flags.constr % NONLCON is non-empty
-  #    flags.gradconst = strcmpi(options.GradConstr,'on');
-  #    % hessflag in optimfcnchk set to false because hessian is never returned by nonlinear constraint 
-  #    % function
-  #    %
-  #    % constrflag in optimfcnchk set to true because we're checking the constraints
-  #    confcn = optimfcnchk(NONLCON,'fmincon',length(varargin),funValCheck,flags.gradconst,false,true);
-  # else
-  #    flags.gradconst = false; 
-  #    confcn = {'','','','',''};
-  # end
+  if flags['constr'] # NONLCON is non-empty
+     flags['gradconst'] = options['GradConstr'] = 'on'
+     # hessflag in optimfcnchk set to false because hessian is never returned by nonlinear constraint
+     # function
+     #
+     # constrflag in optimfcnchk set to true because we're checking the constraints
+     confcn = optimfcnchk(NONLCON,'fmincon',length(varargin),funValCheck,flags.gradconst,false,true);
+  else
+     flags['gradconst'] = False
+     confcn = ['','','','','']
 
   rowAeq,colAeq = Aeq.shape
 
@@ -582,7 +581,7 @@ def fmincon(FUN,X,NONLCON,options,*args):
       # See if linear constraints are sparse and if user passed in Hessian
       if spr.issparse(Aeq) or spr.issparse(A):
           sys.stdout.write('optimlib:fmincon:ConvertingToFull %s', Algorithm)
-      
+
       if flags['hess']: # conflicting options
           flags['hess'] = False
           sys.stdout.write('optimlib:fmincon:HessianIgnoredForAlg %s', Algorithm));
@@ -594,8 +593,8 @@ def fmincon(FUN,X,NONLCON,options,*args):
   elif OUTPUT['algorithm']=='trustRegionReflective':
       # % Look at constraint type and supplied derivatives, and determine if
       # % trust-region-reflective can solve problem
-      isBoundedNLP = NONLCON.size and A.size and Aeq.size  #problem has only bounds and no other constraints 
-      isLinEqNLP = (NONLCON.size and A.size and lFinite.size 
+      isBoundedNLP = NONLCON.size and A.size and Aeq.size  #problem has only bounds and no other constraints
+      isLinEqNLP = (NONLCON.size and A.size and lFinite.size
                     and uFinite.size and colAeq) > rowAeq;
       if isBoundedNLP and flags['grad']:
         pass
@@ -607,21 +606,21 @@ def fmincon(FUN,X,NONLCON,options,*args):
           # linkToDoc = addLink('Choosing the Algorithm', 'optim', 'helptargets.map', ...
           #                     'choose_algorithm', false);
           # if ((not isBoundedNLP) and (not isLinEqNLP)):
-          #     print('optimlib:fmincon:ConstrTRR', linkToDoc))            
+          #     print('optimlib:fmincon:ConstrTRR', linkToDoc))
           # else
           #     % The user has a problem that satisfies the TRR constraint
           #     % restrictions but they haven't supplied gradients.
-          #     error(message('optimlib:fmincon:GradOffTRR', linkToDoc))
+          #     sys.stdout.write('optimlib:fmincon:GradOffTRR', linkToDoc)
           pass
 
-  # % Process initial point 
+  # % Process initial point
   shiftedX0 = False # boolean that indicates if initial point was shifted
   if (OUTPUT['algorithm'] ==('activeSet' or 'sqp' or 'sqpLegacy')):
      if OUTPUT['algorithm']=='sqpLegacy':
          # Classify variables: finite lower bounds, finite upper bounds
          xIndices = classifyBoundsOnVars(l,u,sizes.nVar,false);
          # xIndices = NotImplemented
-     
+
      # Check that initial point strictly satisfies the bounds on the variables.
      violatedLowerBnds_idx = XOUT[finDiffFlags['hasLBs']] < l[finDiffFlags['hasLBs']]
      violatedUpperBnds_idx = XOUT[finDiffFlags['hasUBs']] > u[finDiffFlags['hasUBs']]
@@ -634,7 +633,7 @@ def fmincon(FUN,X,NONLCON,options,*args):
          shiftedX0 = True
   elif OUTPUT['algorithm']=='trustRegionReflective':
      #
-     # If components of initial x not within bounds, set those components  
+     # If components of initial x not within bounds, set those components
      # of initial point to a "box-centered" point
      #
      if not Aeq.size:
@@ -648,13 +647,13 @@ def fmincon(FUN,X,NONLCON,options,*args):
              X = XOUT
      else:
         # Phase-1 for sfminle nearest feas. pt. to XOUT. Don't print a
-        # message for this change in X0 for sfminle. 
+        # message for this change in X0 for sfminle.
          XOUT = NotImplemented #feasibl(Aeq,Beq,XOUT)
          X = XOUT
-    
+
   elif OUTPUT['algorithm'] == 'interiorPoint':
       # Variables: fixed, finite lower bounds, finite upper bounds
-      xIndices = classifyBoundsOnVars(l,u,sizes.nVar,true);
+      xIndices = classifyBoundsOnVars(l,u,sizes['nVar'],True);
 
       # If honor bounds mode, then check that initial point strictly satisfies the
       # simple inequality bounds on the variables and exactly satisfies fixed variable
@@ -671,7 +670,7 @@ def fmincon(FUN,X,NONLCON,options,*args):
   # Display that x0 was shifted in order to honor bounds
   # if shiftedX0
   #     if verbosity >= 3
-  #         if strcmpi(OUTPUT.algorithm,interiorPoint) 
+  #         if strcmpi(OUTPUT.algorithm,interiorPoint)
   #             fprintf(getString(message('optimlib:fmincon:ShiftX0StrictInterior')));
   #             fprintf('\n');
   #         else
@@ -680,17 +679,17 @@ def fmincon(FUN,X,NONLCON,options,*args):
   #         end
   #     end
   # end
-      
+
   # Evaluate function
   initVals['g'] = np.zeros((sizes['nVar'],1))
-  HESSIAN = np.any(()) 
+  HESSIAN = np.any(())
 
   if FUN['fun']: # calltype==fmincon, interiorPoint
     initVals['f'] = FUN(X, args)
 
   if FUN['fungrad']:
     initVals['f'], initVals['g'] = FUN(X, args)
-  
+
   if FUN['fungradhess']:
     initVals['f'], initVals['g'], HESSIAN = FUN(X, args)
 
@@ -724,34 +723,32 @@ def fmincon(FUN,X,NONLCON,options,*args):
   #       HESSIAN = feval(funfcn{5},X,varargin{:});
   #    catch userFcn_ME
   #         optim_ME = MException('optimlib:fmincon:HessianError', ...
-  #             getString(message('optimlib:fmincon:HessianError')));            
+  #             getString(message('optimlib:fmincon:HessianError')));
   #         userFcn_ME = addCause(userFcn_ME,optim_ME);
   #         rethrow(userFcn_ME)
   #    end
   # otherwise
-  #    error(message('optimlib:fmincon:UndefinedCallType'));
+  #    sys.stdout.write('optimlib:fmincon:UndefinedCallType'))
   # end
 
-  % Check that the objective value is a scalar
-  if numel(initVals.f) ~= 1
-     error(message('optimlib:fmincon:NonScalarObj'))
-  end
+  # Check that the objective value is a scalar
+  if initVals['f'].size != 1:
+     sys.stdout.write('optimlib:fmincon:NonScalarObj')
 
-  % Check that the objective gradient is the right size
-  initVals.g = initVals.g(:);
-  if numel(initVals.g) ~= sizes.nVar
-     error('optimlib:fmincon:InvalidSizeOfGradient', ...
-         getString(message('optimlib:commonMsgs:InvalidSizeOfGradient',sizes.nVar)));
-  end
+  # Check that the objective gradient is the right size
+  initVals['g'] = initVals['g'].flatten()
+  if initVals['g'].size != sizes['nVar']:
+     print('optimlib:fmincon:InvalidSizeOfGradient', +
+            'optimlib:commonMsgs:InvalidSizeOfGradient', sizes['nVar'])
 
-  % Evaluate constraints
+  # Evaluate constraints
   switch confcn{1}
   case 'fun'
       try
           [ctmp,ceqtmp] = feval(confcn{3},X,varargin{:});
       catch userFcn_ME
           if strcmpi('MATLAB:maxlhs',userFcn_ME.identifier)
-                  error(message('optimlib:fmincon:InvalidHandleNonlcon'))
+                  sys.stdout.write('optimlib:fmincon:InvalidHandleNonlcon')
           else
               optim_ME = MException('optimlib:fmincon:NonlconError', ...
                   getString(message('optimlib:fmincon:NonlconError')));
@@ -768,7 +765,7 @@ def fmincon(FUN,X,NONLCON,options,*args):
         [ctmp,ceqtmp,initVals.gnc,initVals.gnceq] = feval(confcn{3},X,varargin{:});
      catch userFcn_ME
          optim_ME = MException('optimlib:fmincon:NonlconError', ...
-             getString(message('optimlib:fmincon:NonlconError')));           
+             getString(message('optimlib:fmincon:NonlconError')));
          userFcn_ME = addCause(userFcn_ME,optim_ME);
          rethrow(userFcn_ME)
      end
@@ -803,10 +800,10 @@ def fmincon(FUN,X,NONLCON,options,*args):
      initVals.gnc = [];
      initVals.gnceq = [];
   otherwise
-     error(message('optimlib:fmincon:UndefinedCallType'));
+     sys.stdout.write('optimlib:fmincon:UndefinedCallType'))
   end
 
-  % Check for non-double data typed values returned by user functions 
+  % Check for non-double data typed values returned by user functions
   if ~isempty( isoptimargdbl('FMINCON', {'f','g','H','c','ceq','gc','gceq'}, ...
      initVals.f, initVals.g, HESSIAN, initVals.ncineq, initVals.nceq, initVals.gnc, initVals.gnceq) )
       error('optimlib:fmincon:NonDoubleFunVal',getString(message('optimlib:commonMsgs:NonDoubleFunVal','FMINCON')));
@@ -832,10 +829,10 @@ def fmincon(FUN,X,NONLCON,options,*args):
   [ceqgrow,ceqgcol] = size(initVals.gnceq);
 
   if cgrow ~= sizes.nVar || cgcol ~= sizes.mNonlinIneq
-     error(message('optimlib:fmincon:WrongSizeGradNonlinIneq', sizes.nVar, sizes.mNonlinIneq))
+     sys.stdout.write('optimlib:fmincon:WrongSizeGradNonlinIneq', sizes.nVar, sizes.mNonlinIneq)
   end
   if ceqgrow ~= sizes.nVar || ceqgcol ~= sizes.mNonlinEq
-     error(message('optimlib:fmincon:WrongSizeGradNonlinEq', sizes.nVar, sizes.mNonlinEq))
+     sys.stdout.write('optimlib:fmincon:WrongSizeGradNonlinEq', sizes.nVar, sizes.mNonlinEq)
   end
 
   if diagnostics
@@ -857,7 +854,7 @@ def fmincon(FUN,X,NONLCON,options,*args):
 
   % For parallel finite difference (if needed) we need to send the function
   % handles now to the workers. This avoids sending the function handles in
-  % every iteration of the solver. The output from 'setOptimFcnHandleOnWorkers' 
+  % every iteration of the solver. The output from 'setOptimFcnHandleOnWorkers'
   % is a onCleanup object that will perform cleanup task on the workers.
   UseParallel = optimget(options,'UseParallel',defaultopt,'fast');
   cleanupObj = setOptimFcnHandleOnWorkers(UseParallel,funfcn,confcn); %#ok<NASGU>
@@ -882,18 +879,18 @@ def fmincon(FUN,X,NONLCON,options,*args):
      if (strcmpi(funfcn{1}, 'fun_then_grad_then_hess') || strcmpi(funfcn{1}, 'fungradhess'))
         Hstr = [];
      elseif (strcmpi(funfcn{1}, 'fun_then_grad') || strcmpi(funfcn{1}, 'fungrad'))
-        n = length(XOUT); 
+        n = length(XOUT);
         Hstr = optimget(options,'HessPattern',defaultopt,'fast');
-        if ischar(Hstr) 
+        if ischar(Hstr)
            if strcmpi(Hstr,'sparse(ones(numberofvariables))')
               Hstr = sparse(ones(n));
            else
-              error(message('optimlib:fmincon:InvalidHessPattern'))
+              sys.stdout.write('optimlib:fmincon:InvalidHessPattern')
            end
         end
         checkoptionsize('HessPattern', size(Hstr), n);
      end
-     
+
      defaultopt.MaxIter = 400; defaultopt.MaxFunEvals = '100*numberofvariables'; defaultopt.TolX = 1e-6;
      defaultopt.Hessian = 'off';
      % Trust-region-reflective algorithm does not compute constraint
@@ -919,25 +916,25 @@ def fmincon(FUN,X,NONLCON,options,*args):
       defaultopt.MaxIter = 1000; defaultopt.MaxFunEvals = 3000; defaultopt.TolX = 1e-10;
       defaultopt.Hessian = 'bfgs';
       mEq = lin_eq + sizes.mNonlinEq + nnz(xIndices.fixed); % number of equalities
-      % Interior-point-specific options. Default values for lbfgs memory is 10, and 
+      % Interior-point-specific options. Default values for lbfgs memory is 10, and
       % ldl pivot threshold is 0.01
-      options = getIpOptions(options,sizes.nVar,mEq,flags.constr,defaultopt,10,0.01); 
+      options = getIpOptions(options,sizes.nVar,mEq,flags.constr,defaultopt,10,0.01);
 
       [X,FVAL,EXITFLAG,OUTPUT,LAMBDA,GRAD,HESSIAN] = barrier(funfcn,X,A,B,Aeq,Beq,l,u,confcn,options.HessFcn, ...
           initVals.f,initVals.g,initVals.ncineq,initVals.nceq,initVals.gnc,initVals.gnceq,HESSIAN, ...
           xIndices,options,optionFeedback,finDiffFlags,varargin{:});
   elseif strcmpi(OUTPUT.algorithm,sqp)
-      defaultopt.MaxIter = 400; defaultopt.MaxFunEvals = '100*numberofvariables'; 
+      defaultopt.MaxIter = 400; defaultopt.MaxFunEvals = '100*numberofvariables';
       defaultopt.TolX = 1e-6; defaultopt.Hessian = 'bfgs';
       % Validate options used by sqp
       options = getSQPOptions(options,defaultopt,sizes.nVar);
-      optionFeedback.detailedExitMsg = flags.detailedExitMsg;    
+      optionFeedback.detailedExitMsg = flags.detailedExitMsg;
       % Call algorithm
       [X,FVAL,EXITFLAG,OUTPUT,LAMBDA,GRAD,HESSIAN] = sqpInterface(funfcn,X,full(A),full(B),full(Aeq),full(Beq), ...
           full(l),full(u),confcn,initVals.f,full(initVals.g),full(initVals.ncineq),full(initVals.nceq), ...
           full(initVals.gnc),full(initVals.gnceq),sizes,options,finDiffFlags,verbosity,optionFeedback,varargin{:});
   else % sqpLegacy
-      defaultopt.MaxIter = 400; defaultopt.MaxFunEvals = '100*numberofvariables'; 
+      defaultopt.MaxIter = 400; defaultopt.MaxFunEvals = '100*numberofvariables';
       defaultopt.TolX = 1e-6; defaultopt.Hessian = 'bfgs';
       % Validate options used by sqp
       options = getSQPOptions(options,defaultopt,sizes.nVar);

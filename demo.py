@@ -61,7 +61,7 @@ def guess_init_lyap(data, Vxf0, b_initRandom=False):
         '''
         tempcov = np.cov(temp, rowvar=False)
         lengthScaleMatrix = LA.sqrtm(tempcov)
-        Vxf0['Priors'] = np.random.rand(Vxf0['L']+1,1);
+        Vxf0['Priors'] = np.random.rand(Vxf0['L']+1,1)
 
         for l in range(Vxf0['L']+1):
             tempMat = np.random.randn(Vxf0['d'], Vxf0['d'])
@@ -75,7 +75,7 @@ def guess_init_lyap(data, Vxf0, b_initRandom=False):
         # Vxf0['Mu'] = np.zeros((Vxf0['d'], Vxf0['d'], Vxf0['L']+1))
 
         # allocate Vxf0['P']
-        # Vxf0['P']   =  np.zeros(( Vxf0['d'], Vxf0['d'], Vxf0['L']+1)) # wil be 2x2x3
+        # Vxf0['P']   =  np.zeros(( Vxf0[ 'd'], Vxf0['d'], Vxf0['L']+1)) # wil be 2x2x3
         for l in range(Vxf0['L']+1):
             Vxf0['P'][:,:,l] = np.eye((Vxf0['d']))
 
