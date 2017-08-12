@@ -49,7 +49,7 @@ def energyContour(Vxf,D,*args):
 
     if args:
         quality, b_plot_stream, b_plot_stream, sp,
-            countour_levels, b_plot_color = (args[i] for _ in range(5))
+            countour_levels, b_plot_color = (args[i] for _ in range(6))
 
     if quality =='high':
         nx, ny = 600, 600
@@ -61,44 +61,48 @@ def energyContour(Vxf,D,*args):
     x = np.arange(D[0], D[1], nx)
     y = np.arange(D[2], D[3], ny)
     X, Y = np.meshgrid(x, y)
-    x = np.array(np.r_(
-                       np.ravel(X), np.ravel(Y)].T
-                 ) )
+    x = (np.array(np.r_(np.ravel(X), np.ravel(Y)])
+                 )
+        ).T
 
     V, dV = computeEnergy(x,np.array(()),Vxf, nargout = 2)
 
     if not countour_levels.size:
-        countour_levels = np.linspace(0,np.log(np.max(V)),40)
+        countour_levels = np.arange(0,np.log(np.max(V)),40)
         countour_levels = np.exp(countour_levels)
         if np.max(V)>40:
             countour_levels = np.round(countour_levels)
 
     V = V.reshape(ny,nx);
     if not sp.size:
-        figure
-        sp = gca
+        figure = plt.figure()
+        sp = plt.gca()
 
     if b_plot_color:
-        pcolor(X,Y,V)
-        shading interp
-
-        colormap pink
-        ca = caxis;
-        ca(1) = 0;
-        caxis(ca)
+        # pcolor(X,Y,V)
+        # shading interp
+        #
+        # colormap pink
+        # ca = caxis;
+        # ca(1) = 0;
+        # caxis(ca)
+        pass
 
     if b_plot_contour:
     #     [~,h] = contour(sp,X,Y,log(V),countour_levels);
-        [~,h] = contour(sp,X,Y,V,countour_levels);
-        set(h,'ShowText','on','color','k','labelspacing',200);%,'fill','on'
+        # [~,h] = contour(sp,X,Y,V,countour_levels);
+        h = plt.contour(X, Y, V, countour_levels, colors='k', origin='upper',
+                    extent=extent, linewidths=2, labelspacing=200)
+        # plt.legend([h1, labelspacing=200])
+        # set(h,'ShowText','on','color','k','labelspacing',200);%,'fill','on'
     #     set(h,'ShowText','on','TextStep',get(h,'LevelStep')*2,'color','g')
-    end
 
-    if b_plot_stream:
-        h_S = streamslice(sp,X,Y,reshape(-dV(1,:),ny,nx),reshape(-dV(2,:),ny,nx),0.5,'method','cubic');
-        set(h_S,'color','m');
-    end
-    plot(sp,0,0,'k*','markersize',12,'linewidth',2)
-    axis(sp,'equal');axis(sp,'tight');box(sp,'on')
+    # if b_plot_stream:
+    #     h_S = streamslice(sp,X,Y,reshape(-dV(1,:),ny,nx),reshape(-dV(2,:),ny,nx),0.5,'method','cubic');
+    #     set(h_S,'color','m');
+    # end
+    plt.plot(sp,0,0,'k*',markersize=12, linewidth=2)
+    # axis(sp,'equal');axis(sp,'tight');box(sp,'on')
     # grid on
+    # h = [h1, h2]
     return h
