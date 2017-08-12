@@ -1,2 +1,6 @@
 cvxopt>=1.1.9
 cvxpy>=0.4.10
+scipy
+sklearn
+numpy
+matplotlib

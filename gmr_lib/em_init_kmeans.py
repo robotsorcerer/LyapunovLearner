@@ -1,5 +1,7 @@
 import numpy as np
 from scipy.cluster.vq import vq
+from sklearn.cluster import KMeans
+from sklearn.decomposition import PCA
 from .. learn_energy import matlength
 
 def emInitKmeans(data, nbStates):
@@ -30,11 +32,19 @@ def emInitKmeans(data, nbStates):
                          August 12, 2017
     """
     nbVar, nbdata = data.shape
-
-    centroids, distortion = vq.kmeans(data.T, nbStates,iter=500);
+    '''
+    kmeans++:  selects initial cluster centers for k-mean
+        clustering in a smart way to speed up convergence
+    algorithm:  selects initial cluster centers for k-mean
+        clustering in a smart way to speed up convergence
+    '''
+    kmeans = Kmeans(data=data.T, n_clusters=nbStates,max_iter=500,
+                                 init='k-means++', n_jobs=4, random_state=0)
+    data_id = kmeans.labels_
+    centroids = kmeans.cluster_centers_
     mu = centroids.T
     for i in range(nbStates):
-      idtmp = find(data_id==i)
+      idtmp = np.where(data_id==i)
       priors[i] = matlength(idtmp)
       sigma[:,:,i] = np.cov(
                             (np.r_[data[:,idtmp] data[:,idtmp]]).T
