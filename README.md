@@ -20,7 +20,7 @@ from the root directory of this package.
 ### Code Structure
 
 This package was ported from Khansari's [bitbucket](https://bitbucket.org/khansari/clfdm) matlab to python. It includes the python functions:
-`demo.py`, 'config.py' and 4 subdirectories: `clfm_lib`, `gmr_lib`, `example_models`, and `doc`.
+`demo.py`, `config.py` and 4 subdirectories: `clfm_lib`, `gmr_lib`, `example_models`, and `doc`.
 
 + [config.py](/config.py): a python script that configures the general properties of the Lyapunov energy function.
 

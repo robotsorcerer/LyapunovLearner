@@ -47,9 +47,8 @@ def energyContour(Vxf,D,*args):
     sp = np.array(())
     countour_levels = np.array(())
 
-    if args:
-        quality, b_plot_stream, b_plot_stream, sp,
-            countour_levels, b_plot_color = (args[i] for _ in range(6))
+    quality, b_plot_stream, sp, countour_levels,
+            b_plot_color = ('medium', False, None, None, True)
 
     if quality =='high':
         nx, ny = 600, 600

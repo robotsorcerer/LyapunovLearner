@@ -20,6 +20,8 @@ import numpy as np
 # import scipy as sp
 import scipy.io as sio
 import scipy.linalg as LA
+import matplotlib.pyplot as plt
+plt.style.use(['presentation', 'fivethirtyeight'])
 
 # path imports
 from os.path import dirname, abspath#, join, sep
@@ -102,6 +104,24 @@ def main():
     Vxf = learnEnergy(Vxf0, data, options)
 
     # plot the result
+    fig = mpl.figure.Figure(figsize=(6.40,4.80), dpi=128, facecolor=darkslategray,
+                            edgecolor=blue, linewidth=2.4, frameon=None,
+                            subplotpars=None, tight_layout=True)
+    fig = plt.figure()
+    axes = plt.gca()
+    plt.hold(True)
+
+    h1 = plt.plot(data[0:,:], data[1,:], 'r.', label='demonstrations')
+    axes.set_xlim([ax.XLim(1)-(ax.XLim(2)-ax.XLim(1))/10, ax.XLim(2)+(ax.XLim(2)-ax.XLim(1))/10])
+    axes.set_ylim([ax.YLim(1)-(ax.YLim(2)-ax.YLim(1))/10, ax.YLim(2)+(ax.YLim(2)-ax.YLim(1))/10])
+
+    h3 = energyContour(Vxf, axis, np.array(()), np.array(()), axes, np.array(()), False, label='energy levels')
+    h2 = plt.plot(0,0, 'g*', markersize=15, linewidth=3, label='target')
+    plt.title('Energy Levels of the learned Lyapunov Functions')
+    plt.xlabel('x (mm)','fontsize',15)
+    plt.ylabel('y (mm)','fontsize',15)
+    h = [h1, h2, h3]
+    plt.legend(handles=h,loc=3)
 
     if args.verbose:
         print('demoIdx: ', demoIdx)

@@ -3,6 +3,7 @@ import scipy.linalg as LA
 import matplotlib.pyplot as plt
 from matplotlib.patches import Polygon
 from matplotlib.collections import PatchCollection
+plt.style.use('fivethirtyeight')
 
 def plotGMM(mu, sigma, color, display_mode, *args):
     '''
