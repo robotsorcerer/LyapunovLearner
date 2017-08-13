@@ -1,6 +1,6 @@
 import numpy as np
 from .gauss_pdf import gaussPDF
-from .. learn_energy import matlength
+from clfm_lib.learn_energy import matlength
 
 def GMR(Priors, Mu, Sigma, x, inp, out, nargout=3):
     """
@@ -65,7 +65,7 @@ def GMR(Priors, Mu, Sigma, x, inp, out, nargout=3):
     ## Compute the influence of each GMM component, given input x
     #########################################################################
     for i in range(nbStates):
-      Pxi[:,i] = Priors[i] * gaussPDF[x, Mu[inp,i], Sigma[inp,inp,i]);
+      Pxi[:,i] = Priors[i] * gaussPDF(x, Mu[inp,i], Sigma[inp,inp,i]);
 
     beta = Pxi / np.tile(np.sum(Pxi,axis=1) +
                          np.finfo(np.float64).min, [1,nbStates])
@@ -84,23 +84,23 @@ def GMR(Priors, Mu, Sigma, x, inp, out, nargout=3):
     ## Compute expected means y, given input x
     #########################################################################
     for j in range(nbStates):
-      y_tmp[:,:,j] = np.tile(Mu[out,j],[1,nbData]) +
-                     Sigma[out,inp,j]/(Sigma[inp,inp,j]).dot(x-np.tile(Mu[inp,j],[1,nbData]))
+      y_tmp[:,:,j] = np.tile(Mu[out,j],[1,nbData]) \
+                     + Sigma[out,inp,j]/(Sigma[inp,inp,j]).dot(x-np.tile(Mu[inp,j],[1,nbData]))
 
-    beta_tmp = beta.reshape(1 beta.shape)
+    beta_tmp = beta.reshape(1, beta.shape)
     y_tmp2 = np.tile(beta_tmp,[matlength(out), 1, 1]) * y_tmp
     y = np.sum(y_tmp2,axis=2)
     ## Compute expected covariance matrices Sigma_y, given input x
     #########################################################################
     if nargout > 1:
         for j in range(nbStates):
-            Sigma_y_tmp[:,:,0,j] = Sigma[out,out,j] -
-                                   (Sigma[out,inp,j]/(Sigma[inp,inp,j])*
-                                    Sigma[inp,out,j])
+            Sigma_y_tmp[:,:,0,j] = Sigma[out,out,j] \
+                                   - (Sigma[out,inp,j]/(Sigma[inp,inp,j])  \
+                                   * Sigma[inp,out,j])
 
         beta_tmp = beta.reshape(1, 1, beta.shape)
-        Sigma_y_tmp2 = np.tile(beta_tmp * beta_tmp,
-                               [matlength(out), matlength(out), 1, 1]) *
+        Sigma_y_tmp2 = np.tile(beta_tmp * beta_tmp, \
+                               [matlength(out), matlength(out), 1, 1]) * \
                                 np.tile(Sigma_y_tmp,[1, 1, nbData, 1])
         Sigma_y = np.sum(Sigma_y_tmp2, axis=3)
 

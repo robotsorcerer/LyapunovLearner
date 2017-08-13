@@ -65,47 +65,47 @@ def EM(data, priors0, mu0, sigma0):
     num_iter = 0;
     while (1 and num_iter <= max_iter):
         num_iter +=  1
-      # E-step
-      for i in range(nbStates):
-        # Compute probability p(x|i)
-        Pxi[:,i] = gaussPDF(data, mu[:,i], sigma[:,:,i])
+        # E-step
+        for i in range(nbStates):
+            # Compute probability p(x|i)
+            Pxi[:,i] = gaussPDF(data, mu[:,i], sigma[:,:,i])
 
-      # Compute posterior probability p(i|x)
-      Pix_tmp = np.tile(priors,[nbdata ,1])*Pxi
-      Pix = Pix_tmp / np.tile(np.sum(Pix_tmp,axis=1),[1, nbStates])
-      #Compute cumulated posterior probability
-      E = np.sum(Pix)
-      ## M-step ################################
-      for i in range(nbStates):
-        # Update the priors
-        priors[i] = np.divide(E[i], nbdata)
-        # Update the centers
-        mu[:,i] = data*Pix[:,i] / E[i]
-        # Update the covariance matrices
-        data_tmp1 = data - np.tile(mu[:,i], [1,nbdata])
-        data_tmp2a = np.tile(data_tmp1.reshape(np.r_[nbVar, 1, nbdata]), [1, nbVar, 1])
-        data_tmp2b = np.tile(data_tmp1.reshape(np.r_[1, nbVar, nbdata]), [nbVar, 1, 1])
-        data_tmp2c = np.tile(Pix[:,i].reshape(np.r_[1, 1, nbdata]), [nbVar, nbVar, 1])
-        sigma[:,:,i] = np.sum(data_tmp2a * data_tmp2b * data_tmp2c, axis=2) / E[i]
-        ## Add a tiny variance to avoid numerical instability
-        sigma[:,:,i] += 1e-5 * np.diag(
+        # Compute posterior probability p(i|x)
+        Pix_tmp = np.tile(priors,[nbdata ,1])*Pxi
+        Pix = Pix_tmp / np.tile(np.sum(Pix_tmp,axis=1),[1, nbStates])
+        #Compute cumulated posterior probability
+        E = np.sum(Pix)
+        ## M-step ################################
+        for i in range(nbStates):
+            # Update the priors
+            priors[i] = np.divide(E[i], nbdata)
+            # Update the centers
+            mu[:,i] = data*Pix[:,i] / E[i]
+            # Update the covariance matrices
+            data_tmp1 = data - np.tile(mu[:,i], [1,nbdata])
+            data_tmp2a = np.tile(data_tmp1.reshape(np.r_[nbVar, 1, nbdata]), [1, nbVar, 1])
+            data_tmp2b = np.tile(data_tmp1.reshape(np.r_[1, nbVar, nbdata]), [nbVar, 1, 1])
+            data_tmp2c = np.tile(Pix[:,i].reshape(np.r_[1, 1, nbdata]), [nbVar, nbVar, 1])
+            sigma[:,:,i] = np.sum(data_tmp2a * data_tmp2b * data_tmp2c, axis=2) / E[i]
+            ## Add a tiny variance to avoid numerical instability
+            sigma[:,:,i] += 1e-5 * np.diag(
                                         np.ones((nbVar,1))
                                       )
-      ## Stopping criterion ####################
-      for i in range(nbStates):
-        #Compute the new probability p(x|i)
-        Pxi[:,i] = gaussPDF(data, mu[:,i], sigma[:,:,i])
+        ## Stopping criterion ####################
+        for i in range(nbStates):
+            #Compute the new probability p(x|i)
+            Pxi[:,i] = gaussPDF(data, mu[:,i], sigma[:,:,i])
 
-      # Compute the log likelihood
-      F = Pxi.dot(priors.T)
-      F[F<np.finfo(np.float64).min)] = np.finfo(np.float64).min
-      loglik = np.sum(log(F))
-      # Stop the process depending on the increase of the log likelihood
-      if np.abs((loglik/loglik_old)-1) < loglik_threshold:
-        break
+        # Compute the log likelihood
+        F = Pxi.dot(priors.T)
+        F[np.where(F<np.finfo(np.float64).min)] = np.finfo(np.float64).min
+        loglik = np.sum(log(F))
+        # Stop the process depending on the increase of the log likelihood
+        if np.abs((loglik/loglik_old)-1) < loglik_threshold:
+            break
 
-      loglik_old = loglik
-      nbStep += 1
+        loglik_old = loglik
+        nbStep += 1
 
     # ## EM slow one-by-one computation (better suited to understand the
     # ## algorithm)

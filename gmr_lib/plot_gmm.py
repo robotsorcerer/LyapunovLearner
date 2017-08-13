@@ -36,7 +36,7 @@ def plotGMM(mu, sigma, color, display_mode, *args):
     else:
         lightcolor=args[0]
     if display_mode==1:
-      nbDrawingSeg = 4.T
+      nbDrawingSeg = 40
       t = np.arange(-pi, pi, nbDrawingSeg).T
       for j in range(nbData):
         stdev = LA.sqrtm(3.0*sigma[:,:,j])
@@ -47,17 +47,17 @@ def plotGMM(mu, sigma, color, display_mode, *args):
         plt.hold(True)  #hold on
         plt.plot(X[:,1], X[:,2],'c')
       plt.plot(mu[1,:], mu[2,:], 'cx', linewidth=2, markersize=6)
-  elif display_mode==2:
+    elif display_mode==2:
       nbDrawingSeg = 40
       lightcolor=np.array([0.7, 0.7, 0])
       t = np.arange(-np.pi, np.pi, nbDrawingSeg).T
       for j in range(nbData):
-        stdev = LA.sqrtm(3.0.*sigma[:,:,j]) #1.0->3.0
+        stdev = LA.sqrtm(3.0 * sigma[:,:,j]) #1.0->3.0
         X = np.array([np.cos(t), np.sin(t)]) * stdev.real() + np.tile(mu[:,j].T, [nbDrawingSeg,1])
         # patch(X(:,1), X(:,2), lightcolor, 'LineStyle', 'none');
       plt.hold(True) #hold on
       plt.plot(mu[1,:], mu[2,:], 'cx', lineWidth=3, color=color);
-  elif display_mode==3:
+    elif display_mode==3:
       for j in range(nbData):
         ymax[j] = mu[2,j] + LA.sqrtm(3*sigma[1,1,j])
         ymin[j] = mu[2,j] - LA.sqrtm(3*sigma[1,1,j])

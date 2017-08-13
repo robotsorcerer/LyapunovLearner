@@ -2,7 +2,7 @@ import numpy as np
 from scipy.cluster.vq import vq
 from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
-from .. learn_energy import matlength
+from clfm_lib.learn_energy import matlength
 
 def emInitKmeans(data, nbStates):
     """
@@ -47,7 +47,7 @@ def emInitKmeans(data, nbStates):
       idtmp = np.where(data_id==i)
       priors[i] = matlength(idtmp)
       sigma[:,:,i] = np.cov(
-                            (np.r_[data[:,idtmp] data[:,idtmp]]).T
+                            (np.r_[data[:,idtmp], data[:,idtmp]]).T
                             )
       # Add a tiny variance to avoid numerical instability
       sigma[:,:,i] = sigma[:,:,i] + 1e-5*np.diag(

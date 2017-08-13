@@ -1,4 +1,25 @@
 #! /usr/bin/env python3
+import sys
+import argparse
+import numpy as np
+# import scipy as sp
+import scipy.io as sio
+import scipy.linalg as LA
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+plt.style.use(['presentation', 'fivethirtyeight'])
+
+# path imports
+from os.path import dirname, abspath#, join, sep
+lyap = dirname(dirname(abspath(__file__))) + '/' + 'LyapunovLearner'
+sys.path.append(lyap)
+
+from config import Vxf0, options
+from clfm_lib.learn_energy import learnEnergy
+from clfm_lib.ds_stabilizer import dsStabilizer
+from clfm_lib.compute_energy import computeEnergy
+from gmr_lib.gmr import GMR
+
 """
 Source code for implementing the Learning Control Lyapunov Function paper by Khansari-Zadeh
 
@@ -14,32 +35,19 @@ Written by: Olalekan Ogunmolu
 Date:     August 04, 2017
 """
 
-import sys
-import argparse
-import numpy as np
-# import scipy as sp
-import scipy.io as sio
-import scipy.linalg as LA
-import matplotlib.pyplot as plt
-plt.style.use(['presentation', 'fivethirtyeight'])
-
-# path imports
-from os.path import dirname, abspath#, join, sep
-lyap = dirname(dirname(abspath(__file__))) + '/' + 'LyapunovLearner'
-sys.path.append(lyap)
-
-from config import Vxf0, options
-from clfm_lib.learn_energy import learnEnergy
-from clfm_lib.compute_energy import computeEnergy
-
-def loadSavedMatFile(x):
+def loadSavedMatFile(x, **kwargs):
     matFile = sio.loadmat(x)
 
     # print(matFile)
     data = matFile['Data']
     demoIdx = matFile['demoIndices']
 
-    return data, demoIdx
+    if ('Priors_EM' or 'Mu_EM' or 'Sigma_EM') in kwargs:
+        Priors_EM, Mu_EM, Sigma_EM = matFile['Priors_EM'], matFile['Mu_EM'],
+        matFile['Sigma_EM']
+        return data, demoIdx, Priors_EM, Mu_EM, Sigma_EM
+    else:
+        return data, demoIdx
 
 def guess_init_lyap(data, Vxf0, b_initRandom=False):
     """
@@ -123,11 +131,47 @@ def main():
     h = [h1, h2, h3]
     plt.legend(handles=h,loc=3)
 
-    if args.verbose:
-        print('demoIdx: ', demoIdx)
-        for k, v in Vxf0.items():
-            # print(k, v)
-            pass
+    # if args.verbose:
+    #     print('demoIdx: ', demoIdx)
+    #     for k, v in Vxf0.items():
+    #         # print(k, v)
+    #         pass
+
+    # Simulation
+
+    # A set of options that will be passed to the Simulator. Please type
+    # 'doc preprocess_demos' in the MATLAB command window to get detailed
+    # information about each option.
+    opt_sim = dict()
+    opt_sim['dt']   = 0.01
+    opt_sim['i_max']    = 4000
+    opt_sim['tol']  = 1
+    d = Data.shape[0]/2  #dimension of data
+    x0_all = Data[:d,demoIndices[:-2]]; #finding initial points of all demonstrations
+
+    # load(['ExampleModels/' modelNames{modelNumber}],'Priors_EM','Mu_EM','Sigma_EM')
+    data, demoIdx, Priors_EM, Mu_EM, Sigma_EM = loadSavedMatFile(lyap + '/' + 'example_models/' +
+                                     modelNames[modelNumber], Priors_EM=None,
+                                     Mu_EM=None, Sigma_EM=None)
+
+    # rho0 and kappa0 impose minimum acceptable rate of decrease in the energy
+    # function during the motion. Refer to page 8 of the paper for more information
+    rho0 = 1
+    kappa0 = 0.1
+
+    inp = list(range(Vxf['d']))
+    output = Vxf['d']+ np.array([0, 1]) * Vxf['d']
+    gmr_handle = lambda x: gmr(Priors_EM, Mu_EM, Sigma_EM, x, inp,output)
+    fn_handle = lambda x: dsStabilizer(x,gmr_handle,Vxf,rho0,kappa0)
+
+    x, xd = Simulation(x0_all,np.array(()),fn_handle,opt_sim) #running the simulator
+
+    for i in x.shape[2]:
+        h4 = plt.plot(x[0,:,i],x[1,:,i],'b',linewidth=1.5)
+        h += h4
+    lg = legend(h, ['demonstrations','target','energy levels','reproductions',
+                    'location','southwest','orientation','horizontal']);
+    # set(lg,'position',[0.0673    0.9278    0.8768    0.0571])
 
 if __name__ == '__main__':
     main()

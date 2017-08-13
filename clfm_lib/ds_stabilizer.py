@@ -5,7 +5,7 @@ from .compute_energy import computeEnergy
 
 from inspect import getfullargspec
 
-def DS_stabilizer(x, fn_handle, Vxf, rho0, kappa0, *args):
+def dsStabilizer(x, fn_handle, Vxf, rho0, kappa0, *args):
     d = Vxf['d']
     if (int(X.shape[0]) == 2*d):
         Xd = X[d+1:2*d,:]
@@ -33,21 +33,21 @@ def DS_stabilizer(x, fn_handle, Vxf, rho0, kappa0, *args):
         u[:,ind] = -np.tile(lambder,[d,1]) * Vx[:,ind]
         Xd[:,ind] = Xd[:,ind] + u[:,ind]
 
-     if not args:
-         dt = args[0]
-         xn = X + np.dot(Xd, dt)
-         Vn = computeEnergy(xn,np.array(()),Vxf)
-         ind = Vn >= V
-         i = 0
+    if not args:
+        dt = args[0]
+        xn = X + np.dot(Xd, dt)
+        Vn = computeEnergy(xn,np.array(()),Vxf)
+        ind = Vn >= V
+        i = 0
 
-         while(np.any(ind) and i < 10):
-             alpha = V[ind]/Vn[ind]
-             Xd[:,ind] = np.tile(alpha,[d,1]) * Xd[:,ind] -
-                         np.tile(alpha * np.sum(Xd[:,ind] * 
-                                                Vx[:,ind], axis=0)/norm_Vx[ind],[d,1])*Vx[:,ind]
-             xn = X + np.dot(Xd,dt)
-             Vn = computeEnergy(xn,np.array(()),Vxf)
-             ind = Vn >= V
-             i = i + 1
+        while(np.any(ind) and i < 10):
+            alpha = V[ind]/Vn[ind]
+            Xd[:,ind] = np.tile(alpha,[d,1]) * Xd[:,ind] - \
+                        np.tile(alpha * np.sum(Xd[:,ind] * \
+                        Vx[:,ind], axis=0)/norm_Vx[ind],[d,1])*Vx[:,ind]
+            xn = X + np.dot(Xd,dt)
+            Vn = computeEnergy(xn,np.array(()),Vxf)
+            ind = Vn >= V
+            i = i + 1
 
     return Xd, u
