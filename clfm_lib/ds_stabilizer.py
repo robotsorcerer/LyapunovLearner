@@ -7,7 +7,7 @@ from inspect import getfullargspec
 
 def dsStabilizer(x, fn_handle, Vxf, rho0, kappa0, *args):
     d = Vxf['d']
-    if (int(X.shape[0]) == 2*d):
+    if X.shape[0] == 2*d:
         Xd = X[d+1:2*d,:]
         X = X[:d,:]
     else:
@@ -28,12 +28,12 @@ def dsStabilizer(x, fn_handle, Vxf, rho0, kappa0, *args):
     ind = Vdot + rho >= 0
     u = Xd * 0
 
-    if(np.sum(ind)>0):
+    if np.sum(ind)>0:
         lambder = (Vdot[ind] + rho[ind]) / norm_Vx[ind]
         u[:,ind] = -np.tile(lambder,[d,1]) * Vx[:,ind]
         Xd[:,ind] = Xd[:,ind] + u[:,ind]
 
-    if not args:
+    if args:
         dt = args[0]
         xn = X + np.dot(Xd, dt)
         Vn = computeEnergy(xn,np.array(()),Vxf)

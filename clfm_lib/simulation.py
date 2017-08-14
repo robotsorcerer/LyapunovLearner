@@ -1,5 +1,7 @@
 import numpy as np
 from .learn_energy import matlength
+import matplotlib as mpl
+import matplotlib.pyplot as plt
 
 def Simulation(x0,xT,fn_handle,*args):
     """
@@ -116,9 +118,9 @@ def Simulation(x0,xT,fn_handle,*args):
         for n in range(matlength(obs)):
             x_obs[n] = obs[n].x0
             if not 'extra' in obs[n]:
-                obs[n]['extra']['ind'] = 2;
-                obs[n]['extra']['C_Amp'] = 0.01;
-                obs[n]['extra']['R_Amp'] = 0.0;
+                obs[n]['extra']['ind'] = 2
+                obs[n]['extra']['C_Amp'] = 0.01
+                obs[n]['extra']['R_Amp'] = 0.0
             else:
                 if not 'ind' in obs[n]['extra']:
                     obs[n]['extra']['ind'] = 2
@@ -135,7 +137,7 @@ def Simulation(x0,xT,fn_handle,*args):
 
     #initialization
     for i in range(nbSPoint):
-        x[:,1,i] = x0[:,i]
+        x[:,0,i] = x0[:,i]
     xd = np.zeros(x.shape)
     if xT.shape == x0.shape:
         XT = xT
@@ -151,7 +153,7 @@ def Simulation(x0,xT,fn_handle,*args):
     i=1;
     while True:
         #Finding xd using fn_handle.
-        xd[:,i,:]=fn_handle(squeeze(x(:,i,:))-XT).reshape([d, 1, nbSPoint])
+        xd[:,i,:]=fn_handle(np.squeeze(x(:,i,:))-XT).reshape([d, 1, nbSPoint])
 
         # This part if for the obstacle avoidance module
         if obs_bool:
@@ -173,7 +175,8 @@ def Simulation(x0,xT,fn_handle,*args):
                     xd_obs = 0
 
             for j in range(nbSPoint):
-                xd[:,i,j] b_contour[j] = obs_modulation_ellipsoid(x[:,i,j],xd[:,i,j],obs,b_contour[j],xd_obs)
+                xd[:,i,j] b_contour[j] = obs_modulation_ellipsoid(x[:,i,j], \
+                                            xd[:,i,j],obs,b_contour[j],xd_obs)
 
         # Integration
         x[:,i+1,:]=x[:,i,:]+xd[:,i,:]*options['dt']
@@ -289,80 +292,76 @@ def check_options(args):
 return options
 
 def plot_results(mode,sp,x,xT,args):
-    if isempty(args) || isempty(args{1})
-        b_obs = false;
-    else
-        b_obs = true;
-        obs = args{1};
-    end
-    [d, ~, nbSPoint] = size(x);
-    switch mode
-        case 'i' %initializing the figure
-            if d==2
-                sp.fig = figure('name','2D Simulation of the task','position',[653 550 560 420]);
-                sp.axis = gca;
-                hold on
-                sp.xT = plot(xT(1),xT(2),'k*','EraseMode','none','markersize',10,'linewidth',1.5);
-                sp.xT_l = plot(xT(1),xT(2),'k--','EraseMode','none','linewidth',1.5);
-                for j=1:nbSPoint
-                    plot(x(1,1,j),x(2,1,j),'ok','markersize',2,'linewidth',7.5)
-                    sp.x(j)= plot(x(1,1,j),x(2,1,j),'EraseMode','none');
-                end
-                xlabel('$\xi_1$','interpreter','latex','fontsize',16);
-                ylabel('$\xi_2$','interpreter','latex','fontsize',16);
-                grid on;box on
+    if not args or not args[0]:
+        b_obs = False
+    else:
+        b_obs = True
+        obs = args[0]
+    d, _, nbSPoint = x.shape
+    if mode=='i':
+        if d==2:
+            sp['fig'] = plt.figure(num=0) #,'2D Simulation of the task',figsize=(653 550 560 420)
+            plt.title(r'2D Simulation of the task')
+            sp['axis'] = plt.gca()
+            hold(True)
+            sp['xT'] = plt.plot(xT[0],xT[1],'k*', markersize=10, linewidth=1.5)
+            sp['xT_l'] = plt.plot(xT[0],xT[1],'k--', linewidth=1.5)
+            for j in range(nbSPoint):
+                plot(x[0,0,j],x[1,0,j],'ok',markersize=2,linewidth=7.5)
+                sp['x['str(j)']']= plot(x[0,0,j],x[1,0,j])
+            plt.xlabel(r'$\xi_1$',interpreter=latex,fontsize=16)
+            plt.ylabel(r'$\xi_2$',interpreter=latex,fontsize=16)
+            grid on;box on
 
-                if b_obs
-                    [x_obs x_obs_sf] = obs_draw_ellipsoid(obs,40);
-                    for n=1:size(x_obs,3)
-                        sp.obs(n) = patch(x_obs(1,:,n),x_obs(2,:,n),0.1*ones(1,size(x_obs,2)),[0.6 1 0.6]);
-                        sp.obs_sf(n) = plot(x_obs_sf(1,:,n),x_obs_sf(2,:,n),'k--','linewidth',0.5);
-                    end
-                end
-            elseif d==3
-                sp.fig = figure('name','3D Simulation of the task','position',[653 550 560 420]);
-                sp.axis = gca;
-                hold on
-                sp.xT = plot3(xT(1),xT(2),xT(3),'k*','EraseMode','none','markersize',10,'linewidth',1.5);
-                sp.xT_l = plot3(xT(1),xT(2),xT(3),'k--','EraseMode','none','linewidth',1.5);
-                for j=1:nbSPoint
-                    plot3(x(1,1,j),x(2,1,j),x(3,1,j),'ok','markersize',2,'linewidth',7.5)
-                    sp.x(j)= plot3(x(1,1,j),x(2,1,j),x(3,1,j),'EraseMode','none');
-                end
+            if b_obs:
+                x_obs, x_obs_sf = obs_draw_ellipsoid(obs,40)
+                for n in range(x_obs.shape[3]):
+                    sp['obs'][n] = patch(x_obs[0,:,n],x_obs[1,:,n],0.1*np.ones((1,x_obs.shape[2])),[0.6 1 0.6])
+                    sp['obs_sf'][n] = plot(x_obs_sf[0,:,n],x_obs_sf[1,:,n],'k--',linewidth=0.5)
+        elif d==3:
+            sp['fig'] = figure('name','3D Simulation of the task','position',[653 550 560 420]);
+            sp['axis'] = gca;
+            hold on
+            sp['xT'] = plot3(xT(1),xT(2),xT(3),'k*','EraseMode','none','markersize',10,'linewidth',1.5);
+            sp['xT_l'] = plot3(xT(1),xT(2),xT(3),'k--','EraseMode','none','linewidth',1.5);
+            for j=1:nbSPoint
+                plot3(x(1,1,j),x(2,1,j),x(3,1,j),'ok','markersize',2,'linewidth',7.5)
+                sp['x'][j]= plot3(x(1,1,j),x(2,1,j),x(3,1,j),'EraseMode','none');
+            end
 
-                if b_obs
-                    n_theta = 15;
-                    n_phi = 10;
-                    x_obs = obs_draw_ellipsoid(obs,[n_theta n_phi]);
-                    for n=1:size(x_obs,3)
-                        sp.obs(n) = surf(reshape(x_obs(1,:,n),n_phi,n_theta), reshape(x_obs(2,:,n),n_phi,n_theta), reshape(x_obs(3,:,n),n_phi,n_theta));
-                        set(sp.obs(n),'FaceColor',[0.6 1 0.6],'linewidth',0.1)
-                    end
-                end
-                xlabel('$\xi_1$','interpreter','latex','fontsize',16);
-                ylabel('$\xi_2$','interpreter','latex','fontsize',16);
-                zlabel('$\xi_3$','interpreter','latex','fontsize',16);
-                grid on
-                view(-28,44)
-            else
-                sp.fig = figure('name','Simulation of the task','position',[542   146   513   807]);
-                for i=2:d
-                    sp.axis(i-1)=subplot(d-1,1,i-1);
-                    hold on
-                    sp.xT(i-1) = plot(xT(1),xT(i),'k*','EraseMode','none','markersize',10,'linewidth',1.5);
-                    sp.xT_l(i-1) = plot(xT(1),xT(i),'k--','EraseMode','none','linewidth',1.5);
-                    for j=1:nbSPoint
-                        plot(x(1,1,j),x(i,1,j),'ok','markersize',2,'linewidth',7.5);
-                        sp.x(i-1,j)= plot(x(1,1,j),x(i,1,j),'EraseMode','none');
-                    end
-                    ylabel(['$\xi_' num2str(i) '$'],'interpreter','latex','fontsize',12);
-                    grid on
-                    if i==d
-                        xlabel(['$\xi_' num2str(1) '$'],'interpreter','latex','fontsize',12);
-                    end
-                    grid on;box on
+            if b_obs
+                n_theta = 15;
+                n_phi = 10;
+                x_obs = obs_draw_ellipsoid(obs,[n_theta n_phi]);
+                for n=1:size(x_obs,3)
+                    sp.obs(n) = surf(reshape(x_obs(1,:,n),n_phi,n_theta), reshape(x_obs(2,:,n),n_phi,n_theta), reshape(x_obs(3,:,n),n_phi,n_theta));
+                    set(sp.obs(n),'FaceColor',[0.6 1 0.6],'linewidth',0.1)
                 end
             end
+            xlabel('$\xi_1$','interpreter','latex','fontsize',16);
+            ylabel('$\xi_2$','interpreter','latex','fontsize',16);
+            zlabel('$\xi_3$','interpreter','latex','fontsize',16);
+            grid on
+            view(-28,44)
+        else
+            sp.fig = figure('name','Simulation of the task','position',[542   146   513   807]);
+            for i=2:d
+                sp.axis(i-1)=subplot(d-1,1,i-1);
+                hold on
+                sp.xT(i-1) = plot(xT(1),xT(i),'k*','EraseMode','none','markersize',10,'linewidth',1.5);
+                sp.xT_l(i-1) = plot(xT(1),xT(i),'k--','EraseMode','none','linewidth',1.5);
+                for j=1:nbSPoint
+                    plot(x(1,1,j),x(i,1,j),'ok','markersize',2,'linewidth',7.5);
+                    sp.x(i-1,j)= plot(x(1,1,j),x(i,1,j),'EraseMode','none');
+                end
+                ylabel(['$\xi_' num2str(i) '$'],'interpreter','latex','fontsize',12);
+                grid on
+                if i==d
+                    xlabel(['$\xi_' num2str(1) '$'],'interpreter','latex','fontsize',12);
+                end
+                grid on;box on
+            end
+        end
 
         case 'u' %updating the figure
             if gcf ~= sp.fig
