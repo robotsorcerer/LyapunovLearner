@@ -53,7 +53,7 @@ def guess_init_lyap(data, Vxf0, b_initRandom=False):
     """
     This function guesses the initial lyapunov function
     """
-
+    # print('Vxf0: ', Vxf0)
     # allocate spaces for incoming arrays
     Vxf0['Mu']  =  np.zeros(( Vxf0['d'], Vxf0['L']+1 )) # will be 2x2
     Vxf0['P']   =  np.zeros(( Vxf0['d'], Vxf0['d'], Vxf0['L']+1)) # wil be 2x2x3
@@ -89,11 +89,13 @@ def guess_init_lyap(data, Vxf0, b_initRandom=False):
         for l in range(Vxf0['L']+1):
             Vxf0['P'][:,:,l] = np.eye((Vxf0['d']))
 
+    Vxf0.update(Vxf0)
+
     return Vxf0
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--modelNumber', type=int, default=1, help="can be 0 or 1")
+    parser.add_argument('--modelNumber', type=int, default=0, help="can be 0 or 1")
     parser.add_argument('--verbose', action='store_true')
     args = parser.parse_args()
 
@@ -103,12 +105,27 @@ def main():
     data, demoIdx = loadSavedMatFile(lyap + '/' + 'example_models/' + modelNames[modelNumber])
 
     global Vxf0
-    Vxf0['L'] = modelNumber
+    # Vxf0.update
+    Vxf_main = dict()
+    if modelNumber == 0:
+        Vxf0['L'] = 2   # number of asymmetric quadratic components for L >= 0
+    elif modelNumber == 1:
+        Vxf0['L'] = 1   # number of asymmetric quadratic components for L >= 0
     Vxf0['d'] = int(data.shape[0]/2)
+    Vxf0.update(Vxf0)
+    # A set of options that will be passed to the solver
+    options = {
+        'tol_mat_bias': 1e-1,
+        'display': 1,
+        'tol_stopping': 1e-10,
+        'max_iter':500,
+        'optimizePriors': True,
+        'upperBoundEigenValue': True
+    }
 
-    Vxf0 = guess_init_lyap(data, Vxf0)
+    Vxf0 = guess_init_lyap(data, Vxf0, b_initRandom=False)
     # for k, v in Vxf0.items():
-    #     print(k, v)
+    # print('options: ', options)
     Vxf = learnEnergy(Vxf0, data, options)
 
     # plot the result

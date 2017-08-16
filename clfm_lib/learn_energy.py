@@ -6,7 +6,7 @@ import numpy.random as npr
 import scipy.linalg as linalg
 
 from inspect import currentframe, getframeinfo
-# import cvxpy as cvx
+import cvxpy as cvx
 from cvxopt import solvers, matrix, spdiag, div # to solve convex problems
 
 
@@ -28,40 +28,6 @@ def matlength(x):
   # find the max of a numpy matrix dims
   return np.max(x.shape)
 
-def shape_DS(p,d,L,options):
-  # transforming the column of parameters into Priors, Mu, and P
-  P = np.zeros((d,d,L+1))
-
-  if L == 0:
-      Priors = 1
-      Mu = np.zeros((d,1))
-      i_c = 1
-  else:
-      if options['optimizePriors']:
-          Priors = p[:L+1]
-          i_c = L+1
-      else:
-          Priors = np.ones((L+1,1))
-          i_c = 0
-
-      Priors = np.divide(Priors, np.sum(Priors))
-      Mu = np.hstack((np.zeros((d,1)), p[[i_c+ x for x in range(d*L)]].reshape(d,L)))
-      i_c = i_c+d*L+1
-
-  for k in range(L):
-    # print('p shape: ', p.shape)
-    # print('i_c: {}, k: {}, d: {}, '.format(i_c, k, d))
-    # print('range: ', range(i_c+k*(d**2),i_c+(k+1)*(d**2)-1))
-    # print('p range: \n', p[range(i_c+k*(d**2),i_c+(k+1)*(d**2)-1)])
-    P[:,:,k+1] = p[range(i_c+k*(d**2)-1,i_c+(k+1)*(d**2)-1)].reshape(d,d)
-
-  Vxf           = dict()
-  Vxf['Priors'] = Priors
-  Vxf['Mu']     = Mu
-  Vxf['P']      = P
-  Vxf['SOS']    = 0
-
-  return Vxf
 
 def ctr_eigenvalue(p,d,L,options):
   # This function computes the derivative of the constrains w.r.t.
@@ -69,10 +35,10 @@ def ctr_eigenvalue(p,d,L,options):
   Vxf = dict()
   if L == -1: # SOS
       Vxf['d'] = d
-      Vxf['n'] = np.sqrt(matlength(p)/d**2)
+      Vxf['n'] = int(np.sqrt(matlength(p)/d**2))
       Vxf['P'] = p.reshape(Vxf['n']*d,Vxf['n']*d)
       Vxf['SOS'] = 1
-      c  = np.zeros(Vxf['n']*d,1)
+      c  = np.zeros(( Vxf['n']*d, 1 ))
       ceq = np.array(())
   else:
       Vxf = shape_DS(p,d,L,options)
@@ -136,7 +102,7 @@ def gmm_2_parameters(Vxf, options):
 
 def parameters_2_gmm(popt, d, L, options):
   # transforming the column of parameters into Priors, Mu, and P
-  Vxf = shape_DS(popt, d, L, options);
+  Vxf = shape_DS(popt, d, L, options)
 
   return Vxf
 
@@ -220,6 +186,42 @@ def check_constraints(p,ctr_handle,d,L,options):
       sys.stdout.write('Increasing the number of P could be also helpful.')
       sys.stdout.write(' ')
       sys.stdout.write(' ')
+
+def shape_DS(p,d,L,options):
+  # transforming the column of parameters into Priors, Mu, and P
+  P = np.zeros((d,d,L+1))
+  optimizePriors = options['optimizePriors']
+  # print('options', optimizePriors)
+  if L == 0:
+      Priors = 1
+      Mu = np.zeros((d,1))
+      i_c = 1
+  else:
+      if optimizePriors: #options['optimizePriors']:
+          Priors = p[:L+1]
+          i_c = L+1
+      else:
+          Priors = np.ones((L+1,1))
+          i_c = 0
+
+      Priors = np.divide(Priors, np.sum(Priors))
+      Mu = np.hstack((np.zeros((d,1)), p[[i_c+ x for x in range(d*L)]].reshape(d,L)))
+      i_c = i_c+d*L+1
+
+  for k in range(L):
+    # print('p shape: ', p.shape)
+    # print('i_c: {}, k: {}, d: {}, '.format(i_c, k, d))
+    # print('range: ', range(i_c+k*(d**2),i_c+(k+1)*(d**2)-1))
+    # print('p range: \n', p[range(i_c+k*(d**2),i_c+(k+1)*(d**2)-1)])
+    P[:,:,k+1] = p[range(i_c+k*(d**2)-1,i_c+(k+1)*(d**2)-1)].reshape(d,d)
+
+  Vxf           = dict()
+  Vxf['Priors'] = Priors
+  Vxf['Mu']     = Mu
+  Vxf['P']      = P
+  Vxf['SOS']    = 0
+
+  return Vxf
 
 
 def learnEnergy(Vxf0, Data, options):
@@ -320,6 +322,7 @@ def learnEnergy(Vxf0, Data, options):
   d = int(Data.shape[0]/2)  # dimension of model
   x = Data[:d,:]     # state space
   xd = Data[d:2*d,:]    # derivatives of the state space
+  print('x: ', x.shape, 'xd ', xd.shape)
   Vxf0['SOS'] = False
 
   # Optimization
@@ -352,89 +355,72 @@ def learnEnergy(Vxf0, Data, options):
     ceq are the equality constraints
     dc and dceq are the corresponding derivatives
   """
+  def optimize(p0, d, L, w, options):
+    # print('Vxf', Vxf)
+    # n, T = Vxf['n'], options['max_iter']
 
-  w = Vxf0['w']
-  L = Vxf0['L']
-  # am = matrix(x)
-  def obj(a=None, z=None): # z is positive d mat (mnl+1, 1)
-    # This function computes the derivative of the likelihood objective function
-    # w.r.t. optimization parameters.
-    # a = p0 if a==None else None
-    # a = matrix(x) if a==None else None
-    # z = matrix(np.empty((L+1, 1))) if a is None else None
-    # print('a: ', a, ' z: ', z)
-
-    Vxf = dict()
+    # x = cvx.Variable(n, T+1)   # states of the system
+    # for t in range(T):
     if L == -1: #SOS
-        Vxf['n']    = np.sqrt(matlength(p)/d**2)
-        Vxf['d']    = d
-        Vxf['P']    = p.reshape(Vxf['n']*d,Vxf['n']*d)
-        Vxf['SOS']  = 1
+      Vxf['n']    = np.sqrt(matlength(p)/d**2)
+      Vxf['d']    = d
+      Vxf['P']    = p.reshape(Vxf['n']*d,Vxf['n']*d)
+      Vxf['SOS']  = 1
     else:
-        Vxf = shape_DS(p0,d,L,options)
-
+      Vxf = shape_DS(p0,d,L,options)
+      Vxf.update(Vxf)
     _, Vx         = computeEnergy(x,np.array(()), Vxf, nargout=2)
-    # print('\nVxf[p]: \n', Vxf['P'])
-    Vdot          = np.sum(Vx.T*xd, axis=0)  #derivative of J w.r.t. xd
+    # xd will be 2 x 750
+    # Vx should be (2, 750),
+    # Vdot  (750,) for expt 0,
+    Vdot          = np.sum(Vx*xd, axis=0)  #derivative of J w.r.t. xd
     norm_Vx       = np.sqrt(np.sum(Vx * Vx, axis=0))
-    norm_xd       = np.sqrt(np.sum(xd*xd, axis=0))
-    butt          = norm_Vx * np.expand_dims(norm_xd, axis=1)
-    print('Vx: {}, Vdot, {} norm_Vx, {}, xd*xd: {}, norm_xd: {}, butt: {}'.format(Vx.shape, Vdot.shape,
-                    norm_Vx.shape, (xd*xd).shape, norm_xd.shape, butt.shape) )
+    norm_xd       = np.sqrt(np.sum(xd * xd, axis=0))
+    # print('Vx: {}, Vdot, {} norm_Vx, {}, xd: {}, norm_xd: {}, butt: {}'.format(Vx.shape, Vdot.shape,
+    #                   norm_Vx.shape, (xd).shape, norm_xd.shape, butt.shape) )
+    # x:  (2, 750), xd  (2, 750)
+    # Vx: (2, 750), Vdot, (750,) norm_Vx, (750,), norm_xd: (750,), xd: (2, 750), butt: (750, 750)
+    # expand arrays to fit suppose shape
+    Vdot      = np.expand_dims(Vdot, axis=0)
+    norm_Vx   = np.expand_dims(norm_Vx, axis=0)
+    norm_xd   = np.expand_dims(norm_xd, axis=0)
+    butt          = norm_Vx * norm_xd
     # w was added by Lekan to regularize the invalid values in butt
-    J             = np.expand_dims(Vdot, axis=1) / (butt + w)
+    J             = Vdot / (butt + w)
     J[np.where(norm_xd==0)] = 0
     J[np.where(norm_Vx==0)] = 0
     J[np.where(Vdot>0)]     = J[np.where(Vdot>0)]**2      # solves psi(t,n)**2
-    J[np.where(Vdot<0)]     = -w*J[np.where(Vdot<0)]**2   # solves second component in J term
-    J             = np.sum(J)
-    dJ            = np.array(())
+    J[np.where(Vdot<0)]     = -w*J[np.where(Vdot<0)]**2   # # J should be (1, 750)
+    # print('J: ', J.shape)
+    J = np.sum(J, axis=1) # Jsum would be of shape (1,)
+    print('J sum: ', J[0])
 
-    """
-    F() returns a tuple (m, x0), where m is the number of nonlinear constraints
-    and x_0 is a point in the domain of f. x0 is a dense real matrix of size (n, 1)
+    # print('Vxf: ', -Vxf['P'], 'L: ', L)
+    constraints = []
+    for l in range(L):
+        constraints.append(cvx.Parameter(Vxf['P'][:,:,l]>=0))
+    # The 'minimize' objective must resolve to a scalar.
+    J_var = cvx.Variable(cvx.vec(J))
+    obj   = cvx.Minimize(sum( J ) )
+    prob  = cvx.Problem(obj, constraints)
+    optionsAlg = {
+        'maxiters': options['max_iter'],
+        'show_progress': True,
+        'refinement': 1,
+        'abstol': 1e-12,
+        'reltol':  1e-10,
+        'feastol': 1e-7,
+      }
+    prob.solve(solver=CVXOPT, verbose=True, options=optionsAlg)
+    # prob.solve()
 
-    F(x), with x a dense real matrix of size (n, 1), returns a tuple (f, Df).
-    f is a dense real matrix of size (m+1, 1),
-    Df is a dense or sparse real matrix of size (m + 1, n)
+    return prob#.status, prob.value, J.value
 
-    F(x,z), with x a dense real matrix of size (n, 1) and z a positive dense
-    real matrix of size (m + 1, 1) returns a tuple (f, Df, H).
-    H is a square dense or sparse real matrix of size (n, n)
-    """
-    m, n = Vx.shape[1]-1, 1
-    if a is None: return matrix(0.0, (m+1,1)), matrix(0.0, (m+1,n))
-    if z is None: return matrix(0.0, (m+1,1)), matrix(0.0, (m+1,n)), matrix(0.0, (n,n))
-    # H is actually                           1
-    #               --------------------------------------------------------[nabla_{\zeta,\theta} V(\zeta^{t,n}; \theta)]
-    #               || \nabla_\zeta V(\zeta^{t,n}; \theta)|| ||\zeta^{t,n}||
-    # H = spdiag(2 * z[0] * J)   # approximate the Hessian for now
-    # translate to cvxopt-like dense matrices
-    if use_convex:
-      return matrix(J), matrix(dJ), matrix(dJ)
-    else:
-      return J, dJ, dJ # approx hessian with dJ for now
+  w = Vxf0['w']
+  L = Vxf0['L']
 
-  # mnl, x0 = obj()
-  # print('x0: {}, mnl: {}'.format(x.size, mnl.size))
-  Vxf = shape_DS(p0,d,L,options)
-  # print('L: ', L)
-  # allocate sol for all data demos
-  sol = np.zeros((L+1, 1))
-  # print('c: ', c)
-  for l in range(L):
-    G     = matrix(-Vxf['P'][:,:,l], tc='d') #matrix(np.ones((6, d)))
-    h     = matrix(0., (d, 1), tc='d')  # matrix(c, tc='d')
-    print('G: \n', G, G.size)
-    print('h: \n', h, h.size)
-    dims  = {
-             'l': h.size[0], #0, # l is h.size[0]
-             'q': [], #[d], # a list with the dimensions of the second-order cones (positive integers).
-             's': [], # a list with the dimensions of the positive semidefinite cones (nonnegative integers)
-             }
-    sol   = solvers.cp(obj, G, h)#, dims)
-  print('sol: ', sol)
-  popt, J = sol['x'], sol['primal objective']
+  opt_res = optimize(p0, Vxf0['d'], Vxf0['L'], Vxf0['w'], options)
+  print('status: {}, value: {}', opt_res.status, opt_res.value)
 
   if Vxf0['SOS']:
     Vxf['d']    = d

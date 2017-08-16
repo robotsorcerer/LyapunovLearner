@@ -3,10 +3,12 @@ import numpy as np
 import scipy as sp
 import scipy.sparse as spr
 
+from .learn_energy import matlength
+
 # from .classify_bounds_on_vars import classifyBoundsOnVars
 
-def matlength(x):
-  return np.max(x.shape)
+# def matlength(x):
+#   return np.max(x.shape)
 
 def checkbbounds(xin,lbin,ubin,nvars):
 
@@ -482,8 +484,10 @@ def fmincon(FUN,X,NONLCON,options,*args):
      OUTPUT['iterations'] = 0
      OUTPUT['funcCount'] = 0
      OUTPUT['stepsize'] = np.array(())
-     if (OUTPUT['algorithm']=='activeSet') or (OUTPUT['algorithm']=='sqp')or (OUTPUT['algorithm']=='sqpLegacy'):
-         OUTPUT['lssteplength'] = np.array(())
+     if (OUTPUT['algorithm']=='activeSet') or \
+        (OUTPUT['algorithm']=='sqp') or \
+        (OUTPUT['algorithm']=='sqpLegacy'):
+        OUTPUT['lssteplength'] = np.array(())
      else: #% trust-region-reflective, interior-point
          OUTPUT['cgiterations'] = np.array(())
 
@@ -664,21 +668,8 @@ def fmincon(FUN,X,NONLCON,options,*args):
         violatedUpperBnds_idx = XOUT[xIndices['finiteUb'] >= u[xIndices['finiteUb']]
         if np.any(violatedLowerBnds_idx) or np.any(violatedUpperBnds_idx) or np.any(violatedFixedBnds_idx):
           XOUT = NotImplemented #shiftInitPtToInterior(sizes['nVar'], XOUT, l, u, np.inf);
-          X = XOUT;
-          shiftedX0 = True;
-
-  # Display that x0 was shifted in order to honor bounds
-  # if shiftedX0
-  #     if verbosity >= 3
-  #         if strcmpi(OUTPUT.algorithm,interiorPoint)
-  #             fprintf(getString(message('optimlib:fmincon:ShiftX0StrictInterior')));
-  #             fprintf('\n');
-  #         else
-  #             fprintf(getString(message('optimlib:fmincon:ShiftX0ToBnds')));
-  #             fprintf('\n');
-  #         end
-  #     end
-  # end
+          X = XOUT
+          shiftedX0 = True
 
   # Evaluate function
   initVals['g'] = np.zeros((sizes['nVar'],1))
@@ -693,9 +684,9 @@ def fmincon(FUN,X,NONLCON,options,*args):
   if FUN['fungradhess']:
     initVals['f'], initVals['g'], HESSIAN = FUN(X, args)
 
-  # if FUN['fun_then_grad']:
-  #    initVals['f'] = FUN(X, args)
-  #    initVals['g'] = feval(funfcn{4},X, args);
+  if FUN['fun_then_grad']:
+     initVals['f'] = FUN(X, args)
+    #  initVals['g'] = lambda X: funfcn[3],X, args);
   #    catch userFcn_ME
   #         optim_ME = MException('optimlib:fmincon:GradientError', ...
   #             getString(message('optimlib:fmincon:GradientError')));
@@ -742,183 +733,175 @@ def fmincon(FUN,X,NONLCON,options,*args):
             'optimlib:commonMsgs:InvalidSizeOfGradient', sizes['nVar'])
 
   # Evaluate constraints
-  switch confcn{1}
-  case 'fun'
+  if confcn[0]=='fun':
       try
-          [ctmp,ceqtmp] = feval(confcn{3},X,varargin{:});
-      catch userFcn_ME
-          if strcmpi('MATLAB:maxlhs',userFcn_ME.identifier)
-                  sys.stdout.write('optimlib:fmincon:InvalidHandleNonlcon')
-          else
-              optim_ME = MException('optimlib:fmincon:NonlconError', ...
-                  getString(message('optimlib:fmincon:NonlconError')));
-              userFcn_ME = addCause(userFcn_ME,optim_ME);
-              rethrow(userFcn_ME)
-          end
-      end
-      initVals.ncineq = ctmp(:);
-      initVals.nceq = ceqtmp(:);
-      initVals.gnc = zeros(sizes.nVar,length(initVals.ncineq));
-      initVals.gnceq = zeros(sizes.nVar,length(initVals.nceq));
-  case 'fungrad'
-     try
-        [ctmp,ceqtmp,initVals.gnc,initVals.gnceq] = feval(confcn{3},X,varargin{:});
-     catch userFcn_ME
-         optim_ME = MException('optimlib:fmincon:NonlconError', ...
-             getString(message('optimlib:fmincon:NonlconError')));
-         userFcn_ME = addCause(userFcn_ME,optim_ME);
-         rethrow(userFcn_ME)
-     end
-     initVals.ncineq = ctmp(:);
-     initVals.nceq = ceqtmp(:);
-  case 'fun_then_grad'
-      try
-          [ctmp,ceqtmp] = feval(confcn{3},X,varargin{:});
-      catch userFcn_ME
-          optim_ME = MException('optimlib:fmincon:NonlconError', ...
-              getString(message('optimlib:fmincon:NonlconError')));
-          userFcn_ME = addCause(userFcn_ME,optim_ME);
-          rethrow(userFcn_ME)
-      end
-      initVals.ncineq = ctmp(:);
-      initVals.nceq = ceqtmp(:);
-      try
-          [initVals.gnc,initVals.gnceq] = feval(confcn{4},X,varargin{:});
-      catch userFcn_ME
-          optim_ME = MException('optimlib:fmincon:NonlconFunOrGradError', ...
-              getString(message('optimlib:fmincon:NonlconFunOrGradError')));
-          userFcn_ME = addCause(userFcn_ME,optim_ME);
-          rethrow(userFcn_ME)
-      end
-  case ''
-     % No nonlinear constraints. Reshaping of empty quantities is done later
-     % in this file, where both cases, (i) no nonlinear constraints and (ii)
-     % nonlinear constraints that have one type missing (equalities or
-     % inequalities), are handled in one place
-     initVals.ncineq = [];
-     initVals.nceq = [];
-     initVals.gnc = [];
-     initVals.gnceq = [];
-  otherwise
+          ctmp,ceqtmp = confcn[2](X,args)
+      except:
+          pass
+        #   if 'MATLAB:maxlhs'==userFcn_ME.identifier
+        #           sys.stdout.write('optimlib:fmincon:InvalidHandleNonlcon')
+        #   else
+        #       optim_ME = MException('optimlib:fmincon:NonlconError', ...
+        #           getString(message('optimlib:fmincon:NonlconError')));
+        #       userFcn_ME = addCause(userFcn_ME,optim_ME);
+        #       rethrow(userFcn_ME)
+      initVals['ncineq'] = ctmp.flatten()
+      initVals['nceq'] = ceqtmp.flatten()
+      initVals['gnc'] = np.zeros((sizes['nVar'],matlength(initVals['ncineq'])))
+      initVals['gnceq'] = np.zeros((sizes['nVar'],matlength(initVals['nceq'])))
+  elif  confcn[0]=='fungrad':
+     try:
+        ctmp,ceqtmp,initVals['gnc'],initVals['gnceq'] = confcn[2](X,args)
+     except:
+        raise NotImplementedError
+    #  catch userFcn_ME
+    #      optim_ME = MException('optimlib:fmincon:NonlconError', ...
+    #          getString(message('optimlib:fmincon:NonlconError')));
+    #      userFcn_ME = addCause(userFcn_ME,optim_ME);
+    #      rethrow(userFcn_ME)
+    #  end
+     initVals['ncineq'] = ctmp.flatten()
+     initVals['nceq'] = ceqtmp.flatten()
+ elif confcn[0]== 'fun_then_grad':
+      try:
+          ctmp,ceqtmp = confcn[2](X, args)
+      except RuntimeWarning:
+          print('optimlib:fmincon:NonlconError', +
+               'optimlib:fmincon:NonlconError')
+      initVals['ncineq'] = ctmp.flatten()
+      initVals['nceq'] = ceqtmp.flatten()
+      try:
+          initVals['gnc'],initVals['gnceq'] = confcn[3](X,args)
+      except:
+          print('optimlib:fmincon:NonlconFunOrGradError', +
+              'optimlib:fmincon:NonlconFunOrGradError')
+  elif confcn== '':
+     # No nonlinear constraints. Reshaping of empty quantities is done later
+     # in this file, where both cases, (i) no nonlinear constraints and (ii)
+     # nonlinear constraints that have one type missing (equalities or
+     # inequalities), are handled in one place
+     initVals['ncineq'] = np.array([])
+     initVals['nceq'] = np.array([])
+     initVals['gnc'] = np.array([])
+     initVals['gnceq'] = np.array([])
+ else:
      sys.stdout.write('optimlib:fmincon:UndefinedCallType'))
-  end
 
-  % Check for non-double data typed values returned by user functions
-  if ~isempty( isoptimargdbl('FMINCON', {'f','g','H','c','ceq','gc','gceq'}, ...
-     initVals.f, initVals.g, HESSIAN, initVals.ncineq, initVals.nceq, initVals.gnc, initVals.gnceq) )
-      error('optimlib:fmincon:NonDoubleFunVal',getString(message('optimlib:commonMsgs:NonDoubleFunVal','FMINCON')));
-  end
+  # Check for non-double data typed values returned by user functions
+  # if not ( isoptimargdbl('FMINCON', {'f','g','H','c','ceq','gc','gceq'}, ...
+  #    initVals.f, initVals.g, HESSIAN, initVals.ncineq, initVals.nceq, initVals.gnc, initVals.gnceq) )
+  #     error('optimlib:fmincon:NonDoubleFunVal',getString(message('optimlib:commonMsgs:NonDoubleFunVal','FMINCON')));
+  # end
 
-  sizes.mNonlinEq = length(initVals.nceq);
-  sizes.mNonlinIneq = length(initVals.ncineq);
+  sizes['mNonlinEq'] = matlength(initVals['nceq'])
+  sizes['mNonlinIneq'] = matlength(initVals['ncineq'])
 
-  % Make sure empty constraint and their derivatives have correct sizes (not 0-by-0):
-  if isempty(initVals.ncineq)
-      initVals.ncineq = reshape(initVals.ncineq,0,1);
-  end
-  if isempty(initVals.nceq)
-      initVals.nceq = reshape(initVals.nceq,0,1);
-  end
-  if isempty(initVals.gnc)
-      initVals.gnc = reshape(initVals.gnc,sizes.nVar,0);
-  end
-  if isempty(initVals.gnceq)
-      initVals.gnceq = reshape(initVals.gnceq,sizes.nVar,0);
-  end
-  [cgrow,cgcol] = size(initVals.gnc);
-  [ceqgrow,ceqgcol] = size(initVals.gnceq);
+  # Make sure empty constraint and their derivatives have correct sizes['(']not 0-by-0):
+  if not initVals['ncineq']:
+      initVals['ncineq'] = initVals['ncineq'].reshape(0,1)
+  if not initVals['nceq']:
+      initVals['nceq'] = initVals['nceq'].reshape(0,1)
+  if not initVals['gnc']:
+      initVals['gnc'] = initVals['gnc'].reshape(sizes['nVar'],0)
+  if not initVals['gnceq']:
+      initVals['gnceq'] = initVals['gnceq'].reshape(sizes['nVar'],0);
 
-  if cgrow ~= sizes.nVar || cgcol ~= sizes.mNonlinIneq
-     sys.stdout.write('optimlib:fmincon:WrongSizeGradNonlinIneq', sizes.nVar, sizes.mNonlinIneq)
-  end
-  if ceqgrow ~= sizes.nVar || ceqgcol ~= sizes.mNonlinEq
-     sys.stdout.write('optimlib:fmincon:WrongSizeGradNonlinEq', sizes.nVar, sizes.mNonlinEq)
-  end
+  cgrow,cgcol = size(initVals['gnc'])
+  ceqgrow,ceqgcol = size(initVals['gnceq'])
 
-  if diagnostics
-     % Do diagnostics on information so far
-     diagnose('fmincon',OUTPUT,flags.grad,flags.hess,flags.constr,flags.gradconst,...
-        XOUT,sizes.mNonlinEq,sizes.mNonlinIneq,lin_eq,lin_ineq,l,u,funfcn,confcn);
-  end
+  if cgrow != sizes['nVar'] or cgcol != sizes['mNonlinIneq']:
+     sys.stdout.write('optimlib:fmincon:WrongSizeGradNonlinIneq', sizes['nVar'], sizes['mNonlinIneq'])
 
-  % Create default structure of flags for finitedifferences:
-  % This structure will (temporarily) ignore some of the features that are
-  % algorithm-specific (e.g. scaling and fault-tolerance) and can be turned
-  % on later for the main algorithm.
-  finDiffFlags.fwdFinDiff = strcmpi(options.FinDiffType,'forward');
-  finDiffFlags.scaleObjConstr = false; % No scaling for now
-  finDiffFlags.chkFunEval = false;     % No fault-tolerance yet
-  finDiffFlags.chkComplexObj = false;  % No need to check for complex values
-  finDiffFlags.isGrad = true;          % Scalar objective
+  if ceqgrow != sizes['nVar'] or ceqgcol != sizes['mNonlinEq']:
+     sys.stdout.write('optimlib:fmincon:WrongSizeGradNonlinEq', sizes['nVar'], sizes['mNonlinEq'])
+
+  # if diagnostics:
+  #    # Do diagnostics on information so far
+  #    diagnose('fmincon',OUTPUT,flags.grad,flags.hess,flags.constr,flags.gradconst,...
+  #       XOUT,sizes.mNonlinEq,sizes.mNonlinIneq,lin_eq,lin_ineq,l,u,funfcn,confcn);
+
+  # Create default structure of flags for finitedifferences:
+  # This structure will (temporarily) ignore some of the features that are
+  # algorithm-specific (e.g. scaling and fault-tolerance) and can be turned
+  # on later for the main algorithm.
+  finDiffFlags['fwdFinDiff'] = options['FinDiffType']='forward');
+  finDiffFlags['scaleObjConstr'] = False     # No scaling for now
+  finDiffFlags['chkFunEval'] = False         # No fault-tolerance yet
+  finDiffFlags['chkComplexObj'] = False      # No need to check for complex values
+  finDiffFlags['isGrad'] = True              # Scalar objective
 
 
-  % For parallel finite difference (if needed) we need to send the function
-  % handles now to the workers. This avoids sending the function handles in
-  % every iteration of the solver. The output from 'setOptimFcnHandleOnWorkers'
-  % is a onCleanup object that will perform cleanup task on the workers.
-  UseParallel = optimget(options,'UseParallel',defaultopt,'fast');
-  cleanupObj = setOptimFcnHandleOnWorkers(UseParallel,funfcn,confcn); %#ok<NASGU>
+  # For parallel finite difference (if needed) we need to send the function
+  # handles now to the workers. This avoids sending the function handles in
+  # every iteration of the solver. The output from 'setOptimFcnHandleOnWorkers'
+  # is a onCleanup object that will perform cleanup task on the workers.
+  UseParallel = defaultopt['UseParallel']
+  # cleanupObj = setOptimFcnHandleOnWorkers(UseParallel,funfcn,confcn); %#ok<NASGU>
 
-  % Check derivatives
-  if derivativeCheck && ...               % User wants to check derivatives...
-     (flags.grad || ...                   % of either objective or ...
-     flags.gradconst && sizes.mNonlinEq+sizes.mNonlinIneq > 0) % nonlinear constraint function.
-      validateFirstDerivatives(funfcn,confcn,X, ...
-          l,u,options,finDiffFlags,sizes,varargin{:});
-  end
+  # Check derivatives
+  if (derivativeCheck and \
+    # User wants to check derivatives...
+     (flags['grad'] or \
+      # of either objective or ...
+     flags['gradconst'] and sizes['mNonlinEq']+sizes['mNonlinIneq'] > 0)): # nonlinear constraint function.
+    #   validateFirstDerivatives(funfcn,confcn,X, ...
+    pass
 
-  % call algorithm
-  if strcmpi(OUTPUT.algorithm,activeSet) % active-set
-      defaultopt.MaxIter = 400; defaultopt.MaxFunEvals = '100*numberofvariables'; defaultopt.TolX = 1e-6;
-      defaultopt.Hessian = 'off';
-      problemInfo = []; % No problem related data
-      [X,FVAL,LAMBDA,EXITFLAG,OUTPUT,GRAD,HESSIAN]=...
+
+  # call algorithm
+  if OUTPUT['algorithm']==activeSet) # active-set
+      defaultopt['MaxIter'] = 400; defaultopt['MaxFunEvals'] = 100*numberofvariables;
+      defaultopt['TolX'] = 1e-6;
+      defaultopt['Hessian'] = 'off';
+      problemInfo = np.array(()); % No problem related data
+      X,FVAL,LAMBDA,EXITFLAG,OUTPUT,GRAD,HESSIAN= \
           nlconst(funfcn,X,l,u,full(A),B,full(Aeq),Beq,confcn,options,defaultopt, ...
           finDiffFlags,verbosity,flags,initVals,problemInfo,optionFeedback,varargin{:});
-  elseif strcmpi(OUTPUT.algorithm,trustRegionReflective) % trust-region-reflective
-     if (strcmpi(funfcn{1}, 'fun_then_grad_then_hess') || strcmpi(funfcn{1}, 'fungradhess'))
-        Hstr = [];
-     elseif (strcmpi(funfcn{1}, 'fun_then_grad') || strcmpi(funfcn{1}, 'fungrad'))
-        n = length(XOUT);
-        Hstr = optimget(options,'HessPattern',defaultopt,'fast');
-        if ischar(Hstr)
-           if strcmpi(Hstr,'sparse(ones(numberofvariables))')
-              Hstr = sparse(ones(n));
-           else
-              sys.stdout.write('optimlib:fmincon:InvalidHessPattern')
-           end
-        end
-        checkoptionsize('HessPattern', size(Hstr), n);
-     end
 
-     defaultopt.MaxIter = 400; defaultopt.MaxFunEvals = '100*numberofvariables'; defaultopt.TolX = 1e-6;
-     defaultopt.Hessian = 'off';
-     % Trust-region-reflective algorithm does not compute constraint
-     % violation as it progresses. If the user requests the output structure,
-     % we need to calculate the constraint violation at the returned
-     % solution.
-     if nargout > 3
-         computeConstrViolForOutput = true;
-     else
-         computeConstrViolForOutput = false;
-     end
-
-     if isempty(Aeq)
-        [X,FVAL,LAMBDA,EXITFLAG,OUTPUT,GRAD,HESSIAN] = ...
-           sfminbx(funfcn,X,l,u,verbosity,options,defaultopt,computeLambda,initVals.f,initVals.g, ...
-           HESSIAN,Hstr,flags.detailedExitMsg,computeConstrViolForOutput,optionFeedback,varargin{:});
-     else
-        [X,FVAL,LAMBDA,EXITFLAG,OUTPUT,GRAD,HESSIAN] = ...
-           sfminle(funfcn,X,sparse(Aeq),Beq,verbosity,options,defaultopt,computeLambda,initVals.f, ...
-           initVals.g,HESSIAN,Hstr,flags.detailedExitMsg,computeConstrViolForOutput,optionFeedback,varargin{:});
-     end
-  elseif strcmpi(OUTPUT.algorithm,interiorPoint)
-      defaultopt.MaxIter = 1000; defaultopt.MaxFunEvals = 3000; defaultopt.TolX = 1e-10;
-      defaultopt.Hessian = 'bfgs';
-      mEq = lin_eq + sizes.mNonlinEq + nnz(xIndices.fixed); % number of equalities
-      % Interior-point-specific options. Default values for lbfgs memory is 10, and
-      % ldl pivot threshold is 0.01
-      options = getIpOptions(options,sizes.nVar,mEq,flags.constr,defaultopt,10,0.01);
+  # elseif OUTPUT['algorithm']==trustRegionReflective) # trust-region-reflective #TODO
+  #    if (funfcn{1}, =='fun_then_grad_then_hess') || strcmpi(funfcn{1}, 'fungradhess'))
+  #       Hstr = [];
+  #    elseif (strcmpi(funfcn{1}, 'fun_then_grad') || strcmpi(funfcn{1}, 'fungrad'))
+  #       n = length(XOUT);
+  #       Hstr = optimget(options,'HessPattern',defaultopt,'fast');
+  #       if ischar(Hstr)
+  #          if strcmpi(Hstr,'sparse(ones(numberofvariables))')
+  #             Hstr = sparse(ones(n));
+  #          else
+  #             sys.stdout.write('optimlib:fmincon:InvalidHessPattern')
+  #          end
+  #       end
+  #       checkoptionsize('HessPattern', size(Hstr), n);
+  #    end
+  #
+  #    defaultopt.MaxIter = 400; defaultopt.MaxFunEvals = '100*numberofvariables'; defaultopt.TolX = 1e-6;
+  #    defaultopt.Hessian = 'off';
+  #    % Trust-region-reflective algorithm does not compute constraint
+  #    % violation as it progresses. If the user requests the output structure,
+  #    % we need to calculate the constraint violation at the returned
+  #    % solution.
+  #    if nargout > 3
+  #        computeConstrViolForOutput = true;
+  #    else
+  #        computeConstrViolForOutput = false;
+  #    end
+  #
+  #    if isempty(Aeq)
+  #       [X,FVAL,LAMBDA,EXITFLAG,OUTPUT,GRAD,HESSIAN] = ...
+  #          sfminbx(funfcn,X,l,u,verbosity,options,defaultopt,computeLambda,initVals.f,initVals.g, ...
+  #          HESSIAN,Hstr,flags.detailedExitMsg,computeConstrViolForOutput,optionFeedback,varargin{:});
+  #    else
+  #       [X,FVAL,LAMBDA,EXITFLAG,OUTPUT,GRAD,HESSIAN] = ...
+  #          sfminle(funfcn,X,sparse(Aeq),Beq,verbosity,options,defaultopt,computeLambda,initVals.f, ...
+  #          initVals.g,HESSIAN,Hstr,flags.detailedExitMsg,computeConstrViolForOutput,optionFeedback,varargin{:});
+  #    end
+  elif OUTPUT['algorithm']==interiorPoint:
+      defaultopt['MaxIter'] = 1000; defaultopt['MaxFunEvals'] = 3000; defaultopt['TolX'] = 1e-10;
+      defaultopt['Hessian'] = 'bfgs';
+      mEq = lin_eq + sizes['mNonlinEq'] + np.count_nonzero(xIndices['fixed']); # number of equalities
+      # Interior-point-specific options. Default values for lbfgs memory is 10, and
+      # ldl pivot threshold is 0.01
+      options = getIpOptions(options,sizes['nVar'],mEq,flags.constr,defaultopt,10,0.01);
 
       [X,FVAL,EXITFLAG,OUTPUT,LAMBDA,GRAD,HESSIAN] = barrier(funfcn,X,A,B,Aeq,Beq,l,u,confcn,options.HessFcn, ...
           initVals.f,initVals.g,initVals.ncineq,initVals.nceq,initVals.gnc,initVals.gnceq,HESSIAN, ...

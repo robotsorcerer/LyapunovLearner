@@ -61,7 +61,7 @@ def computeEnergy(X,Xd,Vxf, nargout=2):
     """
     # print(X.shape)
     d = X.shape[0]
-    nDemo = X.shape[-1]
+    nDemo = 1 #X.shape[2]
     # print('nDemo: ', nDemo)
     if nDemo>1:
         X = X.reshape(d,-1)
@@ -89,6 +89,7 @@ def computeEnergy(X,Xd,Vxf, nargout=2):
 
 
 def gmr_lyapunov(x, Priors, Mu, P):
+    # print('x.shape: ', x.shape)
     nbData = x.shape[1]
     d = x.shape[0]
     L = P.shape[2]-1;
@@ -97,21 +98,25 @@ def gmr_lyapunov(x, Priors, Mu, P):
     for k in range(L):
         P_cur               = P[:,:,k+1]
         if k                == 0:
-            # print('P_cur: ', P_cur, x.shape)
-            V_k             = np.sum(x * (P_cur.dot(x)), axis=0)
-            # print('Priors[k+1]: ', Priors, Priors[k+1])
-            V               = Priors[k+1] * V_k
             # print('V: ', V)
+            # print('P_cur: ', P_cur, x.shape)
+            # print('Priors[k+1]: ', Priors, Priors[k+1])
+            V_k             = np.sum(x * (P_cur.dot(x)), axis=0)
+            V               = Priors[k+1] * V_k
             Vx              = Priors[k+1] * ((P_cur+P_cur.T).dot(x))
-            # Vxx             =
         else:
-            x_tmp           = x - np.tile(Mu[:,k+1], [1,nbData])
+            x_tmp           = x - np.tile(Mu[:,k+1], [nbData, 1]).T
+            #  x_tmp.shape will be (2,750)
             V_k             = np.sum(P_cur.dot(x_tmp)*x, axis=0)
             V_k[V_k < 0]    = 0
-            # print('V_k: ', V_k)
-            V              += Priors[k+1].dot(V_k ** 2)
-            Vx              = Vx + np.tile((2*Priors[k+1]).dot(V_k), [d,1])*(P_cur.dot(x_tmp) + P_cur.T.dot(x))
-
+            # Prios will be of shape (1,)
+            V              += Priors[k+1].dot(np.expand_dims(V_k ** 2, axis=0))
+            # (V_k).shape)) == (750,)
+            temp            = (2 * Priors[k+1]).dot(np.expand_dims(V_k, axis=0))
+            # temp will be of shape (750,)
+            # Vx will be of shape (2,750)
+            Vx              = Vx + np.tile(temp, [d,1])*(P_cur.dot(x_tmp) + P_cur.T.dot(x))
+            # print('Vx shape: ', Vx.shape)
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     #These lines are for adding some spaces between the contour lines
     #         beta = zeros(size(V_k));
