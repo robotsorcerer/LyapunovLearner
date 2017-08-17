@@ -398,11 +398,12 @@ def learnEnergy(Vxf0, Data, options):
     # print('Vxf: ', -Vxf['P'], 'L: ', L)
     constraints = []
     for l in range(L):
-        constraints.append(cvx.Parameter(Vxf['P'][:,:,l]>=0))
+        # constraints.append(cvx.Parameter(Vxf['P'][:,:,l]>0))
+        constraints.append(Vxf['P'][:,:,l]>0)
     # The 'minimize' objective must resolve to a scalar.
     J_var = cvx.Variable(cvx.vec(J))
-    obj   = cvx.Minimize(sum( J ) )
-    prob  = cvx.Problem(obj, constraints)
+    obj   = cvx.Minimize(J)
+    prob  = cvx.Problem(obj)#, constraints)
     optionsAlg = {
         'maxiters': options['max_iter'],
         'show_progress': True,
@@ -411,7 +412,7 @@ def learnEnergy(Vxf0, Data, options):
         'reltol':  1e-10,
         'feastol': 1e-7,
       }
-    prob.solve(solver=CVXOPT, verbose=True, options=optionsAlg)
+    prob.solve(verbose=True)#, options=optionsAlg)solver=SCS,
     # prob.solve()
 
     return prob#.status, prob.value, J.value
@@ -420,8 +421,10 @@ def learnEnergy(Vxf0, Data, options):
   L = Vxf0['L']
 
   opt_res = optimize(p0, Vxf0['d'], Vxf0['L'], Vxf0['w'], options)
-  print('status: {}, value: {}', opt_res.status, opt_res.value)
+  print('status: {}, value: {}'.format(opt_res.status, opt_res.value))
+  # print('prob', opt_res)
 
+  popt = opt_res.value
   if Vxf0['SOS']:
     Vxf['d']    = d
     Vxf['n']    = Vxf0['n']
@@ -431,7 +434,7 @@ def learnEnergy(Vxf0, Data, options):
     check_constraints(popt,ctr_handle,d,0,options)
   else:
     # transforming back the optimization parameters into the GMM model
-    Vxf             = parameters_2_gmm(popt,d,Vxf0['L'],options)
+    Vxf             = parameters_2_gmm(opt_res.value,d,Vxf0['L'],options)
     Vxf['Mu'][:,0]  = 0
     Vxf['L']        = Vxf0['L']
     Vxf['d']        = Vxf0['d']

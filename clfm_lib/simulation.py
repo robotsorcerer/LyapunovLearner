@@ -311,7 +311,7 @@ def plot_results(mode,sp,x,xT,args):
                 sp['x['str(j)']']= plot(x[0,0,j],x[1,0,j])
             plt.xlabel(r'$\xi_1$',interpreter=latex,fontsize=16)
             plt.ylabel(r'$\xi_2$',interpreter=latex,fontsize=16)
-            grid on;box on
+            plt.show()
 
             if b_obs:
                 x_obs, x_obs_sf = obs_draw_ellipsoid(obs,40)
@@ -319,188 +319,195 @@ def plot_results(mode,sp,x,xT,args):
                     sp['obs'][n] = patch(x_obs[0,:,n],x_obs[1,:,n],0.1*np.ones((1,x_obs.shape[2])),[0.6 1 0.6])
                     sp['obs_sf'][n] = plot(x_obs_sf[0,:,n],x_obs_sf[1,:,n],'k--',linewidth=0.5)
         elif d==3:
-            sp['fig'] = figure('name','3D Simulation of the task','position',[653 550 560 420]);
-            sp['axis'] = gca;
-            hold on
-            sp['xT'] = plot3(xT(1),xT(2),xT(3),'k*','EraseMode','none','markersize',10,'linewidth',1.5);
-            sp['xT_l'] = plot3(xT(1),xT(2),xT(3),'k--','EraseMode','none','linewidth',1.5);
-            for j=1:nbSPoint
-                plot3(x(1,1,j),x(2,1,j),x(3,1,j),'ok','markersize',2,'linewidth',7.5)
-                sp['x'][j]= plot3(x(1,1,j),x(2,1,j),x(3,1,j),'EraseMode','none');
-            end
+            sp['fig'] = plt.figure(num=0)
+            plt.title('3D Simulation of the task')
+            sp['axis'] = plt.gca()
+            ax = sp['fig'].add_subplot(111, projection='3d')
+            sp['xT'] = ax.plot(xT[0],xT[1],xT[2],'k*',markersize=10,linewidth=1.5)
+            sp['xT_l'] = ax.plot(xT[0],xT[1],xT[2],'k--',linewidth=1.5)
+            for j in range(0, nbSPoint-1):
+                ax.plot(x[0,0,j],x[1,0,j],x[2,0,j],markersize=2,linewidth=7.5)
+                sp['x'][j]= ax.plot(x[0,0,j],x[1,0,j],x[2,0,j])
 
-            if b_obs
-                n_theta = 15;
-                n_phi = 10;
-                x_obs = obs_draw_ellipsoid(obs,[n_theta n_phi]);
-                for n=1:size(x_obs,3)
-                    sp.obs(n) = surf(reshape(x_obs(1,:,n),n_phi,n_theta), reshape(x_obs(2,:,n),n_phi,n_theta), reshape(x_obs(3,:,n),n_phi,n_theta));
-                    set(sp.obs(n),'FaceColor',[0.6 1 0.6],'linewidth',0.1)
-                end
-            end
-            xlabel('$\xi_1$','interpreter','latex','fontsize',16);
-            ylabel('$\xi_2$','interpreter','latex','fontsize',16);
-            zlabel('$\xi_3$','interpreter','latex','fontsize',16);
-            grid on
-            view(-28,44)
-        else
-            sp.fig = figure('name','Simulation of the task','position',[542   146   513   807]);
-            for i=2:d
-                sp.axis(i-1)=subplot(d-1,1,i-1);
-                hold on
-                sp.xT(i-1) = plot(xT(1),xT(i),'k*','EraseMode','none','markersize',10,'linewidth',1.5);
-                sp.xT_l(i-1) = plot(xT(1),xT(i),'k--','EraseMode','none','linewidth',1.5);
-                for j=1:nbSPoint
-                    plot(x(1,1,j),x(i,1,j),'ok','markersize',2,'linewidth',7.5);
-                    sp.x(i-1,j)= plot(x(1,1,j),x(i,1,j),'EraseMode','none');
-                end
-                ylabel(['$\xi_' num2str(i) '$'],'interpreter','latex','fontsize',12);
-                grid on
-                if i==d
-                    xlabel(['$\xi_' num2str(1) '$'],'interpreter','latex','fontsize',12);
-                end
-                grid on;box on
-            end
-        end
+            if b_obs:
+                n_theta = 15
+                n_phi = 10
+                x_obs = obs_draw_ellipsoid(obs,[n_theta, n_phi])
+                for n in range(0, np.size(x_obs,2) - 1):
+                    sp['obs'][n] = ax.plot_surface(np.reshape(x_obs[0,:,n],n_phi,n_theta), np.reshape(x_obs[1,:,n],n_phi,n_theta), np.reshape(x_obs[2,:,n],n_phi,n_theta))
+                    plt.setp(sp['obs'][n],color=[0.6, 1, 0.6],linewidth=0.1)
 
-        case 'u' %updating the figure
-            if gcf ~= sp.fig
-                figure(sp.fig)
-            end
-            if d==2
-                ax=get(sp.axis);
-                for j=1:nbSPoint
-                    set(sp.x(j),'XData',x(1,:,j),'YData',x(2,:,j))
-                end
+            plt.xlabel(r'$\xi_1$',interpreter=latex,fontsize=16)
+            plt.ylabel(r'$\xi_2$',interpreter=latex,fontsize=16)
+            plt.zlabel(r'$\xi_3$',interpreter=latex,fontsize=16)
+            plt.show()
+        else:
+            sp['fig'] = plt.figure(num=0)
+            plt.title('Simulation of the task')
+            for i in range(1, d-1):
+                sp.['axis'][i-1]=sp['fig'].add_subplot(d-1,0,i-1)
+                sp['xT'][i-1] = plt.plot(xT[0],xT[i],'k*',markersize=10,linewidth=1.5)
+                sp.['xT_l'][i-1] = plt.plot(xT[0],xT[i],'k--',linewidth=1.5)
+                for j in range(0, nbSPoint - 1):
+                    plt.plot(x[0,0,j],x[i,0,j],markersize=2,linewidth=7.5);
+                    sp['x'][i-1,j]= plt.plot(x[0,0,j],x[i,0,j])
+                plt.ylabel(r'$\xi_' + str(i) + '$',interpreter=latex,fontsize=12)
 
-                if max(x(1,end,:))>ax.XLim(2) || min(x(1,end,:))<ax.XLim(1) || max(x(2,end,:))>ax.YLim(2) || min(x(2,end,:))<ax.YLim(1)
-                    axis(sp.axis,'tight');
-                    ax=get(sp.axis);
-                    axis(sp.axis,...
-                         [ax.XLim(1)-(ax.XLim(2)-ax.XLim(1))/10 ax.XLim(2)+(ax.XLim(2)-ax.XLim(1))/10 ...
-                          ax.YLim(1)-(ax.YLim(2)-ax.YLim(1))/10 ax.YLim(2)+(ax.YLim(2)-ax.YLim(1))/10]);
-                end
-            elseif d==3
-                ax=get(sp.axis);
-                for j=1:nbSPoint
-                    set(sp.x(j),'XData',x(1,:,j),'YData',x(2,:,j),'ZData',x(3,:,j))
-                end
+                if i==d :
+                    plt.xlabel(r'$\xi_1$',interpreter=latex,fontsize=12);
 
-                if max(x(1,end,:))>ax.XLim(2) || min(x(1,end,:))<ax.XLim(1) || max(x(2,end,:))>ax.YLim(2) || min(x(2,end,:))<ax.YLim(1) || max(x(3,end,:))>ax.ZLim(2) || min(x(3,end,:))<ax.ZLim(1)
-                    axis(sp.axis,'tight');
-                    ax=get(sp.axis);
-                    axis(sp.axis,...
-                         [ax.XLim(1)-(ax.XLim(2)-ax.XLim(1))/10 ax.XLim(2)+(ax.XLim(2)-ax.XLim(1))/10 ...
-                          ax.YLim(1)-(ax.YLim(2)-ax.YLim(1))/10 ax.YLim(2)+(ax.YLim(2)-ax.YLim(1))/10 ...
-                          ax.ZLim(1)-(ax.ZLim(2)-ax.ZLim(1))/10 ax.ZLim(2)+(ax.ZLim(2)-ax.ZLim(1))/10]);
-                end
-            else
-                for i=1:d-1
-                    ax=get(sp.axis(i));
-                    for j=1:nbSPoint
-                        set(sp.x(i,j),'XData',x(1,:,j),'YData',x(i+1,:,j))
-                    end
+                plt.show()
 
-                    if max(x(1,end,:))>ax.XLim(2) || min(x(1,end,:))<ax.XLim(1) || max(x(i+1,end,:))>ax.YLim(2) || min(x(i+1,end,:))<ax.YLim(1)
-                        axis(sp.axis(i),'tight');
-                        ax=get(sp.axis(i));
-                        axis(sp.axis(i),...
-                            [ax.XLim(1)-(ax.XLim(2)-ax.XLim(1))/10 ax.XLim(2)+(ax.XLim(2)-ax.XLim(1))/10 ...
-                            ax.YLim(1)-(ax.YLim(2)-ax.YLim(1))/10 ax.YLim(2)+(ax.YLim(2)-ax.YLim(1))/10]);
-                    end
-                end
-            end
 
-        case 't' %updating the figure
-            if gcf ~= sp.fig
-                figure(sp.fig)
-            end
-            if d==2
-                ax=get(sp.axis);
-                set(sp.xT,'XData',xT(1,end),'YData',xT(2,end))
-                set(sp.xT_l,'XData',xT(1,:),'YData',xT(2,:))
 
-                if max(xT(1,end))>ax.XLim(2) || min(xT(1,end))<ax.XLim(1) || max(xT(2,end))>ax.YLim(2) || min(xT(2,end))<ax.YLim(1)
-                    axis(sp.axis,'tight');
-                    ax=get(sp.axis);
-                    axis(sp.axis,...
-                         [ax.XLim(1)-(ax.XLim(2)-ax.XLim(1))/10 ax.XLim(2)+(ax.XLim(2)-ax.XLim(1))/10 ...
-                          ax.YLim(1)-(ax.YLim(2)-ax.YLim(1))/10 ax.YLim(2)+(ax.YLim(2)-ax.YLim(1))/10]);
-                end
-            elseif d==3
-                ax=get(sp.axis);
-                set(sp.xT,'XData',xT(1,end),'YData',xT(2,end),'ZData',xT(3,end))
-                set(sp.xT_l,'XData',xT(1,:),'YData',xT(2,:),'ZData',xT(3,:))
+        if mode=='u': #updating the figure
+            if plt.gcf() != sp['fig']:
+                plt.figure(sp['fig'])
+            if d==2:
+                ax=sp['axis'];
+                for j in range(0, nbSPoint - 1):
+                    sp['x'][j].set_xdata(x[1,:,j])
+                    sp['x'][j].set_ydata(x[1,:,j])
 
-                if max(xT(1,end))>ax.XLim(2) || min(xT(1,end))<ax.XLim(1) || max(xT(2,end))>ax.YLim(2) || min(xT(2,end))<ax.YLim(1) || max(xT(3,end))>ax.ZLim(2) || min(xT(3,end))<ax.ZLim(1)
-                    axis(sp.axis,'tight');
-                    ax=get(sp.axis);
-                    axis(sp.axis,...
-                         [ax.XLim(1)-(ax.XLim(2)-ax.XLim(1))/10 ax.XLim(2)+(ax.XLim(2)-ax.XLim(1))/10 ...
-                          ax.YLim(1)-(ax.YLim(2)-ax.YLim(1))/10 ax.YLim(2)+(ax.YLim(2)-ax.YLim(1))/10 ...
-                          ax.ZLim(1)-(ax.ZLim(2)-ax.ZLim(1))/10 ax.ZLim(2)+(ax.ZLim(2)-ax.ZLim(1))/10]);
-                end
-            else
-                for i=1:d-1
-                    ax=get(sp.axis(i));
-                    set(sp.xT(i),'XData',xT(1,end),'YData',xT(i+1,end))
-                    set(sp.xT_l(i),'XData',xT(1,:),'YData',xT(i+1,:))
+                if np.maximum(x[0,end,:])>ax.get_xlim(1) or np.minimum(x[0,end,:])<ax.get_xlim(0)
+                    or np.maximmum(x[1,end,:])>ax.get_ylim(1) or np.minimum(x[1,end,:])<ax.get_ylim(0):
+                    plt.autoscale(enable=True, axis=sp['axis'], tight=True)
+                    ax=sp['axis'];
+                    sp['fig'].add_subplot(ax,
+                         [ax.get_xlim(0)-(ax.get_xlim(1)-ax.get_xlim(0))/10, ax.get_xlim(1)+(ax.get_xlim(1)-ax.get_xlim(0))/10,
+                          ax.get_ylim(0)-(ax.get_ylim(1)-ax.get_ylim(0))/10 ax.get_ylim(1)+(ax.get_ylim(1)-ax.get_ylim(0))/10])
 
-                    if max(xT(1,end))>ax.XLim(2) || min(xT(1,end))<ax.XLim(1) || max(xT(i+1,end))>ax.YLim(2) || min(xT(i+1,end))<ax.YLim(1)
-                        axis(sp.axis(i),'tight');
-                        ax=get(sp.axis(i));
-                        axis(sp.axis(i),...
-                            [ax.XLim(1)-(ax.XLim(2)-ax.XLim(1))/10 ax.XLim(2)+(ax.XLim(2)-ax.XLim(1))/10 ...
-                            ax.YLim(1)-(ax.YLim(2)-ax.YLim(1))/10 ax.YLim(2)+(ax.YLim(2)-ax.YLim(1))/10]);
-                    end
-                end
-            end
+            elif d==3:
+                ax=sp['axis'];
+                for j in range(0, nbSPoint - 1):
+                    sp.['x'][j].set_xdata(x[0,:,j])
+                    sp.['x'][j].set_ydata(x[1,:,j])
+                    sp.['x'][j].set_zdata(x[2,:,j])
 
-        case 'o' %updating the obstacle position
-            if gcf ~= sp.fig
-                figure(sp.fig)
-            end
-            if b_obs
-                n = args{1};
-                dx = args{2};
-                if d==2
-                    set(sp.obs(n),'XData',get(sp.obs(n),'XData')+ dx(1))
-                    set(sp.obs(n),'YData',get(sp.obs(n),'YData')+ dx(2))
+                if np.maximum(x[0,end,:])>ax.get_xlim(1) or np.minimum(x[0,end,:])<ax.get_xlim(0)
+                 or np.maximum(x[1,end,:])>ax.get_ylim(1) or np.minimum(x[1,end,:])<ax.get_ylim(1) or
+                  np.maximum(x[2,end,:])>ax.get_zlim(1) or np.minimum(x[2,end,:])<ax.get_zlim(0):
+                    plt.autoscale(enable=True, axis=sp['axis'], tight=True)
+                    ax=sp['axis']
+                    sp['fig'].add_subplot(ax,
+                         get_xlim(0)-(ax.get_xlim(1)-ax.get_xlim(0))/10, ax.get_xlim(1)+(ax.get_xlim(1)-ax.get_xlim(0))/10,
+                          ax.get_ylim(0)-(ax.get_ylim(1)-ax.get_ylim(0))/10 ax.get_ylim(1)+(ax.get_ylim(1)-ax.get_ylim(0))/10,
+                          ax.get_zlim(0)-(ax.get_zlim(1)-ax.get_zlim(0))/10 ax.get_zlim(1)+(ax.get_zlim(1)-ax.get_zlim(0))/10])
+            else:
+                for i in range(0, d-2):
+                    ax=sp['axis'][i]
+                    for j in range(0, nbSPoint-1):
+                        sp['x'][i,j].set_xdata(x[0,:,j])
+                        sp['x'][i,j].set_ydata(x[i+1,:,j])
 
-                    set(sp.obs_sf(n),'XData',get(sp.obs_sf(n),'XData')+ dx(1))
-                    set(sp.obs_sf(n),'YData',get(sp.obs_sf(n),'YData')+ dx(2))
-                elseif d==3
-                    set(sp.obs(n),'XData',get(sp.obs(n),'XData')+ dx(1))
-                    set(sp.obs(n),'YData',get(sp.obs(n),'YData')+ dx(2))
-                    set(sp.obs(n),'ZData',get(sp.obs(n),'ZData')+ dx(2))
-                end
-            end
+                    if np.maximum(x[0,end,:])>ax.get_xlim(1) or np.minimum(x[0,end,:])<ax.get_xlim(0)
+                        or np.maximum(x[i+1,end,:])>ax.get_ylim[1] or np.minimum(x[i+1,end,:])<ax.get_ylim(0):
+                        plt.autoscale(enable=True, axis=sp['axis'], tight=True)
+                        ax=sp['axis']
+                        sp['fig'].add_subplot(ax,
+                             get_xlim(0)-(ax.get_xlim(1)-ax.get_xlim(0))/10, ax.get_xlim(1)+(ax.get_xlim(1)-ax.get_xlim(0))/10,
+                              ax.get_ylim(0)-(ax.get_ylim(1)-ax.get_ylim(0))/10 ax.get_ylim(1)+(ax.get_ylim(1)-ax.get_ylim(0))/10])
 
-        case 'f' % final alighnment of axis
-            if gcf ~= sp.fig
-                figure(sp.fig)
-            end
-            if d==2
-                axis(sp.axis,'tight');
-                ax=get(sp.axis);
-                axis(sp.axis,...
-                    [ax.XLim(1)-(ax.XLim(2)-ax.XLim(1))/10 ax.XLim(2)+(ax.XLim(2)-ax.XLim(1))/10 ...
-                     ax.YLim(1)-(ax.YLim(2)-ax.YLim(1))/10 ax.YLim(2)+(ax.YLim(2)-ax.YLim(1))/10]);
-            elseif d==3
-                axis(sp.axis,'tight');
-                ax=get(sp.axis);
-                axis(sp.axis,...
-                    [ax.XLim(1)-(ax.XLim(2)-ax.XLim(1))/10 ax.XLim(2)+(ax.XLim(2)-ax.XLim(1))/10 ...
-                     ax.YLim(1)-(ax.YLim(2)-ax.YLim(1))/10 ax.YLim(2)+(ax.YLim(2)-ax.YLim(1))/10 ...
-                     ax.ZLim(1)-(ax.ZLim(2)-ax.ZLim(1))/10 ax.ZLim(2)+(ax.ZLim(2)-ax.ZLim(1))/10]);
-            else
-                for i=1:d-1
-                    axis(sp.axis(i),'tight');
-                    ax=get(sp.axis(i));
-                    axis(sp.axis(i),...
-                        [ax.XLim(1)-(ax.XLim(2)-ax.XLim(1))/10 ax.XLim(2)+(ax.XLim(2)-ax.XLim(1))/10 ...
-                         ax.YLim(1)-(ax.YLim(2)-ax.YLim(1))/10 ax.YLim(2)+(ax.YLim(2)-ax.YLim(1))/10]);
-                end
-            end
-    end
-    drawnow
+
+        if mode == 't':#updating the figure
+            if plt.gcf != sp['fig']:
+                plt.figure(sp['fig'])
+            if d==2:
+                ax=sp['axis']
+                sp['xT'].set_xdata(xT[0,end])
+                sp['xT'].set_ydata(xT[1,end])
+
+                sp['xT_l'].set_xdata(xT_l[0,end])
+                sp['xT_l'].set_ydata(xT_l[1,end])
+
+                if np.maximum(xT[0,end])>ax.get_xlim(1) or np.minimum(xT[0,end])<ax.get_xlim(0)
+                    or np.maximmum(xT[1,end])>ax.get_ylim(1) or np.minimum(xT[1,end])<ax.get_ylim(0):
+                    plt.autoscale(enable=True, axis=sp['axis'], tight=True)
+                    ax=sp['axis'];
+                    sp['fig'].add_subplot(ax,
+                         [ax.get_xlim(0)-(ax.get_xlim(1)-ax.get_xlim(0))/10, ax.get_xlim(1)+(ax.get_xlim(1)-ax.get_xlim(0))/10,
+                          ax.get_ylim(0)-(ax.get_ylim(1)-ax.get_ylim(0))/10 ax.get_ylim(1)+(ax.get_ylim(1)-ax.get_ylim(0))/10])
+
+            elif d==3:
+                ax=sp['axis']
+                sp['xT'].set_xdata(xT[0,end])
+                sp['xT'].set_ydata(xT[1,end])
+                sp['xT'].set_zdata(xT[2,end])
+
+                sp['xT_l'].set_xdata(xT_l[0,end])
+                sp['xT_l'].set_ydata(xT_l[1,end])
+                sp['xT_l'].set_zdata(xT_l[2,end])
+
+                if np.maximum(xT[0,end])>ax.get_xlim(1) or np.minimum(xT[0,end])<ax.get_xlim(0)
+                 or np.maximum(xT[1,end])>ax.get_ylim(1) or np.minimum(xT[1,end])<ax.get_ylim(1) or
+                  np.maximum(xT[2,end])>ax.get_zlim(1) or np.minimum(xT[2,end])<ax.get_zlim(0):
+                    plt.autoscale(enable=True, axis=sp['axis'], tight=True)
+                    ax=sp['axis']
+                    sp['fig'].add_subplot(ax,
+                         get_xlim(0)-(ax.get_xlim(1)-ax.get_xlim(0))/10, ax.get_xlim(1)+(ax.get_xlim(1)-ax.get_xlim(0))/10,
+                          ax.get_ylim(0)-(ax.get_ylim(1)-ax.get_ylim(0))/10 ax.get_ylim(1)+(ax.get_ylim(1)-ax.get_ylim(0))/10,
+                          ax.get_zlim(0)-(ax.get_zlim(1)-ax.get_zlim(0))/10 ax.get_zlim(1)+(ax.get_zlim(1)-ax.get_zlim(0))/10])
+
+            else:
+                for i in range(0, d-2):
+                    ax=sp['axis']
+                    sp['xT'].set_xdata(xT[0,end])
+                    sp['xT'].set_ydata(xT[1,end])
+
+                    sp['xT_l'].set_xdata(xT_l[0,end])
+                    sp['xT_l'].set_ydata(xT_l[1,end])
+
+                    if np.maximum(xT[0,end])>ax.get_xlim(1) or np.minimum(xT[0,end])<ax.get_xlim(0)
+                        or np.maximmum(xT[1,end])>ax.get_ylim(1) or np.minimum(xT[1,end])<ax.get_ylim(0):
+                        plt.autoscale(enable=True, axis=sp['axis'], tight=True)
+                        ax=sp['axis'];
+                        sp['fig'].add_subplot(ax,
+                             [ax.get_xlim(0)-(ax.get_xlim(1)-ax.get_xlim(0))/10, ax.get_xlim(1)+(ax.get_xlim(1)-ax.get_xlim(0))/10,
+                              ax.get_ylim(0)-(ax.get_ylim(1)-ax.get_ylim(0))/10 ax.get_ylim(1)+(ax.get_ylim(1)-ax.get_ylim(0))/10])
+
+
+        if mode =='o' #updating the obstacle position
+            if plt.gcf != sp['fig']:
+                plt.figure(sp['fig'])
+            if b_obs:
+                n = args[0]
+                dx = args[1]
+                if d==2:
+                    sp['obs'][n].set_xdata(sp['obs'][n].get_xdata() + dx[0])
+                    sp['obs'][n].set_ydata(sp['obs'][n].get_ydata() + dx[1])
+
+                    sp['obs_sf'][n].set_xdata(sp['obs_sf'][n].get_xdata() + dx[0])
+                    sp['obs_sf'][n].set_ydata(sp['obs_sf'][n].get_ydata() + dx[1])
+                elif d==3:
+                    sp['obs'][n].set_xdata(sp['obs'][n].get_xdata() + dx[0])
+                    sp['obs'][n].set_ydata(sp['obs'][n].get_ydata() + dx[1])
+                    sp['obs'][n].set_zdata(sp['obs'][n].get_zdata() + dx[1])
+
+
+        if mode=='f': # final alighnment of axis
+            if plt.gcf != sp['fig']:
+                plt.figure(sp['fig'])
+            if d==2:
+                plt.autoscale(enable=True, axis=sp['axis'], tight=True)
+                ax=sp['axis'];
+                sp['fig'].add_subplot(ax,
+                     [ax.get_xlim(0)-(ax.get_xlim(1)-ax.get_xlim(0))/10, ax.get_xlim(1)+(ax.get_xlim(1)-ax.get_xlim(0))/10,
+                      ax.get_ylim(0)-(ax.get_ylim(1)-ax.get_ylim(0))/10 ax.get_ylim(1)+(ax.get_ylim(1)-ax.get_ylim(0))/10])
+
+            elif d==3:
+                plt.autoscale(enable=True, axis=sp['axis'], tight=True)
+                ax=sp['axis']
+                sp['fig'].add_subplot(ax,
+                     get_xlim(0)-(ax.get_xlim(1)-ax.get_xlim(0))/10, ax.get_xlim(1)+(ax.get_xlim(1)-ax.get_xlim(0))/10,
+                      ax.get_ylim(0)-(ax.get_ylim(1)-ax.get_ylim(0))/10 ax.get_ylim(1)+(ax.get_ylim(1)-ax.get_ylim(0))/10,
+                      ax.get_zlim(0)-(ax.get_zlim(1)-ax.get_zlim(0))/10 ax.get_zlim(1)+(ax.get_zlim(1)-ax.get_zlim(0))/10])
+
+            else:
+                for i in range(0, d-2):
+                    plt.autoscale(enable=True, axis=sp['axis'], tight=True)
+                    ax=sp['axis'];
+                    sp['fig'].add_subplot(ax,
+                         [ax.get_xlim(0)-(ax.get_xlim(1)-ax.get_xlim(0))/10, ax.get_xlim(1)+(ax.get_xlim(1)-ax.get_xlim(0))/10,
+                          ax.get_ylim(0)-(ax.get_ylim(1)-ax.get_ylim(0))/10 ax.get_ylim(1)+(ax.get_ylim(1)-ax.get_ylim(0))/10])
+
+    plt.show()
