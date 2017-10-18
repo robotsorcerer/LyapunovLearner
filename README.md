@@ -1,4 +1,4 @@
-### Learning Lyapunov Functions for Dynamical Systems
+### Learning Lyapunov Functions for Dynamical Systems [WIP]
 
 This package contains the CLFDM algorithm presented in the paper:
 
