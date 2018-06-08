@@ -1,0 +1,3 @@
+[submodule "clfdm"]
+	path = clfdm
+	url = https://bitbucket.org/khansari/clfdm
