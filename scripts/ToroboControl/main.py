@@ -4,7 +4,6 @@ import h5py
 import time
 import logging
 import numpy as np
-from cost.cost import learnEnergy
 
 import matplotlib as mpl
 mpl.use('qt5agg')
@@ -15,14 +14,17 @@ torcont = dirname(dirname(abspath(__file__))) + '/' + 'ToroboControl'
 # print(torcont)
 sys.path.append(torcont)
 
+from gmm.gmm import GMM
+from gmm.gmm_utils import GMR
+from cost.cost import learnEnergy
+from config import Vxf0, options, opt_exec
+from utils.utils import guess_init_lyap
+from stabilizer.ds_stab import dsStabilizer
+from robot_executor.execute import execute
+
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
 LOGGER = logging.getLogger(__name__)
 
-from gmm.gmm import GMM
-from gmm.gmm_utils import GMR
-from config import Vxf0, options
-from utils.utils import guess_init_lyap
-from stabilizer.ds_stab import dsStabilizer
 
 def main(Vxf0, options):
     gmm = GMM()
@@ -64,6 +66,7 @@ def main(Vxf0, options):
     logging.debug('Xd: {}, u: {}'.format(Xd.shape, u.shape))
 
     # do robot execution
+    x0_all = data[:3, :]
     x, xd = execute(x0_all, [], stab_handle, opt_exec)
 
 if __name__ == '__main__':

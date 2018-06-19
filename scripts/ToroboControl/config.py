@@ -17,6 +17,12 @@ options = {
     'upperBoundEigenValue': True,
 }
 
+opt_exec = {
+'dt': 0.1,
+'i_max': 4000,
+'tol': 1,
+}
+
 
 hyperparams = {
     'use_cvxopt': True, #whether to use cvxopt package, fmincon or otherwise
