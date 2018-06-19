@@ -72,9 +72,7 @@ def gmm_2_parameters(Vxf, options):
 
 def parameters_2_gmm(popt, d, L, options):
     # transforming the column of parameters into Priors, Mu, and P
-    Vxf = shape_DS(popt, d, L, options)
-
-    return Vxf
+    return shape_DS(popt, d, L, options)
 
 def shape_DS(p,d,L,options):
     # transforming the column of parameters into Priors, Mu, and P

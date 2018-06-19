@@ -8,13 +8,18 @@ from gmm import gmm_2_parameters, parameters_2_gmm, \
 
 LOGGER = logging.getLogger(__name__)
 
+def matVecNorm(x):
+    return np.sqrt(np.sum(x**2, axis=0))
+
 def obj(p, x, xd, d, L, w, options):
     Vxf         = shape_DS(p,d,L,options)
     _, Vx       = computeEnergy(x, None, Vxf)
-    Vdot        = np.sum(Vx*xd, axis=0)  #derivative of J w.r.t. xd
+    Vdot        = np.sum(Vx*xd, axis=0)  # derivative of J w.r.t. xd
     norm_Vx     = np.sqrt(np.sum(Vx * Vx, axis=0))
     norm_xd     = np.sqrt(np.sum(xd * xd, axis=0))
-    J           = np.divide(Vdot, np.multiply(norm_Vx, norm_xd))#.squeeze()
+    bot         = np.multiply(norm_Vx, norm_xd)
+    # print('bot: ', norm_Vx.shape, norm_xd.shape)
+    J           = np.divide(Vdot, bot)#.squeeze()
 
     # projections onto positive orthant
     J[np.where(norm_xd==0)] = 0
@@ -34,7 +39,7 @@ def optimize(obj_handle, p0):
         jac=False,
         bounds=[(0.0, None) for _ in range(len(p0))], # no negative p values
         #bounds = Bounds(ctr_handle(p0), keep_feasible=True), # will produce c, ceq as lb and ub
-        options={'ftol': 1e-4, 'disp': True}
+        options={'ftol': 1e-4, 'disp': False}
         )
     return opt
 
@@ -91,8 +96,8 @@ def learnEnergy(Vxf0, Data, options):
     else:
         for l in range(Vxf0['L']):
             try:
-                Vxf0['P'][:,:,l+1] = scipy.linalg.solve(Vxf0['P'][:,:,l+1], np.eye(d))
-                #print('Vxf0[:,:,l+1]: ', Vxf0['P'][:,:,l+1])
+                Vxf0['P'][:,:,l+1] = LA.solve(Vxf0['P'][:,:,l+1], np.eye(d))
+                # print('Vxf0[:,:,l+1]: ', Vxf0['P'][:,:,l+1])
             except LA.LinAlgError as e:
                 LOGGER.debug('LinAlgError: %s', e)
 
@@ -123,14 +128,17 @@ def learnEnergy(Vxf0, Data, options):
         Vxf['L']        = Vxf0['L']
         Vxf['d']        = Vxf0['d']
         Vxf['w']        = Vxf0['w']
+        #Vxf['P']        = Vxf0['P']
         #check_constraints(popt,ctr_handle,d,Vxf['L'],options)
 
     sumDet = 0
     for l in range(Vxf['L']+1):
         sumDet += np.linalg.det(Vxf['P'][:,:,l])
+        print('P: ', Vxf['P'][:,:,l])
+        print('sumDet: ', sumDet)
 
     Vxf['P'][:,:,0] = Vxf['P'][:,:,0]/sumDet
-    Vxf['P'][:,:,1:] = Vxf['P'][:,:,1:]/np.sqrt(sumDet)
+    Vxf['P'][:,:,1:] = Vxf['P'][:,:,1:]/np.sqrt(abs(sumDet))
 
     return Vxf, J
 

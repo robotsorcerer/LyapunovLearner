@@ -1,5 +1,6 @@
 import numpy as np
 from inspect import getfullargspec
+from cost.cost import computeEnergy
 
 def dsStabilizer(X, fn_handle, Vxf, rho0, kappa0):
     d = Vxf['d']
@@ -17,16 +18,17 @@ def dsStabilizer(X, fn_handle, Vxf, rho0, kappa0):
             logger.CRITICAL('Unknown function handle!')
 
     V,Vx    = computeEnergy(X,[],Vxf)
+
     norm_Vx = np.sum(V ** 2, axis=0)
     norm_x  = np.sum(X ** 2,axis=0)
 
     Vdot    = np.sum(Vx * Xd,axis=0)
     rho     = rho0 * (1-np.exp(-kappa0*norm_x)) * np.sqrt(norm_Vx)
     ind     = (Vdot + rho) >= 0
-    #ind     = np.where((Vdot + rho) >= 0)
     u       = Xd * 0
 
-    print(np.sum(ind))
+    print('Vdot: ', Vdot)
+    
     if np.sum(ind)>0:
         lambder   = (Vdot[ind] + rho[ind]) / norm_Vx[ind]
         u[:,ind]  = -np.tile(lambder,[d,1]) * Vx[:,ind]

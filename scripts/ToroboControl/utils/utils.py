@@ -5,6 +5,8 @@ def guess_init_lyap(data, Vxf0, b_initRandom=False):
     """
     This function guesses the initial lyapunov function
     """
+    # for k, v in Vxf0.items():
+    #     print(k, v)
     # allocate spaces for incoming arrays
     Vxf0['Mu']  =  np.zeros(( Vxf0['d'], Vxf0['L']+1 )) # will be 2x2
     Vxf0['P']   =  np.zeros(( Vxf0['d'], Vxf0['d'], Vxf0['L']+1)) # wil be 2x2x3

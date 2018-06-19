@@ -1,7 +1,9 @@
+import logging
 import numpy as np
 import scipy.linalg
 import scipy.linalg as LA
 
+LOGGER = logging.getLogger(__name__)
 
 def logsum(vec, axis=0, keepdims=True):
     #TODO: Add a docstring.

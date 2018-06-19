@@ -28,54 +28,43 @@ def matlength(x):
   # find the max of a numpy matrix dims
   return np.max(x.shape)
 
-
 def ctr_eigenvalue(p,d,L,options):
-  # This function computes the derivative of the constrains w.r.t.
-  # optimization parameters.
-  Vxf = dict()
-  if L == -1: # SOS
-      Vxf['d'] = d
-      Vxf['n'] = int(np.sqrt(matlength(p)/d**2))
-      Vxf['P'] = p.reshape(Vxf['n']*d,Vxf['n']*d)
-      Vxf['SOS'] = 1
-      c  = np.zeros(( Vxf['n']*d, 1 ))
-      ceq = np.array(())
-  else:
-      Vxf = shape_DS(p,d,L,options)
-      if L > 0:
-          c  = np.zeros(((L+1)*d+(L+1)*options['optimizePriors'],1))  #+options.variableSwitch
-          if options['upperBoundEigenValue']:
-              ceq = np.zeros((L+1,1))
-          else:
-              ceq = np.array(()) # zeros(L+1,1);
-      else:
-          c  = np.zeros((d,1))
-          ceq = (np.ravel(Vxf['P']).T).dot(np.ravel(Vxf['P'])) -2
+    Vxf = dict()
+    if L == -1: # SOS
+        Vxf['d'] = d
+        Vxf['n'] = int(np.sqrt(matlength(p)/d**2))
+        Vxf['P'] = p.reshape(Vxf['n']*d,Vxf['n']*d)
+        Vxf['SOS'] = 1
+        c  = np.zeros(( Vxf['n']*d, 1 ))
+        ceq = []
+    else:
+        Vxf = shape_DS(p,d,L,options)
+        if L > 0:
+            c  = np.zeros(((L+1)*d+(L+1)*options['optimizePriors'],1))
+            if options['upperBoundEigenValue']:
+                ceq = np.zeros((L+1,1))
+            else:
+                ceq = []
+        else:
+            c   = np.zeros((d,1))
+            ceq = Vxf['P'].T.dot(Vxf['P']) - 2
 
-  dc = np.array(())
-  dceq = np.array(())
+    dc, dceq = [], []
 
-  if L == -1:  # SOS
-    c = -np.linalg.eigvals(Vxf['P'] + Vxf['P'].T - np.eye(Vxf['n']*d)*options['tol_mat_bias'])
-  else:
-    for k in range(L):
-      lambder = sp.linalg.eigvals(Vxf['P'][:,:,k+1] + (Vxf['P'][:,:,k+1]).T)
-      #   print("check that div 2 works in line %d in file %s ".format(frameinfo.lineno, frameinfo.filename))
-      lambder = np.divide(lambder.real, 2.0)
-      lambder = np.expand_dims(lambder, axis=1)
-      # print('lambder: ', lambder.shape, c[k*d:(k+1)*d].shape)
-      c[k*d:(k+1)*d] = -lambder.real + options['tol_mat_bias']
-      if options['upperBoundEigenValue']:
-        ceq[k+1] = 1.0 - np.sum(lambder.real) # + Vxf.P(:,:,k+1)'
+    if L == -1:  # SOS
+        c = -np.linalg.eigvals(Vxf['P'] + Vxf['P'].T - np.eye(Vxf['n']*d)*options['tol_mat_bias'])
+    else:
+        for k in range(L):
+            lambder = sp.linalg.eigvals(Vxf['P'][:,:,k+1] + (Vxf['P'][:,:,k+1]).T).real/2.0
+            lambder = np.expand_dims(lambder, axis=1)
+            c[k*d:(k+1)*d] = -lambder + options['tol_mat_bias']
+            if options['upperBoundEigenValue']:
+                ceq[k+1] = 1.0 - np.sum(lambder.real) # + Vxf.P(:,:,k+1)'
 
-  if L > 0 and options['optimizePriors']:
-    #   print(Vxf['Priors'].shape)
-    #   print(c.shape)
-    #   print(c[(L+1)*d:(L+1)*d+L+1].shape)
-      c[(L+1)*d:(L+1)*d+L+1] = -Vxf['Priors']
-      #   was: c[(L+1)*d+1:(L+1)*d+L+1] = -Vxf['Priors']
+        if L > 0 and options['optimizePriors']:
+            c[(L+1)*d:(L+1)*d+L+1] = -Vxf['Priors']
 
-  return c, ceq, dc, dceq
+    return c, ceq, dc, dceq
 
 def gmm_2_parameters(Vxf, options):
   # transforming optimization parameters into a column vector
@@ -106,7 +95,6 @@ def parameters_2_gmm(popt, d, L, options):
 
   return Vxf
 
-
 def check_options(*args):
     options = args[0] if args else None
     if (not args) or ('tol_mat_bias' not in options):
@@ -131,12 +119,7 @@ def check_options(*args):
 
     return options
 
-
 def check_constraints(p,ctr_handle,d,L,options):
-# checking if every thing goes well here. Sometimes if the parameter
-# 'options['cons_penalty']' is not big enough, the constrains may be violated.
-# Then this function notifies the user to increase 'options['cons_penalty']'.
-
   c = -ctr_handle[p]
 
   if L > 0:
@@ -222,7 +205,6 @@ def shape_DS(p,d,L,options):
   Vxf['SOS']    = 0
 
   return Vxf
-
 
 def learnEnergy(Vxf0, Data, options):
   """
