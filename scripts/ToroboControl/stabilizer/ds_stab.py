@@ -19,7 +19,7 @@ def dsStabilizer(X, fn_handle, Vxf, rho0, kappa0):
 
     V,Vx    = computeEnergy(X,[],Vxf)
 
-    norm_Vx = np.sum(V ** 2, axis=0)
+    norm_Vx = np.sum(Vx ** 2, axis=0)
     norm_x  = np.sum(X ** 2,axis=0)
 
     Vdot    = np.sum(Vx * Xd,axis=0)
@@ -27,9 +27,7 @@ def dsStabilizer(X, fn_handle, Vxf, rho0, kappa0):
     ind     = (Vdot + rho) >= 0
     u       = Xd * 0
 
-    print('Vdot: ', Vdot)
-    
-    if np.sum(ind)>0:
+    if np.sum(ind)>0:  # we need to correct the unstable points
         lambder   = (Vdot[ind] + rho[ind]) / norm_Vx[ind]
         u[:,ind]  = -np.tile(lambder,[d,1]) * Vx[:,ind]
         Xd[:,ind] = Xd[:,ind] + u[:,ind]

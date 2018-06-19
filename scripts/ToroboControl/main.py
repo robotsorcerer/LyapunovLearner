@@ -44,8 +44,8 @@ def main(Vxf0, options):
     Vxf0 = guess_init_lyap(data, Vxf0, b_initRandom=False)
     Vxf, J = learnEnergy(Vxf0, data, options)
 
-    for k, v in Vxf.items():
-        print(k, v)
+    # for k, v in Vxf.items():
+    #     print(k, v)
     # get gmm params
     gmm.update(data.T, K=6, max_iterations=100)
     mu, sigma, priors = gmm.mu, gmm.sigma, gmm.logmass

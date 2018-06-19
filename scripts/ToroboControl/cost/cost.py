@@ -13,19 +13,25 @@ def matVecNorm(x):
 
 def obj(p, x, xd, d, L, w, options):
     Vxf         = shape_DS(p,d,L,options)
-    _, Vx       = computeEnergy(x, None, Vxf)
+    _, Vx       = computeEnergy(x, [], Vxf)
     Vdot        = np.sum(Vx*xd, axis=0)  # derivative of J w.r.t. xd
     norm_Vx     = np.sqrt(np.sum(Vx * Vx, axis=0))
     norm_xd     = np.sqrt(np.sum(xd * xd, axis=0))
-    bot         = np.multiply(norm_Vx, norm_xd)
-    # print('bot: ', norm_Vx.shape, norm_xd.shape)
-    J           = np.divide(Vdot, bot)#.squeeze()
+    bot         = norm_Vx * norm_xd
+    # fix nans in Vdot and bot
+    bot[bot==0] = options['tol_mat_bias']
+    # Vdot[Vdot==0] = options['tol_mat_bias']
+    # print('Vdot: ', Vdot)
+    # print('bot: ', bot)
+    J           = np.divide(Vdot, bot)
+    # print('J, ', J)
 
     # projections onto positive orthant
     J[np.where(norm_xd==0)] = 0
     J[np.where(norm_Vx==0)] = 0
     J[np.where(Vdot>0)]     = J[np.where(Vdot>0)]**2      # solves psi(t,n)**2
-    J[np.where(Vdot<0)]     = -w*J[np.where(Vdot<0)]**2   # # J should be (1, 750)
+    J[np.where(Vdot<0)]     = -w*J[np.where(Vdot<0)]**2   # solves -psi(t,n)**2
+    #print('J after: ', J)
     J                       = np.sum(J)
     dJ                      = None
 
@@ -134,8 +140,8 @@ def learnEnergy(Vxf0, Data, options):
     sumDet = 0
     for l in range(Vxf['L']+1):
         sumDet += np.linalg.det(Vxf['P'][:,:,l])
-        print('P: ', Vxf['P'][:,:,l])
-        print('sumDet: ', sumDet)
+        # print('P: ', Vxf['P'][:,:,l])
+        # print('sumDet: ', sumDet)
 
     Vxf['P'][:,:,0] = Vxf['P'][:,:,0]/sumDet
     Vxf['P'][:,:,1:] = Vxf['P'][:,:,1:]/np.sqrt(abs(sumDet))

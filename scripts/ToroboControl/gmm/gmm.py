@@ -90,7 +90,8 @@ class GMM(object):
         logobs = -0.5*np.ones((N, K))*D*np.log(2*np.pi)
         for i in range(K):
             mu, sigma = self.mu[i], self.sigma[i]
-            sigma = sigma
+            # print('sigma: ', sigma.shape)
+            sigma = check_sigma(sigma)
             L = scipy.linalg.cholesky(sigma, lower=True)
             logobs[:, i] -= np.sum(np.log(np.diag(L)))
             diff = (data - mu).T
