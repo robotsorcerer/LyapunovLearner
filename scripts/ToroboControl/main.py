@@ -59,9 +59,12 @@ def main(Vxf0, options):
     rho0, kappa0 = 1.0, 1.0
 
     gmr_handle = lambda x: GMR(priors, mu, sigma, x, inp, out)
-    Xd, u = dsStabilizer(data, gmr_handle, Vxf, rho0, kappa0)
+    stab_handle = lambda dat: dsStabilizer(dat, gmr_handle, Vxf, rho0, kappa0)
+    # Xd, u = dsStabilizer(data, gmr_handle, Vxf, rho0, kappa0)
     logging.debug('Xd: {}, u: {}'.format(Xd.shape, u.shape))
 
+    # do robot execution
+    x, xd = execute(x0_all, [], stab_handle, opt_exec)
 
 if __name__ == '__main__':
     # A set of options that will be passed to the solver
