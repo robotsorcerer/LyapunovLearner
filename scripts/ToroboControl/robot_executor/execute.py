@@ -13,7 +13,7 @@ from tampy.tampy import ORDER_SERVO_ON, ORDER_SERVO_OFF, ORDER_RUN_MODE, CTRL_MO
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-class ToroboEnvironment(object):
+class ToroboExecutor(object):
     def __init__(self, home_pos):
         """
          in update(self, currents) currents are inindividual currents to each joint
@@ -40,6 +40,7 @@ class ToroboEnvironment(object):
         rx = self.tampy.get_latest_rx()
         positions = [j.position for j in rx.joints]
         velocities = [j.velocity for j in rx.joints]
+
         return positions, velocities
 
     def execute(self, XT, stab_handle, opt_exec):
@@ -48,32 +49,24 @@ class ToroboEnvironment(object):
 
             where x is an arbitrary d dimensional variable and xd is the first time derivative
         """
+        xvel_des = np.zeros_like(XT)
         while True:
             xpos_cur, xvel_cur = self.get_state()
+            xpos_next = xpos_cur + xvel_des *  opt_exec['dt']
 
-            # xd[:,i,:] = np.tile(ds_stab(np.squeeze(x[:,i,:])-XT), [d, 1, nbSPoint])
-            xvel_des, u = ds_stab(xpos_cur - XT)
+            xvel_des, u = stab_handle(xpos_next - XT)
             xvel_des   = xvel_des + u
 
+            self.set_position(self, xpos_next)
 
-            ### integration
-            x[:,i,:] = x[:,i,:] + xd[:,i,:]*opt_exec['dt']
-
-
-
-            ### integration ###
-            x[:,i+1,:] = x[:,i,:] + xd[:,i,:] * options['dt']
-            t[i+1] = t[i]+options['dt']
-
-            i += 1
-
-            # check convergence
-            if i > 3 and (np.all(np.all(np.all(abs(xd[:,-1-3:-1,:])))))
+            if np.linalg.norm((xpos_next - xpos_cur), ord=2) > opt_exec['stop_tol']:
+                logger.debug('robot reached tolerance; schtoppen')
+                break
 
 
 
 
-        return x, xd
+        return xpos_next, xvel_des
 
 
         def __enter__(self):

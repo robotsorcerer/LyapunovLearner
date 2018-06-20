@@ -20,7 +20,7 @@ from cost.cost import learnEnergy
 from config import Vxf0, options, opt_exec
 from utils.utils import guess_init_lyap
 from stabilizer.ds_stab import dsStabilizer
-from robot_executor.execute import execute
+from robot_executor.execute import ToroboExecutor
 
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
 LOGGER = logging.getLogger(__name__)
@@ -46,8 +46,6 @@ def main(Vxf0, options):
     Vxf0 = guess_init_lyap(data, Vxf0, b_initRandom=False)
     Vxf, J = learnEnergy(Vxf0, data, options)
 
-    # for k, v in Vxf.items():
-    #     print(k, v)
     # get gmm params
     gmm.update(data.T, K=6, max_iterations=100)
     mu, sigma, priors = gmm.mu, gmm.sigma, gmm.logmass
@@ -66,8 +64,11 @@ def main(Vxf0, options):
     logging.debug('Xd: {}, u: {}'.format(Xd.shape, u.shape))
 
     # do robot execution
-    x0_all = data[:3, :]
-    x, xd = execute(x0_all, [], stab_handle, opt_exec)
+    x0_all = data[:, :3]
+    XT     = data[:, 4]
+    home_pos = [0.0]*7
+    executor = ToroboExecutor()
+    x, xd = executor.execute(x0_all, [], stab_handle, opt_exec)
 
 if __name__ == '__main__':
     # A set of options that will be passed to the solver

@@ -21,6 +21,7 @@ opt_exec = {
 'dt': 0.1,
 'i_max': 4000,
 'tol': 1,
+'stop_tol': 1e-4,
 }
 
 
