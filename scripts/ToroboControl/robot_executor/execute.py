@@ -5,10 +5,9 @@ import logging
 import numpy as np
 from os.path import join, expanduser
 
-sys.path.append(join(os.expanduser('~'), 'catkin_ws', 'src', 'torobo', 'tampy') )
+sys.path.append(join(expanduser('~'), 'catkin_ws', 'src', 'torobo', 'tampy') )
 from tampy.tampy import Tampy
 from tampy.tampy import ORDER_SERVO_ON, ORDER_SERVO_OFF, ORDER_RUN_MODE, CTRL_MODE_CURRENT
-
 
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -43,7 +42,7 @@ class ToroboExecutor(object):
 
         return positions, velocities
 
-    def execute(self, XT, stab_handle, opt_exec):
+    def execute(self, x0, XT, stab_handle, opt_exec):
         """function runs motions learned with SEDs
             xd = f(x)
 
@@ -52,6 +51,7 @@ class ToroboExecutor(object):
         xvel_des = np.zeros_like(XT)
         while True:
             xpos_cur, xvel_cur = self.get_state()
+            print(np.array(xpos_cur).shape, np.array(xvel_cur).shape)
             xpos_next = xpos_cur + xvel_des *  opt_exec['dt']
 
             xvel_des, u = stab_handle(xpos_next - XT)

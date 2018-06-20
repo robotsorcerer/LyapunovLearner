@@ -1,21 +1,22 @@
 import numpy as np
-from inspect import getfullargspec
+# from inspect import getfullargspec
 from cost.cost import computeEnergy
 
-def dsStabilizer(X, fn_handle, Vxf, rho0, kappa0):
+def dsStabilizer(X, gmr_handle, Vxf, rho0, kappa0):
     d = Vxf['d']
     if X.shape[0] == 2*d:
         Xd     = X[d:2*d,:]
         X      = X[:d,:]
     else:
-        if (len(getfullargspec(fn_handle).args) == 1):
-            Xd, _, _ = fn_handle(X)
-        elif (len(getfullargspec(fn_handle).args) == 2):
-            t  = X[d,:]
-            X  = X[d:]
-            Xd, _, _ = fn_handle(t,X)
-        else:
-            logger.CRITICAL('Unknown function handle!')
+        Xd, _, _ = gmr_handle(X)
+        # if (len(getfullargspec(gmr_handle).args) == 1):
+        #     Xd, _, _ = gmr_handle(X)
+        # elif (len(getfullargspec(gmr_handle).args) == 2):
+        #     t  = X[d,:]
+        #     X  = X[d:]
+        #     Xd, _, _ = gmr_handle(t,X)
+        # else:
+        #     logger.CRITICAL('Unknown function handle!')
 
     V,Vx    = computeEnergy(X,[],Vxf)
 

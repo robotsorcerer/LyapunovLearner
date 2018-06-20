@@ -36,7 +36,7 @@ def main(Vxf0, options):
 
     Vxf0['L'] = 2   # number of asymmetric quadratic components for L >= 0
     Vxf0['d'] = int(data.shape[0]/2)
-    Vxf0.update(Vxf0)
+    Vxf0.update(Vxf0)1
 
     filename = '../{}.h5'.format('torobo_processed_data')
     with h5py.File(filename, 'r+') as f:
@@ -50,9 +50,10 @@ def main(Vxf0, options):
     gmm.update(data.T, K=6, max_iterations=100)
     mu, sigma, priors = gmm.mu, gmm.sigma, gmm.logmass
 
-    logging.debug(' mu {}, sigma {}, priors: {}'.
-                    format(mu.shape, sigma.shape, \
-                    priors.shape))
+    if options['disp']:
+        logging.debug(' mu {}, sigma {}, priors: {}'.
+                        format(mu.shape, sigma.shape, \
+                        priors.shape))
 
     inp = range(0, Vxf['d'])
     out = range(Vxf['d'], 2* Vxf['d'])
@@ -61,23 +62,21 @@ def main(Vxf0, options):
     gmr_handle = lambda x: GMR(priors, mu, sigma, x, inp, out)
     stab_handle = lambda dat: dsStabilizer(dat, gmr_handle, Vxf, rho0, kappa0)
     # Xd, u = dsStabilizer(data, gmr_handle, Vxf, rho0, kappa0)
-    logging.debug('Xd: {}, u: {}'.format(Xd.shape, u.shape))
+    # logging.debug('Xd: {}, u: {}'.format(Xd.shape, u.shape))
 
     # do robot execution
-    x0_all = data[:, :3]
-    XT     = data[:, 4]
+    x0_all = data[:, :21]
+    XT     = data[:, 14:]
+    logger.debug('XT: {} xo: {} '.format(XT.shape, x0_all.shape)
     home_pos = [0.0]*7
-    executor = ToroboExecutor()
-    x, xd = executor.execute(x0_all, [], stab_handle, opt_exec)
+    executor = ToroboExecutor(home_pos)
+    x, xd = executor.execute(x0_all, XT, stab_handle, opt_exec)
 
 if __name__ == '__main__':
     # A set of options that will be passed to the solver
+    global options
     options = {
-        'tol_mat_bias': 1e-1,
-        'display': 1,
-        'tol_stopping': 1e-10,
-        'max_iter':500,
-        'optimizePriors': True,
-        'upperBoundEigenValue': True
+        'disp': 0,
     }
+    options.update()
     main(Vxf0, options)
