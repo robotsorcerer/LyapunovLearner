@@ -3,7 +3,6 @@
 import rospy
 import logging
 import argparse
-# from trac_ik_python.trac_ik import IK
 from trac_ik_python.trac_ik_wrap import TRAC_IK
 from numpy.random import random
 import time

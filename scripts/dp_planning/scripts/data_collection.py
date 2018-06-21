@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 from __future__ import print_function
+import os
 import sys
 import time
 import math
 import logging
 
 from os.path import join, expanduser
-sys.path.append(join(os.expanduser('~'), 'catkin_ws', 'src', 'torobo', 'tampy') )
+sys.path.append(join(expanduser('~'), 'catkin_ws', 'src', 'torobo', 'tampy') )
 from tampy.tampy import *
 
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
