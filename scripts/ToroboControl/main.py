@@ -69,8 +69,12 @@ def main(Vxf0, urdf, options):
 	stab_handle = lambda dat: dsStabilizer(dat, gmr_handle, Vxf, rho0, kappa0)
 
 	# do robot execution
-	x0_all = data[:, :14]
-	XT     = data[:, 14:]
+	# x0_all = [0.0]*7 #data[:, :14]
+	# XT     = #data[:, 14:]
+
+	x0_all = [30.23, -2.28, -9.68, 48.09, -23.25, 68.50, -0.03]
+	XT = [30.15, -8.90, 0.12, 59.71, 4.80, 83.20, -0.01]
+
 	logger.debug('XT: {} xo: {} '.format(XT.shape, x0_all.shape))
 	home_pos = [0.0]*7
 	executor = ToroboExecutor(home_pos, urdf)

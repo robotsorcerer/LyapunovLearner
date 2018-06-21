@@ -99,7 +99,11 @@ class Tampy(object):
 		#file opne
 		dir_name_tmp = os.path.dirname(os.path.abspath(__file__)).split("/")[:-1]
 		dir_name = '/'.join(dir_name_tmp)
-		self.save_joint = open(dir_name + '/data/' + 'state_joint.npy', 'wb')
+		file_path = dir_name + '/data/' #+ 'state_joint.npy'
+		print('filepath: ', file_path)
+		if not os.path.exists(file_path):
+			os.makedirs(file_path)
+		self.save_joint = open(file_path + 'state_joint.npy', 'a+')
 		# self.save_camera = open(dir_name + '/data/' + 'state_camera.npy', 'wb')
 
 
@@ -331,10 +335,11 @@ class Tampy(object):
 
 
 	def logger(self):
-		self.get_state_with_camera()
+		# self.get_state_with_camera()
+		self.get_state()
 		np.save(self.save_joint, self.state_buf)
 		# np.save(self.save_camera, self.frame_buf)
-		print(self.state_buf.shape)
+		#print(self.state_buf.shape)
 		# print(self.frame_buf.shape)
 
 
