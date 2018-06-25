@@ -40,3 +40,19 @@ def guess_init_lyap(data, Vxf0, b_initRandom=False):
     Vxf0.update(Vxf0)
 
     return Vxf0
+
+
+class BundleType(object):
+    """
+    This class bundles many fields, similar to a record or a mutable
+    namedtuple.
+    """
+    def __init__(self, variables):
+        for var, val in variables.items():
+            object.__setattr__(self, var, val)
+
+    # Freeze fields so new ones cannot be set.
+    def __setattr__(self, key, value):
+        if not hasattr(self, key):
+            raise AttributeError("%r has no attribute %s" % (self, key))
+        object.__setattr__(self, key, value)

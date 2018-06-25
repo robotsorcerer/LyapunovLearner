@@ -20,25 +20,29 @@ from gmm.gmm import GMM
 from gmm.gmm_utils import GMR
 from cost.cost import learnEnergy
 from config import Vxf0, options, opt_exec
-from utils.utils import guess_init_lyap
+from utils.utils import guess_init_lyap, BundleType
 from stabilizer.ds_stab import dsStabilizer
 from robot_executor.execute import ToroboExecutor
 
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-parser = argparse.ArgumentParser(description='odom_receiver')
 parser.add_argument('--silent', '-si', action='store_true', default=True,
 						help='max num iterations' )
+parser.add_argument('--data_type', '-dt', type=str, default='h5_data',
+						help='pipe_et_trumpet | h5_data' )
+
 args = parser.parse_args()
 
 def main(Vxf0, urdf, options):
 	gmm = GMM()
 
 	filename = '../{}.h5'.format('torobo_processed_data')
-	with h5py.File(filename, 'r+') as f:
-		data = f['data/data'].value
-	logging.debug(''.format(data.shape))
+	if options.args.data_type = 'h5_data':
+		with h5py.File(filename, 'r+') as f:
+			data = f['data/data'].value
+		logging.debug(''.format(data.shape))
+	elif options.args.data_type 
 
 	Vxf0['L'] = 2   # number of asymmetric quadratic components for L >= 0
 	Vxf0['d'] = int(data.shape[0]/2)
@@ -91,8 +95,10 @@ if __name__ == '__main__':
 		rospy.loginfo('Trajectory optimization node started!')
 
 		global options
+		options = BundleTyrpe(options)
 		# A set of options that will be passed to the solver
-		options['disp'] = 0
+		options.disp = 0
+		options.args = args
 		options.update()
 		#print(options)
 		urdf = rospy.get_param('/robot_description')
