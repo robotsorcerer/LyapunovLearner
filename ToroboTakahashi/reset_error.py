@@ -33,7 +33,7 @@ def reset_error():
 	tampy.servo_on()
 	tampy.start_joints()
 	tampy.log_buf(duration=5.0)
-	tampy.start_time()
+	tampy.start_timer()
 	tampy.move_joints([0.0] * 7, each_time=5.0, duration=5.0, motion_time=5.0)
 	tampy.servo_off()
 	print('done')

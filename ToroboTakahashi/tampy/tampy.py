@@ -99,11 +99,10 @@ class Tampy(object):
 		#file opne
 		dir_name_tmp = os.path.dirname(os.path.abspath(__file__)).split("/")[:-1]
 		dir_name = '/'.join(dir_name_tmp)
-		file_path = dir_name + '/data/' #+ 'state_joint.npy'
-		print('filepath: ', file_path)
+		file_path = dir_name + '/data/'
 		if not os.path.exists(file_path):
 			os.makedirs(file_path)
-		self.save_joint = open(file_path + 'state_joint.npy', 'a+')
+		self.save_joint = file_path + 'state_joint.npy'
 		# self.save_camera = open(dir_name + '/data/' + 'state_camera.npy', 'wb')
 
 
@@ -254,8 +253,10 @@ class Tampy(object):
 				print('{0:3.4f}'.format(time.time()-self.start_time))
 				print(['{0:3.2f}'.format(j.position) for j in rx.joints])
 
-				if(time.time()- self.start_time > duration):
-					self.logger()
+				self.logger()
+				# if(time.time()- self.start_time > duration):
+				# 	print('logging')
+				# 	self.logger()
 
 
 	def log_buf(self, duration):
@@ -335,13 +336,12 @@ class Tampy(object):
 
 
 	def logger(self):
+		print('logging')
 		# self.get_state_with_camera()
 		self.get_state()
-		np.save(self.save_joint, self.state_buf)
-		# np.save(self.save_camera, self.frame_buf)
-		#print(self.state_buf.shape)
-		# print(self.frame_buf.shape)
 
+		with open(self.save_joint, 'a') as foo:
+			np.save(foo, self.state_buf)
 
 	def camera_launch(self):
 		self.cam = Camera()
