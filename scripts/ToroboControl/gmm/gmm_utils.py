@@ -1,4 +1,7 @@
+from __future__ import print_function
 import numpy as np
+import logging
+logger = logging.getLogger(__name__)
 
 def matlength(x):
   # find the max of a numpy matrix dims
@@ -95,7 +98,9 @@ def shape_DS(p,d,L,options):
         i_c = i_c+d*L+1
 
     for k in range(L):
-        P[:,:,k+1] = p[range(i_c+k*(d**2)-1,i_c+(k+1)*(d**2)-1)].reshape(d,d)
+        #print('P [',k, ']', list(range(i_c+k*(d**2)-1,i_c+(k+1)*(d**2)-1)))
+        P[:,:,k] = p[range(i_c+k*(d**2)-1,i_c+(k+1)*(d**2)-1)].reshape(d,d)
+        #print(P[:,:,k])
 
     Vxf           = dict()
     Vxf['Priors'] = Priors

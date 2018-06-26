@@ -1,8 +1,8 @@
 import numpy as np
 
 Vxf0 = {
-    'L': None,
-    'd': None,
+    'L': 4,
+    'd': 2,
     'w': 1e-4, #A positive scalar weight regulating the priority between the two objectives of the opitmization. Please refer to the page 7 of the paper for further information.
     'Mu': np.array(()),
     'P': np.array(()),
@@ -13,6 +13,7 @@ options = {
     'disp': 0,
     'tol_stopping': 1e-10,
     'max_iter': 500,
+    'int_lyap_random': True,
     'optimizePriors': True,
     'upperBoundEigenValue': True,
 }

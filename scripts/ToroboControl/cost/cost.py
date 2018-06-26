@@ -1,3 +1,4 @@
+from __future__ import print_function
 import logging
 import numpy as np
 import numpy.random as npr
@@ -20,18 +21,14 @@ def obj(p, x, xd, d, L, w, options):
     bot         = norm_Vx * norm_xd
     # fix nans in Vdot and bot
     bot[bot==0] = options['tol_mat_bias']
-    # Vdot[Vdot==0] = options['tol_mat_bias']
-    # print('Vdot: ', Vdot)
-    # print('bot: ', bot)
     J           = np.divide(Vdot, bot)
-    # print('J, ', J)
 
     # projections onto positive orthant
     J[np.where(norm_xd==0)] = 0
     J[np.where(norm_Vx==0)] = 0
     J[np.where(Vdot>0)]     = J[np.where(Vdot>0)]**2      # solves psi(t,n)**2
     J[np.where(Vdot<0)]     = -w*J[np.where(Vdot<0)]**2   # solves -psi(t,n)**2
-    #print('J after: ', J)
+
     J                       = np.sum(J)
     dJ                      = None
 
@@ -39,14 +36,14 @@ def obj(p, x, xd, d, L, w, options):
 
 def optimize(obj_handle, p0):
     opt = minimize(
-        obj_handle,
-        x0=p0,
-        method='L-BFGS-B',
-        jac=False,
-        bounds=[(0.0, None) for _ in range(len(p0))], # no negative p values
-        #bounds = Bounds(ctr_handle(p0), keep_feasible=True), # will produce c, ceq as lb and ub
-        options={'ftol': 1e-4, 'disp': False}
-        )
+            obj_handle,
+            x0=p0,
+            method='L-BFGS-B',
+            jac=False,
+            bounds=[(0.0, None) for _ in range(len(p0))], # no negative p values
+            #bounds = Bounds(ctr_handle(p0), keep_feasible=True), # will produce c, ceq as lb and ub
+            options={'ftol': 1e-4, 'disp': False}
+            )
     return opt
 
 def ctr_eigenvalue(p,d,L,options):
@@ -90,7 +87,7 @@ def ctr_eigenvalue(p,d,L,options):
 def learnEnergy(Vxf0, Data, options):
     d = int(Data.shape[0]/2)
     x = Data[:d,:]
-    xd = Data[d:2*d,:]
+    xd = Data[d:,:]
     Vxf0['SOS'] = False
 
     # Transform the Lyapunov model to a vector of optimization parameters
@@ -102,8 +99,7 @@ def learnEnergy(Vxf0, Data, options):
     else:
         for l in range(Vxf0['L']):
             try:
-                Vxf0['P'][:,:,l+1] = LA.solve(Vxf0['P'][:,:,l+1], np.eye(d))
-                # print('Vxf0[:,:,l+1]: ', Vxf0['P'][:,:,l+1])
+                Vxf0['P'][:,:,l] = LA.solve(Vxf0['P'][:,:,l], np.eye(d))
             except LA.LinAlgError as e:
                 LOGGER.debug('LinAlgError: %s', e)
 
@@ -120,6 +116,11 @@ def learnEnergy(Vxf0, Data, options):
     optim_res = optimize(obj_handle, p0)
     popt, J = optim_res.x, optim_res.fun
 
+    while not optim_res.success:
+        optim_res = optimize(obj_handle, p0)
+        popt, J = optim_res.x, optim_res.fun
+    #print('popt: ', popt, ' J: ', J)
+
     if Vxf0['SOS']:
         Vxf['d']    = d
         Vxf['n']    = Vxf0['n']
@@ -134,17 +135,16 @@ def learnEnergy(Vxf0, Data, options):
         Vxf['L']        = Vxf0['L']
         Vxf['d']        = Vxf0['d']
         Vxf['w']        = Vxf0['w']
-        #Vxf['P']        = Vxf0['P']
-        #check_constraints(popt,ctr_handle,d,Vxf['L'],options)
 
     sumDet = 0
     for l in range(Vxf['L']+1):
         sumDet += np.linalg.det(Vxf['P'][:,:,l])
-        # print('P: ', Vxf['P'][:,:,l])
-        # print('sumDet: ', sumDet)
+        #print('sumDet: ', sumDet)
 
+    #print('b4: ', Vxf['P'])
     Vxf['P'][:,:,0] = Vxf['P'][:,:,0]/sumDet
     Vxf['P'][:,:,1:] = Vxf['P'][:,:,1:]/np.sqrt(abs(sumDet))
+    #print('after: ', Vxf['P'])
 
     return Vxf, J
 

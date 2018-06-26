@@ -1,3 +1,4 @@
+from __future__ import print_function
 import os
 import sys
 import time
@@ -7,7 +8,8 @@ import numpy as np
 from os.path import join, expanduser
 from trac_ik_python.trac_ik_wrap import TRAC_IK
 
-sys.path.append(join(expanduser('~'), 'catkin_ws', 'src', 'torobo', 'tampy') )
+sys.path.append(join(expanduser('~'), 'Documents', 'LyapunovLearner', 'ToroboTakahashi') )
+sys.path.append(join(expanduser('~'), 'Documents', 'LyapunovLearner', 'ToroboTakahashi', 'tampy') )
 from tampy.tampy import Tampy
 from tampy.tampy import ORDER_SERVO_ON, ORDER_SERVO_OFF, ORDER_RUN_MODE, CTRL_MODE_CURRENT
 
@@ -45,13 +47,8 @@ class ToroboExecutor(object):
 
 		return positions, velocities
 
-	def execute(self, x0, XT, stab_handle, opt_exec):
-		"""function runs motions learned with SEDs
-			xd = f(x)
+	def cart_to_joint(self, cart_pos):
 
-			where x is an arbitrary d dimensional variable and xd is the first time derivative
-		"""
-		xvel_des = np.zeros_like(XT)
 		ik_solver = TRAC_IK("link0", "link7", self.urdf,
 							0.005,  # default seconds
 							1e-5,   # default epsilon
@@ -64,9 +61,50 @@ class ToroboExecutor(object):
 		bx = by = bz = 0.001
 		brx = bry = brz = 0.1
 
+		num_solutions_found = 0
+		num_waypts   = 200
+
+		for i in range(num_waypts):
+			x, y, xd, yd = cart_pos
+			ini_t = time.time()
+			sol = ik_solver.CartToJnt(qinit,
+									  x, y, z,
+									  rx, ry, rz, rw,
+									  bx, by, bz,
+									  brx, bry, brz)
+			fin_t = time.time()
+			call_time = fin_t - ini_t
+
+			if sol:
+				print("X, Y, Z: " + str( (x, y, z) ))
+				print("SOL: " + str(sol))
+				print()
+				num_solutions_found += 1
+
+		print()
+		print("Found " + str(num_solutions_found) + " solutions")
+		print()
+
+	def execute(self, data, stab_handle, opt_exec):
+		"""function runs motions learned with SEDs
+			xd = f(x)
+
+			where x is an arbitrary d dimensional variable and xd is the first time derivative
+		"""
+
+		logger.debug('data: {}'.format(data.shape))
+
+		x0       = data[:, 0]
+		xvel_des = data[:, 356]
+
+
+		xvel_des = self.cart_to_joint(xvel_des)
+
 		while True:
-			xpos_cur, xvel_cur = self.get_state()
-			print(np.array(xpos_cur).shape, np.array(xvel_cur).shape)
+			xpos_cur, xvel_cur = self.get_state()  # note that these are in joint coordinates
+			# convert xvel_des to joint coordinates
+
+			print('pos: ', np.array(xpos_cur).shape, ' vel: ', np.array(xvel_cur).shape)
 			xpos_next = xpos_cur + xvel_des *  opt_exec['dt']
 
 			xvel_des, u = stab_handle(xpos_next - XT)
@@ -75,27 +113,7 @@ class ToroboExecutor(object):
 			rospy.loginfo(' constructing ik solution ')
 			print(' xpos_next: ', xpos_next.shape)
 			print(xpos_next)
-			num_solutions_found = 0
-			for i in range(xpos_next.shape[-1]):
-				x, y, xd, yd = xpos_next[:, i]
-				ini_t = time.time()
-				sol = ik_solver.CartToJnt(qinit,
-										  x, y, z,
-										  rx, ry, rz, rw,
-										  bx, by, bz,
-										  brx, bry, brz)
-				fin_t = time.time()
-				call_time = fin_t - ini_t
 
-				if sol:
-					print("X, Y, Z: " + str( (x, y, z) ))
-					print("SOL: " + str(sol))
-					print
-					num_solutions_found += 1
-
-			print
-			print("Found " + str(num_solutions_found) + " solutions")
-			print
 
 			self.set_position(qinit)
 

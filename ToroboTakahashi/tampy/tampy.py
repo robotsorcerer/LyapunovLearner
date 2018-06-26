@@ -4,7 +4,7 @@ import atexit
 import serial
 import struct
 import time
-import os
+import os, sys
 from tampy_common import *
 from multiprocessing import Process, Array, Value
 from rx import RX, RX_SIZE, RX_PACKET_PACKSTR

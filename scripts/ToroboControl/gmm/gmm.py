@@ -1,9 +1,10 @@
+from __future__ import print_function
 import logging
 import numpy as np
 import scipy.linalg
 import scipy.linalg as LA
 
-LOGGER = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 def logsum(vec, axis=0, keepdims=True):
     #TODO: Add a docstring.
@@ -18,7 +19,7 @@ def check_sigma(A):
     """
     eigval = np.linalg.eigh(A)[0]
     if np.array_equal(A, A.T) and np.all(eigval>0):
-        # LOGGER.debug("sigma is pos. def. Computing cholesky factorization")
+        # logger.debug("sigma is pos. def. Computing cholesky factorization")
         return A
     else:
         # find lowest eigen value
@@ -90,8 +91,8 @@ class GMM(object):
         logobs = -0.5*np.ones((N, K))*D*np.log(2*np.pi)
         for i in range(K):
             mu, sigma = self.mu[i], self.sigma[i]
-            # print('sigma: ', sigma.shape)
-            sigma = check_sigma(sigma)
+            logger.debug('sigma: {}\n'.format(sigma))
+            #sigma = check_sigma(sigma)
             L = scipy.linalg.cholesky(sigma, lower=True)
             logobs[:, i] -= np.sum(np.log(np.diag(L)))
             diff = (data - mu).T
@@ -135,11 +136,12 @@ class GMM(object):
         N  = data.shape[0]
         Do = data.shape[1]
 
-        LOGGER.debug('Fitting GMM with %d clusters on %d points.', K, N)
+        print('gmm data: ', data.shape)
+        logger.debug('Fitting GMM with %d clusters on %d points.', K, N)
 
         if (not self.warmstart or self.sigma is None or K != self.sigma.shape[0]):
             # Initialization.
-            LOGGER.debug('Initializing GMM.')
+            logger.debug('Initializing GMM.')
             self.sigma = np.zeros((K, Do, Do))
             self.mu = np.zeros((K, Do))
             self.logmass = np.log(1.0 / K) * np.ones((K, 1))
@@ -169,15 +171,15 @@ class GMM(object):
 
             # Compute log-likelihood.
             ll = np.sum(logsum(logobs, axis=1))
-            LOGGER.debug('GMM itr %d/%d. Log likelihood: %f',
+            logger.debug('GMM itr %d/%d. Log likelihood: %f',
                          itr, max_iterations, ll)
             if ll < prevll:
                 # TODO: Why does log-likelihood decrease sometimes?
-                LOGGER.debug('Log-likelihood decreased! Ending on itr=%d/%d',
+                logger.debug('Log-likelihood decreased! Ending on itr=%d/%d',
                              itr, max_iterations)
                 break
             if np.abs(ll-prevll) < 1e-5*prevll:
-                LOGGER.debug('GMM converged on itr=%d/%d',
+                logger.debug('GMM converged on itr=%d/%d',
                              itr, max_iterations)
                 break
             prevll = ll
