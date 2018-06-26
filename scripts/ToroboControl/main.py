@@ -37,12 +37,13 @@ args = parser.parse_args()
 def main(Vxf0, urdf, options):
 	gmm = GMM()
 
-	filename = '../{}.h5'.format('torobo_processed_data')
-	if options.args.data_type = 'h5_data':
+	if options.args.data_type == 'h5_data':
+		filename = '../{}.h5'.format('torobo_processed_data')
 		with h5py.File(filename, 'r+') as f:
 			data = f['data/data'].value
 		logging.debug(''.format(data.shape))
-	elif options.args.data_type 
+	elif options.args.data_type == 'pipe_et_trumpet':
+		filename = 'data/cart_pos.csv'
 
 	Vxf0['L'] = 2   # number of asymmetric quadratic components for L >= 0
 	Vxf0['d'] = int(data.shape[0]/2)
