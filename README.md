@@ -1,12 +1,28 @@
-###  send to home posiition
+### Introduction
 
-###  send all currents to zeros
++ This experiment was implemented on the Tokyo Robotics 7-DoF arm.
 
-###  set mode to tampy.send(ORDER_RUN_MODE, value1=CTRL_MODE_POSITION)
++ I expect that the experiment should be reproducible on any other 7-DoF arm.
 
-###  if into trouble, hit estop; then run reset controller
+### Generating data_type
+
++ First turn off the current on all the servos of your manipulator arm
+
++ Then manually move the arm to the world coordinates where you want it to go, recording the joint angles and joint angle velocities in the process. See [Torobo/Takahashi/main.py](Torobo/Takahashi/main.py) for an example in the `set_current` function
+
++ Then run the `ik_sub` executable in the `trac_ik_torobo` package to generate the cartesian coordinates from the joint space coordinates that you recorded
+    - Note that this uses the [KDL](http://www.orocos.org/kdl) and the [dr_kdl](https://github.com/jettan/dr_kdl) library packages. Please download and place them in your catkin `src` folder
 
 
-### saved coordinate for the Torobo arm is in `scripts/data/cart_pos.csv`
++ Running the ik_sub should place the new cartesian coordinate file in your `LyapunovLearner/scripts/data/cart_pos.csv` path.
 
-### The joint to cartesian coordinates were converted with `ik_sub` in `trac_ik_torobo`
++ Voila! You are ready to run Lyapunov learner.
+
+### Runing Lyapunov Learner
+
++ `cd` into the `scripts` folder of `LyapunovLearner` and run `main.py`. This should take care of business.
+
+### Issues
++ Please open an issue in this repo if you are having trouble running this package.
+
++ Email: lexilighty@gmail.com
