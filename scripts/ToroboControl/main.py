@@ -51,6 +51,9 @@ def main(Vxf0, urdf, options):
 		name = 'cart_pos.csv'
 		data, data6d = format_data(path, name, learn_type='2d')
 
+	if options['use_6d']:
+		data = data6d
+		
 	Vxf0['d'] = int(data.shape[0]/2)
 	Vxf0.update(Vxf0)
 
@@ -79,7 +82,7 @@ def main(Vxf0, urdf, options):
 	logger.debug('XT: {} x0: {} '.format(XT.shape, x0_all.shape))
 	home_pos = [0.0]*7
 	executor = ToroboExecutor(home_pos, urdf)
-	x, xd = executor.execute(data, stab_handle, opt_exec)
+	x, xd = executor.execute(data6d, stab_handle, opt_exec)
 
 if __name__ == '__main__':
 	if args.silent:
