@@ -120,28 +120,22 @@ class ToroboExecutor(object):
 		x_des       = data[:, 356]
 
 		d = data.shape[0]/2
-		while True:
-			# these are in joint coordinates
+
+		while not rospy.is_shutdown():
 			t1 = time.time()
+			# these are in joint coordinates
 			q_cur, qdot_cur, x_cur = self.get_state()
 
 			t2 = time.time()
 			xdot_cur = x_cur / (t2-t1)
 
-			# convert to cartesian coordinates
-			# x_cur, xdot_cur = self.cart_to_joint(q_cur, qdot_cur, check=False)
-			print('x_cur: ', x_cur.shape, '\nxdot_cur', xdot_cur.shape)
-			#print('x_cur: ', x_cur, ' | xdot_cur: ', xdot_cur)
-			print(data.shape)
-
 			# compute f
 			f, u = stab_handle(data - np.expand_dims(x_des, 1))
-			print('f, u', f.shape, u.shape)
 			xvel_des = f + u
 
 			print('xvel_des: ', xvel_des.shape)
 			# get next state
-			x_next = self.expand(x_cur[:d], 1) + xvel_des *  (t2-t1) #opt_exec['dt']
+			x_next = self.expand(x_cur[:d], 1) + xvel_des *  opt_exec['dt']#(t2-t1) #o
 			rospy.logdebug(' constructing ik solution for robot trajectory')
 
 			# assemble state for joint trajectory

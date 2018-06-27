@@ -31,6 +31,7 @@ def dsStabilizer(X, gmr_handle, Vxf, rho0, kappa0):
     ind     = (Vdot + rho) >= 0
     u       = Xd * 0
 
+    #print('Xd: ', np.unique(Xd))
     if np.sum(ind)>0:  # we need to correct the unstable points
         lambder   = (Vdot[ind] + rho[ind]) / norm_Vx[ind]
         u[:,ind]  = -np.tile(lambder,[d,1]) * Vx[:,ind]

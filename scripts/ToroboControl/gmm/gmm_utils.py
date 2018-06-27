@@ -22,6 +22,7 @@ def GMR(Priors, Mu, Sigma, x, inp, out, nargout=3):
     nbVar = Mu.shape[0]
     nbStates = Sigma.shape[2]
 
+    print('Priors: ', Priors)
     Pxi = np.zeros_like(Priors)
     for i in range(nbStates):
         Pxi[:,i] = Priors[i] * gaussPDF(x, Mu[inp,i], Sigma[inp,inp,i])
