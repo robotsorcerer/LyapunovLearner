@@ -11,7 +11,7 @@ Vxf0 = {
 options = {
     'tol_mat_bias': 1e-1,
     'disp': True,
-    'use_6d': True,
+    'learn_type': '6d',
     'num_clusters': 6, # number of gmm clusters
     'tol_stopping': 1e-10,
     'max_iter': 500,

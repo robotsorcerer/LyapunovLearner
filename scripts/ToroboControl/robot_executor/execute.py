@@ -54,7 +54,7 @@ class ToroboExecutor(object):
 
 		return positions, velocities, endeffector
 
-	def cart_to_joint(self, cart_pos, cart_vel, timeout=0.5, check=True):
+	def cart_to_joint(self, cart_pos, timeout=0.5, check=True):
 
 		ik_solver = TRAC_IK("link0", "link7", self.urdf,
 							ik_config['ik_timeout'],  # default seconds
@@ -67,7 +67,8 @@ class ToroboExecutor(object):
 			print("Link names:", ik_solver.getLinkNamesInChain())
 
 		qinit = [0.] * 7  #[-1.24, -8.16, -4.30, 68.21, -17.01, 59.76, 0.03]#
-		x, y, z, xd, yd, zd = cart_pos
+		x, y, z = cart_pos
+		print('cart_pos: ', cart_pos)
 		rx = ry = rz = 0.0
 		rw = 1.0
 		bx = by = bz = 0.001
@@ -83,16 +84,11 @@ class ToroboExecutor(object):
 									  rx, ry, rz, rw,
 									  bx, by, bz,
 									  brx, bry, brz)
-  			vel = ik_solver.CartToJnt(qinit,
-  									  cart_vel[:3],
-  									  rx, ry, rz, rw,
-  									  bx, by, bz,
-  									  brx, bry, brz)
 			fin_t = time.time()
 			call_time = fin_t - ini_t
 			avg_time += call_time
 
-			if pos and vel:
+			if pos:# and vel:
 				num_solutions_found += 1
 
 		if check:
@@ -100,16 +96,16 @@ class ToroboExecutor(object):
 			print("Found " + str(num_solutions_found) + " solutions")
 			print("X, Y, Z: " + str( (x, y, z) ))
 			print("POS: " , list(pos))
-			print("VEL: " , list(vel))
+			# print("VEL: " , list(vel))
 			print("Average IK call time: %.4f mins"%(avg_time*60))
 			print()
-		return list(pos), list(vel)
+		return list(pos)#, list(vel)
 
 	@staticmethod
 	def expand(x, axis):
 		return np.expand_dims(x, axis)
 
-	def execute(self, data, stab_handle, opt_exec):
+	def optimize_traj(self, data, stab_handle, opt_exec):
 		"""
 		    function runs motions learned with SEDs
 			xd = f(x)
@@ -117,13 +113,13 @@ class ToroboExecutor(object):
 			where x is an arbitrary d dimensional variable and xd is the first time derivative
 		"""
 		x0       = data[:, 0]
-		x_des       = data[:, 356]
+		x_des       = data[:, 356]   # as visualized from converted dataset with ik_sub
 
 		d = data.shape[0]/2
 
 		while not rospy.is_shutdown():
 			t1 = time.time()
-			# these are in joint coordinates
+			# these are in joint coordinates save x_cur
 			q_cur, qdot_cur, x_cur = self.get_state()
 
 			t2 = time.time()
@@ -131,40 +127,52 @@ class ToroboExecutor(object):
 
 			# compute f
 			f, u = stab_handle(data - np.expand_dims(x_des, 1))
+			# x_diff = self.expand((x_cur - x_des[:3]), 1)
+			# f, u = stab_handle(x_diff)
 			xvel_des = f + u
 
-			print('xvel_des: ', xvel_des.shape)
-			# get next state
-			x_next = self.expand(x_cur[:d], 1) + xvel_des *  opt_exec['dt']#(t2-t1) #o
-			rospy.logdebug(' constructing ik solution for robot trajectory')
+			# take it to joint space
+			for i in range(xvel_des.shape[-1]):
+				q_new = self.cart_to_joint(xvel_des[:, i], check=False)
+				rospy.loginfo("moving to {}".format(q_new))
+				# then move the robot
+				self.set_position(q_new)
 
-			# assemble state for joint trajectory
-			print('x_next: ', x_next)
+				# get next state
+				x_next = self.expand(x_cur[:d], 1) + xvel_des *  opt_exec['dt']#(t2-t1) #o
+				rospy.logdebug(' constructing ik solution for robot trajectory')
 
-			diff = np.linalg.norm((x_next - self.expand(x_cur[:d], 1)), ord=2)
-			rospy.logdebug('diff: '.format(diff))
+				# assemble state for joint trajectory
+				print('x_next: ', x_next)
 
-			# self.set_position(qinit)
+				diff = np.linalg.norm((x_next - self.expand(x_cur[:d], 1)), ord=2)
+				rospy.loginfo('diff: {}'.format(diff))
 
-			if diff > opt_exec['stop_tol']:
-				rospy.logdebug('robot reached tolerance; schtoppen')
-				break
+				# self.set_position(qinit)
 
-
-
+				# first convert from cartesian coordinates to joint coordinates
+				# before deploying it on the robot
+				if diff > opt_exec['stop_tol']:
+					rospy.logdebug('robot reached tolerance; schtoppen')
+					#optimize_trajreturn x_next, xvel_des
+					break
 
 		return x_next, xvel_des
 
+	def run_traj(self, q, qd):
+		# go home first
+		pass
 
-		def __enter__(self):
-			self.set_position(self.home_pos)
-			self.tampy.send(ORDER_RUN_MODE, value1=CTRL_MODE_CURRENT)
-			self.tampy.send(ORDER_SERVO_ON)
-			self.latest_control = time.time()
-			return self
 
-		def __exit__(self, type, value, tb):
-			self.tampy.send_currents([0] * 7)
-			# TODO: why do we need multiple calls to kill?
-			for _ in range(3):
-				self.tampy.send(ORDER_SERVO_OFF)
+	def __enter__(self):
+		self.set_position(self.home_pos)
+		self.tampy.send(ORDER_RUN_MODE, value1=CTRL_MODE_CURRENT)
+		self.tampy.send(ORDER_SERVO_ON)
+		self.latest_control = time.time()
+		return self
+
+	def __exit__(self, type, value, tb):
+		self.tampy.send_currents([0] * 7)
+		# TODO: why do we need multiple calls to kill?
+		for _ in range(3):
+			self.tampy.send(ORDER_SERVO_OFF)

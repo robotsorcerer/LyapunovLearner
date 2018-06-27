@@ -18,11 +18,10 @@ def gaussPDF(data, mu, sigma):
     return prob
 
 def GMR(Priors, Mu, Sigma, x, inp, out, nargout=3):
-    nbData = x.shape[1]
+    nbData = x.shape[-1]
     nbVar = Mu.shape[0]
     nbStates = Sigma.shape[2]
 
-    print('Priors: ', Priors.shape)
     Pxi = np.zeros_like(Priors)
     for i in range(nbStates):
         Pxi[:,i] = Priors[i] * gaussPDF(x, Mu[inp,i], Sigma[inp,inp,i])
