@@ -3,6 +3,9 @@ import numpy as np
 from cost.cost import computeEnergy
 
 def dsStabilizer(X, gmr_handle, Vxf, rho0, kappa0):
+    """
+    This function takes the position and generates the cartesian velocity
+    """
     d = Vxf['d']
     if X.shape[0] == 2*d:
         Xd     = X[d:2*d,:]

@@ -5,7 +5,9 @@ import time
 import rospy
 import logging
 import numpy as np
+from config import ik_config
 from os.path import join, expanduser
+from torobo_forward import forward_kinematics
 from trac_ik_python.trac_ik_wrap import TRAC_IK
 
 sys.path.append(join(expanduser('~'), 'Documents', 'LyapunovLearner', 'ToroboTakahashi') )
@@ -44,87 +46,120 @@ class ToroboExecutor(object):
 		rx = self.tampy.get_latest_rx()
 		positions = [j.position for j in rx.joints]
 		velocities = [j.velocity for j in rx.joints]
+		T_mat = np.array([forward_kinematics(positions)])
+		endeffector = (T_mat[:, 0:3, 3] / 1000.0).reshape(3)
 
-		return positions, velocities
+		# print('T_mat: ', T_mat)
+		# print('end_eff: ', endeffector)
 
-	def cart_to_joint(self, cart_pos):
+		return positions, velocities, endeffector
+
+	def cart_to_joint(self, cart_pos, cart_vel, timeout=0.5, check=True):
 
 		ik_solver = TRAC_IK("link0", "link7", self.urdf,
-							0.005,  # default seconds
+							ik_config['ik_timeout'],  # default seconds
 							1e-5,   # default epsilon
 							"Speed")
 
-		qinit = [0.] * 7  #Initial status of the joints as seed.
-		x = y = z = 0.0
+		if check: # check that ik solver is actually working
+			print("Number of joints:", ik_solver.getNrOfJointsInChain())
+			print("Joint names: ", ik_solver.getJointNamesInChain(self.urdf))
+			print("Link names:", ik_solver.getLinkNamesInChain())
+
+		qinit = [0.] * 7  #[-1.24, -8.16, -4.30, 68.21, -17.01, 59.76, 0.03]#
+		x, y, z, xd, yd, zd = cart_pos
 		rx = ry = rz = 0.0
 		rw = 1.0
 		bx = by = bz = 0.001
 		brx = bry = brz = 0.1
 
-		num_solutions_found = 0
-		num_waypts   = 200
+		avg_time = num_solutions_found = 0
+		num_waypts   = 2
 
-		for i in range(num_waypts):
-			x, y, xd, yd = cart_pos
+		for i in range(ik_config['ik_trials_num']):
 			ini_t = time.time()
-			sol = ik_solver.CartToJnt(qinit,
+			pos = ik_solver.CartToJnt(qinit,
 									  x, y, z,
 									  rx, ry, rz, rw,
 									  bx, by, bz,
 									  brx, bry, brz)
+  			vel = ik_solver.CartToJnt(qinit,
+  									  cart_vel[:3],
+  									  rx, ry, rz, rw,
+  									  bx, by, bz,
+  									  brx, bry, brz)
 			fin_t = time.time()
 			call_time = fin_t - ini_t
+			avg_time += call_time
 
-			if sol:
-				print("X, Y, Z: " + str( (x, y, z) ))
-				print("SOL: " + str(sol))
-				print()
+			if pos and vel:
 				num_solutions_found += 1
 
-		print()
-		print("Found " + str(num_solutions_found) + " solutions")
-		print()
+		if check:
+			print()
+			print("Found " + str(num_solutions_found) + " solutions")
+			print("X, Y, Z: " + str( (x, y, z) ))
+			print("POS: " , list(pos))
+			print("VEL: " , list(vel))
+			print("Average IK call time: %.4f mins"%(avg_time*60))
+			print()
+		return list(pos), list(vel)
+
+	@staticmethod
+	def expand(x, axis):
+		return np.expand_dims(x, axis)
 
 	def execute(self, data, stab_handle, opt_exec):
-		"""function runs motions learned with SEDs
+		"""
+		    function runs motions learned with SEDs
 			xd = f(x)
 
 			where x is an arbitrary d dimensional variable and xd is the first time derivative
 		"""
-
-		logger.debug('data: {}'.format(data.shape))
-
 		x0       = data[:, 0]
-		xvel_des = data[:, 356]
+		x_des       = data[:, 356]
 
-
-		xvel_des = self.cart_to_joint(xvel_des)
-
+		d = data.shape[0]/2
 		while True:
-			xpos_cur, xvel_cur = self.get_state()  # note that these are in joint coordinates
-			# convert xvel_des to joint coordinates
+			# these are in joint coordinates
+			t1 = time.time()
+			q_cur, qdot_cur, x_cur = self.get_state()
 
-			print('pos: ', np.array(xpos_cur).shape, ' vel: ', np.array(xvel_cur).shape)
-			xpos_next = xpos_cur + xvel_des *  opt_exec['dt']
+			t2 = time.time()
+			xdot_cur = x_cur / (t2-t1)
 
-			xvel_des, u = stab_handle(xpos_next - XT)
-			xvel_des   = xvel_des + u
+			# convert to cartesian coordinates
+			# x_cur, xdot_cur = self.cart_to_joint(q_cur, qdot_cur, check=False)
+			print('x_cur: ', x_cur.shape, '\nxdot_cur', xdot_cur.shape)
+			#print('x_cur: ', x_cur, ' | xdot_cur: ', xdot_cur)
+			print(data.shape)
 
-			rospy.loginfo(' constructing ik solution ')
-			print(' xpos_next: ', xpos_next.shape)
-			print(xpos_next)
+			# compute f
+			f, u = stab_handle(data - np.expand_dims(x_des, 1))
+			print('f, u', f.shape, u.shape)
+			xvel_des = f + u
 
+			print('xvel_des: ', xvel_des.shape)
+			# get next state
+			x_next = self.expand(x_cur[:d], 1) + xvel_des *  (t2-t1) #opt_exec['dt']
+			rospy.logdebug(' constructing ik solution for robot trajectory')
 
-			self.set_position(qinit)
+			# assemble state for joint trajectory
+			print('x_next: ', x_next)
 
-			if np.linalg.norm((xpos_next - xpos_cur), ord=2) > opt_exec['stop_tol']:
-				logger.debug('robot reached tolerance; schtoppen')
+			diff = np.linalg.norm((x_next - self.expand(x_cur[:d], 1)), ord=2)
+			rospy.logdebug('diff: '.format(diff))
+
+			# self.set_position(qinit)
+
+			if diff > opt_exec['stop_tol']:
+				rospy.logdebug('robot reached tolerance; schtoppen')
 				break
 
 
 
 
-		return xpos_next, xvel_des
+		return x_next, xvel_des
 
 
 		def __enter__(self):

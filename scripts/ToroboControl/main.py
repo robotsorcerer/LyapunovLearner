@@ -14,8 +14,10 @@ import rospy
 
 from os.path import dirname, abspath#, join, sep
 torcont = dirname(dirname(abspath(__file__))) + '/' + 'ToroboControl'
-# print(torcont)
+takahashi = dirname(dirname(abspath(__file__))) + '/../' + 'ToroboTakahashi'
+# print(takahashi)
 sys.path.append(torcont)
+sys.path.append(takahashi)
 
 from gmm.gmm import GMM
 from gmm.gmm_utils import GMR
@@ -37,7 +39,7 @@ args = parser.parse_args()
 print(args)
 
 def main(Vxf0, urdf, options):
-	gmm = GMM()
+	gmm = GMM(num_clusters=options['num_clusters'])
 
 	if options['args'].data_type == 'h5_data':
 		filename = '../{}.h5'.format('torobo_processed_data')
@@ -47,7 +49,7 @@ def main(Vxf0, urdf, options):
 	elif options['args'].data_type == 'pipe_et_trumpet':
 		path = '../data'
 		name = 'cart_pos.csv'
-		data = format_data(path, name, learn_type='2d')
+		data, data6d = format_data(path, name, learn_type='2d')
 
 	Vxf0['d'] = int(data.shape[0]/2)
 	Vxf0.update(Vxf0)
@@ -56,7 +58,7 @@ def main(Vxf0, urdf, options):
 	Vxf, J = learnEnergy(Vxf0, data, options)
 
 	# get gmm params
-	gmm.update(data.T, K=6, max_iterations=100)
+	gmm.update(data.T, K=options['num_clusters'], max_iterations=100)
 	mu, sigma, priors = gmm.mu, gmm.sigma, gmm.logmass
 
 	if options['disp']:
@@ -98,6 +100,7 @@ if __name__ == '__main__':
 		options.update()
 
 		urdf = rospy.get_param('/robot_description')
+		# urdf = '/robot_description'
 		main(Vxf0, urdf, options)
 
 		rospy.spin()

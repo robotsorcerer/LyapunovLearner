@@ -34,8 +34,9 @@ def format_data(filepath, name, learn_type='2d'):
 
         data2d = np.hstack([proper_data[:, :2], proper_data[:, 3:5]])
 
-        # returned as [x1, x2, x3, x4] eh to
-        return data2d.T
+        # data2d returned as [x1, y1, x1d, y1d].T eh to"" because control only works in 2d
+        # data6d returned as [x1, y1, z1, x1d, y1d, z1d].T eh to
+        return data2d.T, proper_data.T
 
     else:
         print("learning type not understood")

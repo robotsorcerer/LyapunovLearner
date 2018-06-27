@@ -1,8 +1,10 @@
 from __future__ import print_function
+import rospy
 import logging
 import numpy as np
 import scipy.linalg
 import scipy.linalg as LA
+from numpy.linalg import LinAlgError
 
 logger = logging.getLogger(__name__)
 
@@ -30,17 +32,27 @@ def check_sigma(A):
 
 class GMM(object):
     """ Gaussian Mixture Model. """
-    def __init__(self, init_sequential=False, eigreg=False, warmstart=True):
+    def __init__(self, num_clusters=6, init_sequential=False, eigreg=False, warmstart=True):
         self.init_sequential = init_sequential
         self.eigreg = eigreg
         self.warmstart = warmstart
         self.sigma = None
 
+        # mine June 26
+        self.K    = num_clusters
+        self.fail = None
+
+        # regularization parameters
+        self.eta   = 1e-6
+        self.delta            = 1e-4
+        self.eta_min           = 1e-6
+        self.delta_nut        = 2
+
     def inference(self, pts):
         """
-        Evaluate dynamics prior.
-        Args:
-            pts: A N x D array of points.
+            Evaluate dynamics prior.
+            Args:
+                pts: A N x D array of points.
         """
         # Compute posterior cluster weights.
         logwts = self.clusterwts(pts)
@@ -75,6 +87,16 @@ class GMM(object):
         logwts = logsum(logwts, axis=0) - np.log(data.shape[0])
         return logwts.T
 
+    def reg_sched(self, increase=False):
+        # increase mu
+        if increase:
+            self.delta = max(self.delta_nut, self.delta * self.delta_nut)
+            eta = self.eta * 1.1
+        else: # decrease eta
+            eta = self.eta
+            eta *= 0.09
+        self.eta = eta
+
     def estep(self, data):
         """
         Compute log observation probabilities under GMM.
@@ -89,15 +111,41 @@ class GMM(object):
         K = self.sigma.shape[0]
 
         logobs = -0.5*np.ones((N, K))*D*np.log(2*np.pi)
-        for i in range(K):
-            mu, sigma = self.mu[i], self.sigma[i]
-            logger.debug('sigma: {}\n'.format(sigma))
-            #sigma = check_sigma(sigma)
-            L = scipy.linalg.cholesky(sigma, lower=True)
-            logobs[:, i] -= np.sum(np.log(np.diag(L)))
-            diff = (data - mu).T
-            soln = scipy.linalg.solve_triangular(L, diff, lower=True)
-            logobs[:, i] -= 0.5*np.sum(soln**2, axis=0)
+
+        self.fail = True
+        while(self.fail):
+
+            self.fail = False
+
+            for i in range(K):
+                # print('sigma i ', self.sigma[i].shape, np.eye(self.sigma[i].shape[-1]).shape)
+                # print('eta: ', self.eta)
+                self.sigma[i] +=  self.eta * np.eye(self.sigma[i].shape[-1])
+                mu, sigma = self.mu[i], self.sigma[i]
+                # logger.debug('sigma: {}\n'.format(sigma))
+                try:
+                    L = scipy.linalg.cholesky(sigma, lower=True)
+                except LinAlgError as e:
+                    logger.debug('LinAlgError: %s', e)
+                    self.fail = True
+                    # restart the for loop if sigma aint positive definite
+                    logger.debug("sigma non-positive definiteness encountered; restarting")
+                    break
+                logobs[:, i] -= np.sum(np.log(np.diag(L)))
+                diff = (data - mu).T
+                soln = scipy.linalg.solve_triangular(L, diff, lower=True)
+                logobs[:, i] -= 0.5*np.sum(soln**2, axis=0)
+
+            if self.fail:
+                old_eta = self.eta
+                self.reg_sched(increase=True)
+                rospy.logdebug("Hessian became non positive definite")
+                rospy.logdebug('Increasing mu: {} -> {}'.format(old_eta, self.eta))
+            else:
+                # if successful, decrese mu
+                old_eta = self.eta
+                self.reg_sched(increase=False)
+                rospy.logdebug('Decreasing mu: {} -> {}'.format(old_eta, self.eta))
 
         logobs += self.logmass.T
         return logobs
@@ -125,7 +173,7 @@ class GMM(object):
         sigma = np.sum((self.sigma + diff_expand) * wts_expand, axis=0)
         return mu, sigma
 
-    def update(self, data, K, max_iterations=100):
+    def update(self, data, K=None, max_iterations=100):
         """
         Run EM to update clusters.
         Args:
@@ -136,7 +184,9 @@ class GMM(object):
         N  = data.shape[0]
         Do = data.shape[1]
 
-        print('gmm data: ', data.shape)
+        if K is None:
+            K = self.K
+
         logger.debug('Fitting GMM with %d clusters on %d points.', K, N)
 
         if (not self.warmstart or self.sigma is None or K != self.sigma.shape[0]):
