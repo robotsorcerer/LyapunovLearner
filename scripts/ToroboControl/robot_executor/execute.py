@@ -6,9 +6,13 @@ import rospy
 import logging
 import numpy as np
 from config import ik_config
+from geometry_msgs.msg import Twist
 from os.path import join, expanduser
 from torobo_forward import forward_kinematics
 from trac_ik_python.trac_ik_wrap import TRAC_IK
+from trac_ik_python.trac_ik import IK
+from trac_ik_torobo.srv import SolveDiffIK, SolveDiffIKRequest, SolveDiffIKResponse
+
 
 sys.path.append(join(expanduser('~'), 'Documents', 'LyapunovLearner', 'ToroboTakahashi') )
 sys.path.append(join(expanduser('~'), 'Documents', 'LyapunovLearner', 'ToroboTakahashi', 'tampy') )
@@ -25,13 +29,31 @@ class ToroboExecutor(object):
 		 According to Ryo-san, the max current is 0.5A and you should start with 0.05A or sth and gradually increase
 		"""
 		self.tampy = Tampy()
+		self.tampy.servo_on()
 		self.urdf  = urdf
 		self.home_pos = home_pos
 		self.control_freq = 30.0
 		self.latest_control = time.time()
+		self.carts_to_send = rospy.ServiceProxy("/torobo/solve_diff_ik", SolveDiffIK)
 
-	def set_position(self, positions):
-		self.tampy.move_to(positions)
+	def send_carts(self, msg):
+		rospy.wait_for_service("/torobo/solve_diff_ik")
+
+		try:
+			resp = self.carts_to_send(msg)
+			return SolveDiffIKResponse(resp.q_out)
+		except rospy.ServiceException, e:
+			print( "Service call failed: %s"%(e))
+
+	def set_position(self, positions, duration=500):
+		each_time = 5.00
+		motion_time = 10.00
+
+		self.tampy.start_joints()
+		self.tampy.log_buf(duration)
+		self.tampy.start_timer()
+
+		self.tampy.move_joints(positions, each_time=each_time, motion_time=motion_time, duration=duration)
 
 	def update(self, currents):
 		self.tampy.send_currents(currents)
@@ -49,65 +71,33 @@ class ToroboExecutor(object):
 		T_mat = np.array([forward_kinematics(positions)])
 		endeffector = (T_mat[:, 0:3, 3] / 1000.0).reshape(3)
 
-		# print('T_mat: ', T_mat)
-		# print('end_eff: ', endeffector)
-
 		return positions, velocities, endeffector
-
-	def cart_to_joint(self, cart_pos, timeout=0.5, check=True):
-
-		ik_solver = TRAC_IK("link0", "link7", self.urdf,
-							ik_config['ik_timeout'],  # default seconds
-							1e-5,   # default epsilon
-							"Speed")
-
-		if check: # check that ik solver is actually working
-			print("Number of joints:", ik_solver.getNrOfJointsInChain())
-			print("Joint names: ", ik_solver.getJointNamesInChain(self.urdf))
-			print("Link names:", ik_solver.getLinkNamesInChain())
-
-		qinit = [0.] * 7  #[-1.24, -8.16, -4.30, 68.21, -17.01, 59.76, 0.03]#
-		x, y, z = cart_pos
-		print('cart_pos: ', cart_pos)
-		rx = ry = rz = 0.0
-		rw = 1.0
-		bx = by = bz = 0.001
-		brx = bry = brz = 0.1
-
-		avg_time = num_solutions_found = 0
-		num_waypts   = 2
-
-		for i in range(ik_config['ik_trials_num']):
-			ini_t = time.time()
-			pos = ik_solver.CartToJnt(qinit,
-									  x, y, z,
-									  rx, ry, rz, rw,
-									  bx, by, bz,
-									  brx, bry, brz)
-			fin_t = time.time()
-			call_time = fin_t - ini_t
-			avg_time += call_time
-
-			if pos:# and vel:
-				num_solutions_found += 1
-
-		if check:
-			print()
-			print("Found " + str(num_solutions_found) + " solutions")
-			print("X, Y, Z: " + str( (x, y, z) ))
-			print("POS: " , list(pos))
-			# print("VEL: " , list(vel))
-			print("Average IK call time: %.4f mins"%(avg_time*60))
-			print()
-		return list(pos)#, list(vel)
 
 	@staticmethod
 	def expand(x, axis):
 		return np.expand_dims(x, axis)
 
+	def cart_to_ik_request_msg(self, cart_pos, q_in=None):
+		msg = Twist()
+		msg.linear.x  = -0.191556
+		msg.linear.y  = -0.216731
+		msg.linear.z  =  0.963396
+		msg.angular.x = -2.05147
+		msg.angular.y = -2.32108
+		msg.angular.z = -0.766848
+
+		if q_in is None:
+			q_in = [0,0,0,0,0,0,0]
+
+		tosend 				= SolveDiffIKRequest()
+		tosend.desired_vel  = msg
+		tosend.q_in 		= q_in
+
+		return self.send_carts(tosend)
+
 	def optimize_traj(self, data, stab_handle, opt_exec):
 		"""
-		    function runs motions learned with SEDs
+			function runs motions learned with SEDs
 			xd = f(x)
 
 			where x is an arbitrary d dimensional variable and xd is the first time derivative
@@ -117,52 +107,118 @@ class ToroboExecutor(object):
 
 		d = data.shape[0]/2
 
+		x_cur = x0
+
+		first_time = True
+		exit_while_loop = False
 		while not rospy.is_shutdown():
 			t1 = time.time()
 			# these are in joint coordinates save x_cur
-			q_cur, qdot_cur, x_cur = self.get_state()
+			if first_time:
+				q_cur, qdot_cur, _ = self.get_state()
+			else:
+				q_cur, qdot_cur, x_cur = self.get_state()
 
 			t2 = time.time()
 			xdot_cur = x_cur / (t2-t1)
 
 			# compute f
 			f, u = stab_handle(data - np.expand_dims(x_des, 1))
-			# x_diff = self.expand((x_cur - x_des[:3]), 1)
-			# f, u = stab_handle(x_diff)
 			xvel_des = f + u
 
 			# take it to joint space
 			for i in range(xvel_des.shape[-1]):
-				q_new = self.cart_to_joint(xvel_des[:, i], check=False)
-				rospy.loginfo("moving to {}".format(q_new))
-				# then move the robot
-				self.set_position(q_new)
+				x_next = self.expand(x_cur[:d], 1) + xvel_des *  (t2-t1) #  opt_exec['dt']#
+				print('x_next[:, i]: ', x_next[:, i])
 
-				# get next state
-				x_next = self.expand(x_cur[:d], 1) + xvel_des *  opt_exec['dt']#(t2-t1) #o
 				rospy.logdebug(' constructing ik solution for robot trajectory')
 
-				# assemble state for joint trajectory
-				print('x_next: ', x_next)
+				joint_positions = list(self.cart_to_ik_request_msg(x_next).q_out)
+				print('joint_positions: ', joint_positions)
 
-				diff = np.linalg.norm((x_next - self.expand(x_cur[:d], 1)), ord=2)
+				self.set_position(joint_positions)
+				time.sleep(10)
+
+				# assemble state for joint trajectory
+				rospy.logdebug('x_next: {} |  x_cur[:d] {}: '.format(x_next.shape, x_cur[:d].shape))
+
+				diff = np.linalg.norm((x_next[:, i] - x_des[:3]), ord=2)
 				rospy.loginfo('diff: {}'.format(diff))
 
-				# self.set_position(qinit)
-
-				# first convert from cartesian coordinates to joint coordinates
-				# before deploying it on the robot
 				if diff > opt_exec['stop_tol']:
 					rospy.logdebug('robot reached tolerance; schtoppen')
-					#optimize_trajreturn x_next, xvel_des
+					exit_while_loop = True
 					break
+			first_time = False
+
+			if exit_while_loop:
+				break
 
 		return x_next, xvel_des
 
-	def run_traj(self, q, qd):
-		# go home first
-		pass
 
+	def optimize_traj2(self, data, stab_handle, opt_exec):
+		"""
+			function runs motions learned with SEDs
+			xd = f(x)
+
+			where x is an arbitrary d dimensional variable and xd is the first time derivative
+		"""
+		# general initializations
+		exit_while_loop, first_time = False, True
+		x_cur, x_des                = data[:, 0], data[:, 356]   # as visualized from converted dataset with ik_sub
+
+		nbSPoint, d = data.shape[-1], data.shape[0]/2
+
+
+
+		diff = np.linalg.norm((x_cur - x_des[:3]), ord=2)
+		xd   =  np.zeros(d, 1, nbSPoint)
+
+		while not diff > opt_exec['stop_tol']: #rospy.is_shutdown():
+			t1 = time.time()
+			# these are in joint coordinates save x_cur
+			if first_time:
+				q_cur, qdot_cur, _     = self.get_state()
+			else:
+				q_cur, qdot_cur, x_cur = self.get_state()
+
+			t2 = time.time()
+			xdot_cur = x_cur / (t2-t1)
+
+			# compute f
+			f, u = stab_handle(data - np.expand_dims(x_des, 1))
+			xvel_des = f + u
+
+			# take it to joint space
+			for i in range(xvel_des.shape[-1]):
+				x_next = self.expand(x_cur[:d], 1) + xvel_des *  (t2-t1) #  opt_exec['dt']#
+				# print('x_next[:, i]: ', x_next[:, i])
+
+				rospy.logdebug(' constructing ik solution for robot trajectory')
+
+				joint_positions = list(self.cart_to_ik_request_msg(x_next).q_out)
+				print('joint_positions: ', joint_positions)
+
+				self.set_position(joint_positions)
+				time.sleep(10)
+
+				# assemble state for joint trajectory
+				rospy.logdebug('x_next: {} |  x_cur[:d] {}: '.format(x_next.shape, x_cur[:d].shape))
+
+				diff = np.linalg.norm((x_next[:, i] - x_des[:3]), ord=2)
+				rospy.loginfo('diff: {}'.format(diff))
+
+				if diff > opt_exec['stop_tol']:
+					rospy.logdebug('robot reached tolerance; schtoppen')
+					exit_while_loop = True
+					break
+			first_time = False
+
+			if exit_while_loop:
+				break
+
+		return x_next, xvel_des
 
 	def __enter__(self):
 		self.set_position(self.home_pos)

@@ -83,7 +83,6 @@ def main(Vxf0, urdf, options):
 	rospy.logdebug("optimizing trajectories for reaching target")
 	q, qd = executor.optimize_traj(data, stab_handle, opt_exec)
 
-	# now run the trajectory
 
 if __name__ == '__main__':
 	if args.silent:
@@ -108,5 +107,6 @@ if __name__ == '__main__':
 		main(Vxf0, urdf, options)
 
 		rospy.spin()
+		
 	except KeyboardInterrupt:
-		LOGGER.critical("shutting down ros")
+		logger.critical("shutting down ros")

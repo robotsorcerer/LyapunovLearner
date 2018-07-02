@@ -28,15 +28,15 @@ def format_data(filepath, name, learn_type='2d'):
         proper_data.append(temp)
 
     proper_data = np.array(proper_data)
-    assert proper_data.ndim == 2, "data shape needs to be 2d"
 
+    assert proper_data.ndim == 2, "data shape needs to be 2d"
 
     if learn_type == '2d':
         data2d = np.hstack([proper_data[:, :2], proper_data[:, 3:5]])
 
         # data2d returned as [x1, y1, x1d, y1d].T eh to"" because control only works in 2d
         return data2d.T
-        
+
     elif learn_type == '6d':
         # data6d returned as [x1, y1, z1, x1d, y1d, z1d].T eh to
         return proper_data.T
