@@ -3,12 +3,18 @@ from __future__ import print_function
 import sys
 import time
 import math
+import rospy, rospkg
 import logging
+
+rospack = rospkg.RosPack()
+lyap = rospack.get_path('lyapunovlearner')
+
 sys.path.append('/home/olalekan/catkin_ws/src/torobo/tampy')
 from tampy.tampy import *
 
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__name__)
+
 
 """
 This script basically moves the bot to the home position, then moves the robot to a near nonlinear pose

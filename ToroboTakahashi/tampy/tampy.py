@@ -212,7 +212,7 @@ class Tampy(object):
 		return False
 
 
-	def wait_for_accomplish(self, motion_time, duration):
+	def wait_for_accomplish(self, motion_time, duration, disp=False):
 		rx = self.get_latest_rx()
 		rx_timestamp = rx.timestamp
 		previous_time = time.time() - self.start_time
@@ -232,7 +232,8 @@ class Tampy(object):
 				log_count_current = log_count_current + 1
 				self.get_state_current()
 				currents_tmp_buf[:] = currents_tmp_buf[:] + self.state_currents[:]
-				print(['{0:3.2f}'.format(j.position) for j in rx.joints])
+				if disp:
+					print(['{0:3.2f}'.format(j.position) for j in rx.joints])
 
 			if(self.current_time - previous_time > self.log_time):
 				self.log_count = self.log_count +1

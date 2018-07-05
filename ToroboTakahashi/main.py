@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+# !/usr/bin/env python
 
 import os
 import cv2
@@ -16,7 +16,6 @@ parser.add_argument('--publish', '-pb', type=bool, default=0)
 parser.add_argument('--turn_off_currents', '-co', type=bool, default=0)
 args = parser.parse_args()
 
-print(args)
 tampy = Tampy()
 
 def move_home(duration):
