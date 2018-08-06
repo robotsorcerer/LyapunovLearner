@@ -1,11 +1,11 @@
 from __future__ import print_function
-import logging
+import logging, time
 import numpy as np
 import numpy.random as npr
 import scipy.linalg as LA
 from scipy.optimize import minimize
 from gmm import gmm_2_parameters, parameters_2_gmm, \
-                shape_DS, gmr_lyapunov
+                shape_DS, gmr_lyapunov#, sos_lyapunov
 
 LOGGER = logging.getLogger(__name__)
 
@@ -42,7 +42,7 @@ def optimize(obj_handle, p0):
             jac=False,
             bounds=[(0.0, None) for _ in range(len(p0))], # no negative p values
             #bounds = Bounds(ctr_handle(p0), keep_feasible=True), # will produce c, ceq as lb and ub
-            options={'ftol': 1e-4, 'disp': False}
+            options={'ftol': 1e-8, 'disp': False}
             )
     return opt
 
@@ -85,10 +85,9 @@ def ctr_eigenvalue(p,d,L,options):
     return c, ceq
 
 def learnEnergy(Vxf0, Data, options):
-    d = int(Data.shape[0]/2)
+    d = Vxf0['d'] #int(Data.shape[0]/2)
     x = Data[:d,:]
     xd = Data[d:,:]
-    Vxf0['SOS'] = False
 
     # Transform the Lyapunov model to a vector of optimization parameters
     if Vxf0['SOS']:
@@ -98,16 +97,14 @@ def learnEnergy(Vxf0, Data, options):
         Vxf0['L'] = -1; # to distinguish sos from other methods
     else:
         for l in range(Vxf0['L']):
-            try:
-                Vxf0['P'][:,:,l] = LA.solve(Vxf0['P'][:,:,l], np.eye(d))
-            except LA.LinAlgError as e:
-                LOGGER.debug('LinAlgError: %s', e)
+            Vxf0['P'][:,:,l] = np.linalg.lstsq(Vxf0['P'][:,:,l], np.eye(d))[0]
 
         # in order to set the first component to be the closest Gaussian to origin
         to_sort = matVecNorm(Vxf0['Mu'])
         idx = np.argsort(to_sort, kind='mergesort')
         Vxf0['Mu'] = Vxf0['Mu'][:,idx]
         Vxf0['P']  = Vxf0['P'][:,:,idx]
+        # print('\npriors: ', Vxf0['Priors'])
         p0 = gmm_2_parameters(Vxf0,options)
 
     obj_handle = lambda p: obj(p, x, xd, d, Vxf0['L'], Vxf0['w'], options)
@@ -119,7 +116,6 @@ def learnEnergy(Vxf0, Data, options):
     while not optim_res.success:
         optim_res = optimize(obj_handle, p0)
         popt, J = optim_res.x, optim_res.fun
-    #print('popt: ', popt, ' J: ', J)
 
     if Vxf0['SOS']:
         Vxf['d']    = d

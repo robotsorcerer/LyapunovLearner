@@ -61,6 +61,8 @@ def gmm_2_parameters(Vxf, options):
                            np.expand_dims(np.ravel(Vxf['Priors']), axis=1), # will be a x 1
                            np.expand_dims(Vxf['Mu'][:,1:], axis=1).reshape(Vxf['L']*d,1)
                         ))
+
+            # print('p0 in gmm: ', p0.T, p0.shape)
         else:
             p0 = Vxf['Mu'][:,2:].reshape(Vxf['L']*d, 1) #print(p0) # p0 will be 4x1
     else:
@@ -97,16 +99,20 @@ def shape_DS(p,d,L,options):
         Mu = np.hstack((np.zeros((d,1)), p[[i_c+ x for x in range(d*L)]].reshape(d,L)))
         i_c = i_c+d*L+1
 
-    for k in range(L):
-        #print('P [',k, ']', list(range(i_c+k*(d**2)-1,i_c+(k+1)*(d**2)-1)))
-        P[:,:,k] = p[range(i_c+k*(d**2)-1,i_c+(k+1)*(d**2)-1)].reshape(d,d)
-        #print(P[:,:,k])
+        # print('Priors: ', Priors)
+        # print('Mu: ', Mu)
 
-    Vxf           = dict()
-    Vxf['Priors'] = Priors
-    Vxf['Mu']     = Mu
-    Vxf['P']      = P
-    Vxf['SOS']    = 0
+    # print('p: ', p, p.shape)
+    # print(range(i_c+L*d**2,i_c+(L+1)*d**2-1))
+    for k in range(L):
+        # print('p in range ', i_c+k*(d**2)-1, i_c+(k+1)*(d**2)-1, p.shape)
+        P[:,:,k] = p[range(i_c+k*(d**2)-1,i_c+(k+1)*(d**2)-1)].reshape(d,d)
+        # print(P[:,:,k])
+
+    Vxf           = dict(Priors = Priors,
+                         Mu = Mu,
+                         P = P,
+                         SOS = 0)
 
     return Vxf
 
@@ -114,21 +120,29 @@ def gmr_lyapunov(x, Priors, Mu, P):
     # print('x.shape: ', x.shape)
     nbData = x.shape[1]
     d = x.shape[0]
-    L = P.shape[2]-1;
+    L = P.shape[-1]-1;
+
 
     # Compute the influence of each GMM component, given input x
     for k in range(L):
         P_cur               = P[:,:,k+1]
+        x                   = x - np.expand_dims(x[:, -1], 1)     # subtract target from each x
+
         if k                == 0:
-            V_k             = np.sum(x * (P_cur.dot(x)), axis=0)
-            V               = Priors[k+1]*(V_k)
+            V_k             = np.sum(x * (P_cur.dot(x)), axis=0)  # will be 1 x 10,000
+            # V_k[V_k < 0]    = 0
+            V               = Priors[k+1] * V_k                   # will be
             Vx              = Priors[k+1]*((P_cur+P_cur.T).dot(x))
         else:
             x_tmp           = x - np.tile(Mu[:,k+1], [nbData, 1]).T
+            # print('x_tmp: ', x_tmp.shape, 'np.tile(Mu[:,k+1], [nbData, 1]).T: ', np.tile(Mu[:,k+1], [nbData, 1]).T.shape)
             V_k             = np.sum(P_cur.dot(x_tmp)*x, axis=0)
             V_k[V_k < 0]    = 0
             V              += Priors[k+1] * (V_k ** 2)
             temp            = (2 * Priors[k+1]) * (V_k)
             Vx              = Vx + np.tile(temp, [d,1])*(P_cur.dot(x_tmp) + P_cur.T.dot(x))
+
+        # sanity check to be sure the lyapunov constraints are not being violated
+        # print('V: ', len(np.unique(V[V<0])), ' Vx: ', len(np.unique(Vx[Vx>0])),  'x: ', x.shape)
 
     return V, Vx

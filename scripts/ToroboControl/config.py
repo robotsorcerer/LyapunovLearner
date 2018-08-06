@@ -6,6 +6,7 @@ Vxf0 = {
     'w': 1e-4, #A positive scalar weight regulating the priority between the two objectives of the opitmization. Please refer to the page 7 of the paper for further information.
     'Mu': np.array(()),
     'P': np.array(()),
+    'SOS': False
 }
 
 options = {

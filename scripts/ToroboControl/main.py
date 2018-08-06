@@ -58,6 +58,8 @@ def main(Vxf0, urdf, options):
 	Vxf0.update(Vxf0)
 
 	Vxf0 = guess_init_lyap(data, Vxf0, options['int_lyap_random'])
+	# print('Mu: ', Vxf0['Mu'].shape, ' | P: ', Vxf0['P'].shape)
+
 	Vxf, J = learnEnergy(Vxf0, data, options)
 
 	# get gmm params
