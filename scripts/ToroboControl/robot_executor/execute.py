@@ -14,13 +14,14 @@ from trac_ik_python.trac_ik_wrap import TRAC_IK
 from trac_ik_python.trac_ik import IK
 from torobo_ik.srv import SolveDiffIK, SolveDiffIKRequest, SolveDiffIKResponse
 
+rp = rospkg.RosPack()
+lyap_path = rp.get_path('lyapunovlearner')
 
-rospack = rospkg.RosPack()
-lyap = rospack.get_path('lyapunovlearner')
+# print('lyap_path: ', lyap_path)
+time.sleep(10)
 
-sys.path.append(join(lyap, 'ToroboTakahashi'))
-sys.path.append(join(lyap, 'ToroboTakahashi', 'tampy'))
-
+sys.path.append(join(lyap_path, 'ToroboTakahashi') )
+sys.path.append(join(lyap_path, 'ToroboTakahashi', 'tampy') )
 from tampy.tampy import Tampy
 from tampy.tampy import ORDER_SERVO_ON, ORDER_SERVO_OFF, ORDER_RUN_MODE, CTRL_MODE_CURRENT
 
@@ -39,7 +40,7 @@ class ToroboExecutor(object):
 		self.home_pos = home_pos
 		self.control_freq = 30.0
 		self.latest_control = time.time()
-		self.carts_to_send = rospy.ServiceProxy("/torobo_ik/solve_diff_ik", SolveDiffIK)
+		self.carts_to_send = rospy.ServiceProxy("/torobo/solve_diff_ik", SolveDiffIK)
 
 	def send_carts(self, msg):
 		rospy.wait_for_service("/torobo_ik/solve_diff_ik")
@@ -107,41 +108,48 @@ class ToroboExecutor(object):
 
 			where x is an arbitrary d dimensional variable and xd is the first time derivative
 		"""
-		x_des       = data[:, -1]   # as visualized from converted dataset with ik_sub
-		d = data.shape[0]/2
+		x_cur    = data[:, 0]
+		x_des    = data[:, 356]   # as visualized from converted dataset with ik_sub
+		d        = data.shape[0]/2
+
 
 		first_time = True
 		exit_while_loop = False
+		while not rospy.is_shutdown():
 
-		_, _, x_cur = self.get_state()
-		diff = np.linalg.norm((x_cur[:3] - x_des[:3]), ord=2)
-		i = 0
-		while not (rospy.is_shutdown()) and (diff > opt_exec['stop_tol']):
-			t1 = time.time()
 			# these are in joint coordinates save x_cur
 			q_cur, qdot_cur, x_cur = self.get_state()
-			t2 = time.time()
 
-			t_diff = opt_exec['stop_tol']
-			xdot_cur = x_cur / t_diff
+			xdot_cur = x_cur / opt_exec['dt']
 
+			# compute f
 			xvel_des = sum(stab_handle(data - np.expand_dims(x_des, 1))) #f + u
 
-			x_next = self.expand(x_cur[:d], 1) + xvel_des *  opt_exec['dt'] 
-			print('x_next[:, i]: ', x_next[:, i], ' t2-t1: ', t_diff)
+			des_jnt = list(self.cart_to_ik_request_msg(x_des).q_out)
 
-			q_cur, _, _     = self.get_state()
-			joint_positions = list(self.cart_to_ik_request_msg(x_next, q_in=q_cur).q_out)
-			target_position = list(self.cart_to_ik_request_msg(x_des).q_out)
-			print('joint_positions: ', joint_positions)
+			rospy.logdebug('des joint: {}', des_jnt)
+
+			# take it to joint space
+			x_next = self.expand(x_cur[:d], 1) + xvel_des * opt_exec['dt']#
+			joint_positions = list(self.cart_to_ik_request_msg(x_next).q_out)
+
+			rospy.logdebug(' setting joint_positions: {}', joint_positions)
 
 			self.set_position(joint_positions)
 
+			# assemble state for joint trajectory
+			rospy.logdebug('x_next: {} |  x_cur[:d] {}: '.format(x_next.shape, x_cur[:d].shape))
+
 			diff = np.linalg.norm((x_next[:, i] - x_des[:3]), ord=2)
 			rospy.loginfo('diff: {}'.format(diff))
-			i += 1
 
-			first_time = False
+			if diff > opt_exec['stop_tol']:
+				rospy.logdebug('robot reached tolerance; schtoppen')
+				exit_while_loop = True
+				break
+
+			# if exit_while_loop:
+			# 	break
 
 		return x_next, xvel_des
 

@@ -1,9 +1,10 @@
 from __future__ import print_function
 import numpy as np
-import rospy
+import logging
+logger = logging.getLogger(__name__)
 
-# find the max of a numpy matrix dims
 def matlength(x):
+  # find the max of a numpy matrix dims
   return np.max(x.shape)
 
 def gaussPDF(data, mu, sigma):
@@ -17,11 +18,10 @@ def gaussPDF(data, mu, sigma):
     return prob
 
 def GMR(Priors, Mu, Sigma, x, inp, out, nargout=3):
-    nbData = x.shape[1]
-    nbVar = Mu.shape[0]
+    nbData   = x.shape[-1]
+    nbVar    = Mu.shape[0]
     nbStates = Sigma.shape[2]
 
-    rospy.logdebug('Priors: {} ', Priors.shape)
     Pxi = np.zeros_like(Priors)
     for i in range(nbStates):
         Pxi[:,i] = Priors[i] * gaussPDF(x, Mu[inp,i], Sigma[inp,inp,i])
@@ -30,8 +30,8 @@ def GMR(Priors, Mu, Sigma, x, inp, out, nargout=3):
                          np.finfo(np.float32).min, [1,nbStates])
     #########################################################################
     for j in range(nbStates):
-        y_tmp[:,:,j] = np.tile(Mu[out,j],[1,nbData]) \
-                     + Sigma[out,inp,j]/(Sigma[inp,inp,j]).dot(x-np.tile(Mu[inp,j],[1,nbData]))
+        y_tmp[:,:,j] = np.tile(Mu[out,j],[1,nbData])  + \
+                        Sigma[out,inp,j]/(Sigma[inp,inp,j]).dot(x-np.tile(Mu[inp,j],[1,nbData]))
 
     beta_tmp = beta.reshape(1, beta.shape)
     y_tmp2 = np.tile(beta_tmp,[matlength(out), 1, 1]) * y_tmp
@@ -44,10 +44,10 @@ def GMR(Priors, Mu, Sigma, x, inp, out, nargout=3):
                                    - (Sigma[out,inp,j]/(Sigma[inp,inp,j])  \
                                    * Sigma[inp,out,j])
 
-        beta_tmp = beta.reshape(1, 1, beta.shape)
-        Sigma_y_tmp2 = np.tile(beta_tmp * beta_tmp, \
-                               [matlength(out), matlength(out), 1, 1]) * \
-                                np.tile(Sigma_y_tmp,[1, 1, nbData, 1])
+        beta_tmp                = beta.reshape(1, 1, beta.shape)
+        Sigma_y_tmp2            = np.tile(beta_tmp * beta_tmp, \
+                                   [matlength(out), matlength(out), 1, 1]) * \
+                                    np.tile(Sigma_y_tmp,[1, 1, nbData, 1])
         Sigma_y = np.sum(Sigma_y_tmp2, axis=3)
 
     return y, Sigma_y, beta
