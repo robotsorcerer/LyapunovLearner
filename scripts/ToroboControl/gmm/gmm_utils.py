@@ -61,8 +61,6 @@ def gmm_2_parameters(Vxf, options):
                            np.expand_dims(np.ravel(Vxf['Priors']), axis=1), # will be a x 1
                            np.expand_dims(Vxf['Mu'][:,1:], axis=1).reshape(Vxf['L']*d,1)
                         ))
-
-            # print('p0 in gmm: ', p0.T, p0.shape)
         else:
             p0 = Vxf['Mu'][:,2:].reshape(Vxf['L']*d, 1) #print(p0) # p0 will be 4x1
     else:
@@ -73,6 +71,8 @@ def gmm_2_parameters(Vxf, options):
                       p0,
                       Vxf['P'][:,:,k+1].reshape(d**2,1)
                     ))
+    # print('p0 in gmm: ', p0.shape)
+
     return p0
 
 def parameters_2_gmm(popt, d, L, options):
@@ -99,15 +99,12 @@ def shape_DS(p,d,L,options):
         Mu = np.hstack((np.zeros((d,1)), p[[i_c+ x for x in range(d*L)]].reshape(d,L)))
         i_c = i_c+d*L+1
 
-        # print('Priors: ', Priors)
-        # print('Mu: ', Mu)
-
-    # print('p: ', p, p.shape)
-    # print(range(i_c+L*d**2,i_c+(L+1)*d**2-1))
     for k in range(L):
-        # print('p in range ', i_c+k*(d**2)-1, i_c+(k+1)*(d**2)-1, p.shape)
-        P[:,:,k] = p[range(i_c+k*(d**2)-1,i_c+(k+1)*(d**2)-1)].reshape(d,d)
+        print('p in range ', i_c+k*(d**2)-1, i_c+(k+1)*(d**2)-1, 'p shape ', p.shape)
+        # P[:,:,k+1] = p[range(i_c+k*(d**2)-1,i_c+(k+1)*(d**2)-1)].reshape(d,d)
+        P[:,:,k+1] = p[range(i_c+k*(d**2)-1,i_c+(k+1)*(d**2)-1)].reshape(d,d)
         # print(P[:,:,k])
+    # print('starting over')
 
     Vxf           = dict(Priors = Priors,
                          Mu = Mu,

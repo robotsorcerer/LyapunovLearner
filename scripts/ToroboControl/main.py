@@ -68,7 +68,7 @@ def main(Vxf0, urdf, options):
 
 	if options['disp']:
 		logging.debug(' mu {}, sigma {}, priors: {}'.
-						format(mu.shape, sigma.shape, 						priors.shape))
+						format(mu.shape, sigma.shape, priors.shape))
 
 	inp = range(0, Vxf['d'])
 	out = range(Vxf['d'], 2* Vxf['d'])
