@@ -6,7 +6,7 @@ import scipy.linalg
 import scipy.linalg as LA
 from numpy.linalg import LinAlgError
 
-# logging = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 def logsum(vec, axis=0, keepdims=True):
     #TODO: Add a docstring.
@@ -126,10 +126,10 @@ class GMM(object):
                 try:
                     L = scipy.linalg.cholesky(sigma, lower=True)
                 except LinAlgError as e:
-                    rospy.logdebug('LinAlgError: %s', e)
+                    logger.debug('LinAlgError: %s', e)
                     self.fail = True
                     # restart the for loop if sigma aint positive definite
-                    rospy.logdebug("sigma non-positive definiteness encountered; restarting")
+                    logger.debug("sigma non-positive definiteness encountered; restarting")
                     break
                 logobs[:, i] -= np.sum(np.log(np.diag(L)))
                 diff = (data - mu).T
@@ -187,11 +187,11 @@ class GMM(object):
         if K is None:
             K = self.K
 
-        rospy.logdebug('Fitting GMM with %d clusters on %d points.', K, N)
+        logger.debug('Fitting GMM with %d clusters on %d points.', K, N)
 
         if (not self.warmstart or self.sigma is None or K != self.sigma.shape[0]):
             # Initialization.
-            rospy.logdebug('Initializing GMM.')
+            logger.debug('Initializing GMM.')
             self.sigma = np.zeros((K, Do, Do))
             self.mu = np.zeros((K, Do))
             self.logmass = np.log(1.0 / K) * np.ones((K, 1))
@@ -221,15 +221,15 @@ class GMM(object):
 
             # Compute log-likelihood.
             ll = np.sum(logsum(logobs, axis=1))
-            rospy.logdebug('GMM itr %d/%d. Log likelihood: %f',
+            logger.debug('GMM itr %d/%d. Log likelihood: %f',
                          itr, max_iterations, ll)
             if ll < prevll:
                 # TODO: Why does log-likelihood decrease sometimes?
-                rospy.logdebug('Log-likelihood decreased! Ending on itr=%d/%d',
+                logger.debug('Log-likelihood decreased! Ending on itr=%d/%d',
                              itr, max_iterations)
                 break
             if np.abs(ll-prevll) < 1e-5*prevll:
-                rospy.logdebug('GMM converged on itr=%d/%d',
+                logger.debug('GMM converged on itr=%d/%d',
                              itr, max_iterations)
                 break
             prevll = ll

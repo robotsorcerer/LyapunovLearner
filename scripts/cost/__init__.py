@@ -1,1 +1,1 @@
-# from .learnEnergy import learnEnergy
+from cost import Cost

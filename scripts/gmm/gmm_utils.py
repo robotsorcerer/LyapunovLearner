@@ -1,27 +1,41 @@
 from __future__ import print_function
-import numpy as np
-import rospy
 
-# find the max of a numpy matrix dims
+__author__ 		= "Olalekan Ogunmolu"
+__copyright__ 	= "2018, One Hell of a Lyapunov Solver"
+__credits__  	= "Rachel Thomson (MIT), Jethro Tan (PFN)"
+__license__ 	= "MIT"
+__maintainer__ 	= "Olalekan Ogunmolu"
+__email__ 		= "patlekano@gmail.com"
+__status__ 		= "Testing"
+
+import numpy as np
+import logging
+logger = logging.getLogger(__name__)
+
 def matlength(x):
+  # find the max of a numpy matrix dims
   return np.max(x.shape)
 
 def gaussPDF(data, mu, sigma):
-    nbVar, nbdata = data.shape
+    if data.ndim > 1:
+        nbVar, nbdata = data.shape
+    else:
+        nbVar, nbdata = 1, len(data)
+        sigma = np.expand_dims(sigma, 1)
 
     data = data.T - np.tile(mu.T, [nbdata,1])
     prob = np.sum((data/sigma)*data, axis=1);
+    print('data: {}, prob: {}, sigma: {}'.format(data.shape, prob.shape, sigma.shape))
     prob = np.exp(-0.5*prob) / np.sqrt((2*np.pi)**nbVar *
                                        (np.abs(np.linalg.det(sigma))+
                                         np.finifo(np.float64).min))
     return prob
 
 def GMR(Priors, Mu, Sigma, x, inp, out, nargout=3):
-    nbData = x.shape[1]
-    nbVar = Mu.shape[0]
+    nbData   = x.shape[-1]
+    nbVar    = Mu.shape[0]
     nbStates = Sigma.shape[2]
 
-    rospy.logdebug('Priors: {} ', Priors.shape)
     Pxi = np.zeros_like(Priors)
     for i in range(nbStates):
         Pxi[:,i] = Priors[i] * gaussPDF(x, Mu[inp,i], Sigma[inp,inp,i])
@@ -30,8 +44,8 @@ def GMR(Priors, Mu, Sigma, x, inp, out, nargout=3):
                          np.finfo(np.float32).min, [1,nbStates])
     #########################################################################
     for j in range(nbStates):
-        y_tmp[:,:,j] = np.tile(Mu[out,j],[1,nbData]) \
-                     + Sigma[out,inp,j]/(Sigma[inp,inp,j]).dot(x-np.tile(Mu[inp,j],[1,nbData]))
+        y_tmp[:,:,j] = np.tile(Mu[out,j],[1,nbData])  + \
+                        Sigma[out,inp,j]/(Sigma[inp,inp,j]).dot(x-np.tile(Mu[inp,j],[1,nbData]))
 
     beta_tmp = beta.reshape(1, beta.shape)
     y_tmp2 = np.tile(beta_tmp,[matlength(out), 1, 1]) * y_tmp
@@ -44,10 +58,10 @@ def GMR(Priors, Mu, Sigma, x, inp, out, nargout=3):
                                    - (Sigma[out,inp,j]/(Sigma[inp,inp,j])  \
                                    * Sigma[inp,out,j])
 
-        beta_tmp = beta.reshape(1, 1, beta.shape)
-        Sigma_y_tmp2 = np.tile(beta_tmp * beta_tmp, \
-                               [matlength(out), matlength(out), 1, 1]) * \
-                                np.tile(Sigma_y_tmp,[1, 1, nbData, 1])
+        beta_tmp                = beta.reshape(1, 1, beta.shape)
+        Sigma_y_tmp2            = np.tile(beta_tmp * beta_tmp, \
+                                   [matlength(out), matlength(out), 1, 1]) * \
+                                    np.tile(Sigma_y_tmp,[1, 1, nbData, 1])
         Sigma_y = np.sum(Sigma_y_tmp2, axis=3)
 
     return y, Sigma_y, beta
@@ -71,6 +85,8 @@ def gmm_2_parameters(Vxf, options):
                       p0,
                       Vxf['P'][:,:,k+1].reshape(d**2,1)
                     ))
+    # print('p0 in gmm: ', p0.shape)
+
     return p0
 
 def parameters_2_gmm(popt, d, L, options):
@@ -98,15 +114,14 @@ def shape_DS(p,d,L,options):
         i_c = i_c+d*L+1
 
     for k in range(L):
-        #print('P [',k, ']', list(range(i_c+k*(d**2)-1,i_c+(k+1)*(d**2)-1)))
-        P[:,:,k] = p[range(i_c+k*(d**2)-1,i_c+(k+1)*(d**2)-1)].reshape(d,d)
-        #print(P[:,:,k])
+        # print('p in range ', i_c+k*(d**2)-1, i_c+(k+1)*(d**2)-1, 'p shape ', p.shape)
+        # P[:,:,k+1] = p[range(i_c+k*(d**2)-1,i_c+(k+1)*(d**2)-1)].reshape(d,d)
+        P[:,:,k+1] = p[range(i_c+k*(d**2)-1,i_c+(k+1)*(d**2)-1)].reshape(d,d)
 
-    Vxf           = dict()
-    Vxf['Priors'] = Priors
-    Vxf['Mu']     = Mu
-    Vxf['P']      = P
-    Vxf['SOS']    = 0
+    Vxf           = dict(Priors = Priors,
+                         Mu = Mu,
+                         P = P,
+                         SOS = 0)
 
     return Vxf
 
@@ -114,21 +129,29 @@ def gmr_lyapunov(x, Priors, Mu, P):
     # print('x.shape: ', x.shape)
     nbData = x.shape[1]
     d = x.shape[0]
-    L = P.shape[2]-1;
+    L = P.shape[-1]-1;
+
 
     # Compute the influence of each GMM component, given input x
     for k in range(L):
         P_cur               = P[:,:,k+1]
+        x                   = x - np.expand_dims(x[:, -1], 1)     # subtract target from each x
+
         if k                == 0:
-            V_k             = np.sum(x * (P_cur.dot(x)), axis=0)
-            V               = Priors[k+1]*(V_k)
+            V_k             = np.sum(x * (P_cur.dot(x)), axis=0)  # will be 1 x 10,000
+            # V_k[V_k < 0]    = 0
+            V               = Priors[k+1] * V_k                   # will be
             Vx              = Priors[k+1]*((P_cur+P_cur.T).dot(x))
         else:
             x_tmp           = x - np.tile(Mu[:,k+1], [nbData, 1]).T
+            # print('x_tmp: ', x_tmp.shape, 'np.tile(Mu[:,k+1], [nbData, 1]).T: ', np.tile(Mu[:,k+1], [nbData, 1]).T.shape)
             V_k             = np.sum(P_cur.dot(x_tmp)*x, axis=0)
             V_k[V_k < 0]    = 0
             V              += Priors[k+1] * (V_k ** 2)
             temp            = (2 * Priors[k+1]) * (V_k)
             Vx              = Vx + np.tile(temp, [d,1])*(P_cur.dot(x_tmp) + P_cur.T.dot(x))
+
+        # sanity check to be sure the lyapunov constraints are not being violated
+        # print('V: ', len(np.unique(V[V<0])), ' Vx: ', len(np.unique(Vx[Vx>0])),  'x: ', x.shape)
 
     return V, Vx

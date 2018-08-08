@@ -1,4 +1,13 @@
 from __future__ import print_function
+
+__author__ 		= "Olalekan Ogunmolu"
+__copyright__ 	= "2018, One Hell of a Lyapunov Solver"
+__credits__  	= "Rachel Thomson (MIT), Jethro Tan (PFN)"
+__license__ 	= "MIT"
+__maintainer__ 	= "Olalekan Ogunmolu"
+__email__ 		= "patlekano@gmail.com"
+__status__ 		= "Testing"
+
 import os
 import sys
 import time
@@ -14,13 +23,14 @@ from trac_ik_python.trac_ik_wrap import TRAC_IK
 from trac_ik_python.trac_ik import IK
 from torobo_ik.srv import SolveDiffIK, SolveDiffIKRequest, SolveDiffIKResponse
 
+rp = rospkg.RosPack()
+lyap_path = rp.get_path('lyapunovlearner')
 
-rospack = rospkg.RosPack()
-lyap = rospack.get_path('lyapunovlearner')
+# print('lyap_path: ', lyap_path)
+time.sleep(10)
 
-sys.path.append(join(lyap, 'ToroboTakahashi'))
-sys.path.append(join(lyap, 'ToroboTakahashi', 'tampy'))
-
+sys.path.append(join(lyap_path, 'ToroboTakahashi') )
+sys.path.append(join(lyap_path, 'ToroboTakahashi', 'tampy') )
 from tampy.tampy import Tampy
 from tampy.tampy import ORDER_SERVO_ON, ORDER_SERVO_OFF, ORDER_RUN_MODE, CTRL_MODE_CURRENT
 
@@ -107,41 +117,41 @@ class ToroboExecutor(object):
 
 			where x is an arbitrary d dimensional variable and xd is the first time derivative
 		"""
-		x_des       = data[:, -1]   # as visualized from converted dataset with ik_sub
-		d = data.shape[0]/2
+		d = data.shape[0]//2
+		x_cur    = data[:, 0][:d]
+		x_des    = data[:, 356][:d]   # as visualized from converted dataset with ik_sub
 
-		first_time = True
-		exit_while_loop = False
-
-		_, _, x_cur = self.get_state()
-		diff = np.linalg.norm((x_cur[:3] - x_des[:3]), ord=2)
 		i = 0
-		while not (rospy.is_shutdown()) and (diff > opt_exec['stop_tol']):
-			t1 = time.time()
+		while not rospy.is_shutdown():
+			# get desired joint angle
+			des_jnt = list(self.cart_to_ik_request_msg(x_des).q_out)
+
 			# these are in joint coordinates save x_cur
 			q_cur, qdot_cur, x_cur = self.get_state()
-			t2 = time.time()
 
-			t_diff = opt_exec['stop_tol']
-			xdot_cur = x_cur / t_diff
+			# compute xdot^i = f(x^i) + u(x^i) | step 17 of algorithm
+			xdot_cur = sum(stab_handle(x_cur - x_des)) #f + u
 
-			xvel_des = sum(stab_handle(data - np.expand_dims(x_des, 1))) #f + u
+			rospy.logdebug(' x_des: {} x_cur: {} xdot_cur: {}'
+				.format(x_des.shape, x_cur.shape, xdot_cur.shape))
 
-			x_next = self.expand(x_cur[:d], 1) + xvel_des *  opt_exec['dt'] 
-			print('x_next[:, i]: ', x_next[:, i], ' t2-t1: ', t_diff)
+			# compute next state | step 18 of algorithm
+			x_next  = x_cur  + xdot_cur * opt_exec['dt']
+			jnts 	= list(self.cart_to_ik_request_msg(x_next).q_out)
+			rospy.logdebug(' setting new joints: {}'.format(jnts))
+			self.set_position(jnts)
 
-			q_cur, _, _     = self.get_state()
-			joint_positions = list(self.cart_to_ik_request_msg(x_next, q_in=q_cur).q_out)
-			target_position = list(self.cart_to_ik_request_msg(x_des).q_out)
-			print('joint_positions: ', joint_positions)
-
-			self.set_position(joint_positions)
-
-			diff = np.linalg.norm((x_next[:, i] - x_des[:3]), ord=2)
-			rospy.loginfo('diff: {}'.format(diff))
+			# increment i  | step 19
 			i += 1
 
-			first_time = False
+			# check to see if we are well within tolerance
+			diff 	= np.linalg.norm((x_next - x_des[:3]), ord=2)
+			rospy.loginfo('diff: {}'.format(diff))
+
+			if diff > opt_exec['stop_tol']:
+				rospy.logdebug('robot reached tolerance; schtoppen')
+				break
+
 
 		return x_next, xvel_des
 
