@@ -1,7 +1,7 @@
 from __future__ import print_function
 
 __author__ 		= "Olalekan Ogunmolu"
-__copyright__ 	= "2018, One Hell of a Lyapunov Solver"
+__copyright__ 	= "Olalekan Ogunmolu, One Hell of a Lyapunov Solver"
 __credits__  	= "Rachel Thomson (MIT), Jethro Tan (PFN)"
 __license__ 	= "MIT"
 __maintainer__ 	= "Olalekan Ogunmolu"
@@ -19,16 +19,17 @@ def matlength(x):
 def gaussPDF(data, mu, sigma):
     if data.ndim > 1:
         nbVar, nbdata = data.shape
+        sigma_det = np.linalg.det(sigma)
     else:
         nbVar, nbdata = 1, len(data)
         sigma = np.expand_dims(sigma, 1)
+        sigma_det = np.linalg.norm(sigma, ord=2)
 
     data = data.T - np.tile(mu.T, [nbdata,1])
-    prob = np.sum((data/sigma)*data, axis=1);
-    print('data: {}, prob: {}, sigma: {}'.format(data.shape, prob.shape, sigma.shape))
+    prob = np.sum((data/sigma_det)*data, axis=1);
+    # print('data: {}, prob pre: {}, sigma: {}, nbVar: {}'.format(data.shape, prob, sigma.shape, nbVar))
     prob = np.exp(-0.5*prob) / np.sqrt((2*np.pi)**nbVar *
-                                       (np.abs(np.linalg.det(sigma))+
-                                        np.finifo(np.float64).min))
+                                       np.abs(sigma_det+1e-5))
     return prob
 
 def GMR(Priors, Mu, Sigma, x, inp, out, nargout=3):
@@ -37,8 +38,17 @@ def GMR(Priors, Mu, Sigma, x, inp, out, nargout=3):
     nbStates = Sigma.shape[2]
 
     Pxi = np.zeros_like(Priors)
+
+    print('Pxi {} Priors: {}, Mu: {}, Sigma: {}, x: {} inp: {}, out: {}, nbStates: {}'
+          .format(Pxi.shape, Priors.shape, Mu.shape, Sigma.shape, x.shape,
+                  inp.shape, out.shape, nbStates))
+
     for i in range(nbStates):
-        Pxi[:,i] = Priors[i] * gaussPDF(x, Mu[inp,i], Sigma[inp,inp,i])
+        # print('Priors[i]: {} gaussPDF out: {} '.format(Priors[i], gaussPDF(x, Mu[inp,i], Sigma[inp,inp,i])))
+        if nbVar > 1:
+            Pxi[:,i] = Priors[i] * gaussPDF(x, Mu[inp,i], Sigma[inp,inp,i])
+        else:
+            Pxi[:len(Mu[inp,i]),:,i] = Priors[i] * gaussPDF(x, Mu[inp,i], Sigma[inp,inp,i])
 
     beta = Pxi / np.tile(np.sum(Pxi,axis=1) +
                          np.finfo(np.float32).min, [1,nbStates])

@@ -138,7 +138,10 @@ class ToroboExecutor(object):
 			# compute next state | step 18 of algorithm
 			x_next  = x_cur  + xdot_cur * opt_exec['dt']
 			jnts 	= list(self.cart_to_ik_request_msg(x_next).q_out)
+
+			rospy.logdebug(' x_next: {}'.format(x_next))
 			rospy.logdebug(' setting new joints: {}'.format(jnts))
+
 			self.set_position(jnts)
 
 			# increment i  | step 19
@@ -148,7 +151,7 @@ class ToroboExecutor(object):
 			diff 	= np.linalg.norm((x_next - x_des[:3]), ord=2)
 			rospy.loginfo('diff: {}'.format(diff))
 
-			if diff > opt_exec['stop_tol']:
+			if diff < opt_exec['stop_tol']:
 				rospy.logdebug('robot reached tolerance; schtoppen')
 				break
 
