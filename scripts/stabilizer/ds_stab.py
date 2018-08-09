@@ -2,7 +2,7 @@ from __future__ import print_function
 
 __author__ 		= "Olalekan Ogunmolu"
 __copyright__ 	= "2018, One Hell of a Lyapunov Solver"
-__credits__  	= "Rachel Thomson (MIT), Jethro Tan (PFN)"
+__credits__  	= "Rachel Thompson (MIT), Jethro Tan (PFN)"
 __license__ 	= "MIT"
 __maintainer__ 	= "Olalekan Ogunmolu"
 __email__ 		= "patlekano@gmail.com"
@@ -10,11 +10,9 @@ __status__ 		= "Testing"
 
 import time
 import numpy as np
-# from inspect import getfullargspec
 from cost import Cost
 
 def dsStabilizer(X, gmr_handle, Vxf, rho0, kappa0):
-    # print('X: ', X, X.shape)
     """
     This function takes the position and generates the cartesian velocity
     """

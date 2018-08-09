@@ -37,36 +37,58 @@ def GMR(Priors, Mu, Sigma, x, inp, out, nargout=3):
     nbVar    = Mu.shape[0]
     nbStates = Sigma.shape[2]
 
-    Pxi = np.zeros_like(Priors)
+    # Pxi = np.zeros_like(Priors)
+    Pxi = np.zeros((x.shape[0], nbStates))
 
-    print('Pxi {} Priors: {}, Mu: {}, Sigma: {}, x: {} inp: {}, out: {}, nbStates: {}'
-          .format(Pxi.shape, Priors.shape, Mu.shape, Sigma.shape, x.shape,
-                  inp.shape, out.shape, nbStates))
+    # print('Pxi {} Priors: {}, Mu: {}, Sigma: {}, x: {} inp: {}, out: {}, nbVar: {}'
+    #       .format(Pxi.shape, Priors.shape, Mu.shape, Sigma.shape, x.shape,
+    #               inp.shape, out.shape, nbVar))
 
+    # compute the influence of eacxh GMM component, given input x
     for i in range(nbStates):
-        # print('Priors[i]: {} gaussPDF out: {} '.format(Priors[i], gaussPDF(x, Mu[inp,i], Sigma[inp,inp,i])))
-        if nbVar > 1:
-            Pxi[:,i] = Priors[i] * gaussPDF(x, Mu[inp,i], Sigma[inp,inp,i])
+        gaussOutput = gaussPDF(x, Mu[inp,i], Sigma[inp,inp,i])
+        # print('Priors[i]: {} gaussPDF out: {} '.format(Priors[i], gaussOutput))
+        if gaussOutput.ndim > 1:
+            Pxi[:,i] = Priors[i] * gaussOutput
         else:
-            Pxi[:len(Mu[inp,i]),:,i] = Priors[i] * gaussPDF(x, Mu[inp,i], Sigma[inp,inp,i])
+            Pxi[:,i] = Priors[i] * gaussOutput
 
-    beta = Pxi / np.tile(np.sum(Pxi,axis=1) +
-                         np.finfo(np.float32).min, [1,nbStates])
+    if gaussOutput.ndim > 1:
+        beta = Pxi / np.tile(np.sum(Pxi,axis=1) + np.finfo(np.float32).min, [1,nbStates])
+    else:
+        beta = Pxi / np.tile(np.sum(Pxi,axis=1) + np.finfo(np.float32).min, [x.shape[0],2])
+
     #########################################################################
+    y_tmp = np.zeros((nbData, nbData, nbStates))
     for j in range(nbStates):
-        y_tmp[:,:,j] = np.tile(Mu[out,j],[1,nbData])  + \
-                        Sigma[out,inp,j]/(Sigma[inp,inp,j]).dot(x-np.tile(Mu[inp,j],[1,nbData]))
+        if gaussOutput.ndim > 1:
+            y_tmp[:,:,j] = np.tile(Mu[out,j],[1,nbData])  + \
+                            Sigma[out,inp,j]/(Sigma[inp,inp,j]).dot(x-np.tile(Mu[inp,j],[1,nbData]))
+        else:
+            # print('Mu[out,j]: {} | nbData: {}'.format(Mu[out,j].shape, nbData))
+            # print('np.tile(Mu[out,j],[1,nbData]): {} | Sigma[out,inp,j]: {} | Sigma[inp,inp,j]: {} | x: {} |'
+            #       ' np.tile(Mu[inp,j],[1,nbData]): {}'
+            #       .format(np.tile(Mu[out,j],[1,nbData]).shape, Sigma[out,inp,j].shape,
+            #               Sigma[inp,inp,j].shape, x, np.tile(Mu[inp,j],[1,nbData]).shape))
+            y_tmp[:,:,j] = np.tile(Mu[out,j],[nbData, 1])  + \
+                            Sigma[out,inp,j]/(Sigma[inp,inp,j]).dot(\
+                            x-np.tile(Mu[inp,j],[nbData, 1]))
 
-    beta_tmp = beta.reshape(1, beta.shape)
-    y_tmp2 = np.tile(beta_tmp,[matlength(out), 1, 1]) * y_tmp
-    y = np.sum(y_tmp2,axis=2)
+    beta_tmp = np.expand_dims(beta, 0)
+    y_tmp2   = np.tile(beta_tmp,[len(out), 1, 1]) * y_tmp
+    print('y_tmp2: ', y_tmp2.shape, ' y_tmp: ', y_tmp.shape)
+    y        = np.sum(y_tmp2, axis=2)
+    print('y: ', y.shape)
     ## Compute expected covariance matrices Sigma_y, given input x
     #########################################################################
     if nargout > 1:
         for j in range(nbStates):
-            Sigma_y_tmp[:,:,0,j] = Sigma[out,out,j] \
-                                   - (Sigma[out,inp,j]/(Sigma[inp,inp,j])  \
+            print('Sigma[out,out,j]: {} | Sigma[out,inp,j]: {} | Sigma[inp,inp,j]: {} | Sigma[inp,out,j]: {}'
+                  .format(Sigma[out,out,j].shape, Sigma[out,inp,j].shape, Sigma[inp,inp,j].shape, Sigma[inp,out,j].shape))
+            temp = Sigma[out,out,j] - (Sigma[out,inp,j]/(Sigma[inp,inp,j])  \
                                    * Sigma[inp,out,j])
+            print('temp: ', temp.shape)
+            Sigma_y_tmp[:,:,0,j] = None
 
         beta_tmp                = beta.reshape(1, 1, beta.shape)
         Sigma_y_tmp2            = np.tile(beta_tmp * beta_tmp, \
