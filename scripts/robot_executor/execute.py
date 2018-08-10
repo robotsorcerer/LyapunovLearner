@@ -130,7 +130,7 @@ class ToroboExecutor(object):
 			q_cur, qdot_cur, x_cur = self.get_state()
 
 			# compute xdot^i = f(x^i) + u(x^i) | step 17 of algorithm
-			xdot_cur = sum(stab_handle(x_cur - x_des)) #f + u
+			xdot_cur = sum(stab_handle(x_cur - x_des)) # f + u
 
 			rospy.logdebug(' x_des: {} x_cur: {} xdot_cur: {}'
 				.format(x_des.shape, x_cur.shape, xdot_cur.shape))

@@ -88,8 +88,8 @@ def main(Vxf0, urdf, options):
 		logging.debug(' mu {}, sigma {}, priors: {}'.
 						format(mu.shape, sigma.shape, priors.shape))
 
-	inp = np.array(range(0, Vxf['d']))
-	out = np.array(range(Vxf['d'], 2* Vxf['d']))
+	inp = slice(0, Vxf['d']) #np.array(range(0, Vxf['d']))
+	out = slice(Vxf['d'], 2* Vxf['d']) #np.array(range(Vxf['d'], 2* Vxf['d']))
 	rho0, kappa0 = 1.0, 1.0
 
 	gmr_handle = lambda x: GMR(priors, mu, sigma, x, inp, out)

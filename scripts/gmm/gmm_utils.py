@@ -17,13 +17,15 @@ def matlength(x):
   return np.max(x.shape)
 
 def gaussPDF(data, mu, sigma):
-    if data.ndim > 1:
-        nbVar, nbdata = data.shape
-        sigma_det = np.linalg.det(sigma)
-    else:
+    if data.ndim == 1:
         nbVar, nbdata = 1, len(data)
-        sigma = np.expand_dims(sigma, 1)
-        sigma_det = np.linalg.norm(sigma, ord=2)
+    else:
+        nbVar, nbdata = data.shape
+    sigma_det = np.linalg.det(sigma)
+    # else:
+    #     nbVar, nbdata = 1, len(data)
+    #     sigma = np.expand_dims(sigma, 1)
+    #     sigma_det = np.linalg.norm(sigma, ord=2)
 
     data = data.T - np.tile(mu.T, [nbdata,1])
     prob = np.sum((data/sigma_det)*data, axis=1);
@@ -33,68 +35,51 @@ def gaussPDF(data, mu, sigma):
     return prob
 
 def GMR(Priors, Mu, Sigma, x, inp, out, nargout=3):
-    nbData   = x.shape[-1]
+    nbData   = x.shape[-1] if x.ndim > 1 else 1
     nbVar    = Mu.shape[0]
-    nbStates = Sigma.shape[2]
+    nbStates = Sigma.shape[2]//2
 
-    # Pxi = np.zeros_like(Priors)
+    # compute the influence of each GMM component, given input x
     Pxi = np.zeros((x.shape[0], nbStates))
-
-    # print('Pxi {} Priors: {}, Mu: {}, Sigma: {}, x: {} inp: {}, out: {}, nbVar: {}'
-    #       .format(Pxi.shape, Priors.shape, Mu.shape, Sigma.shape, x.shape,
-    #               inp.shape, out.shape, nbVar))
-
-    # compute the influence of eacxh GMM component, given input x
+    print('Pxi {} Priors: {}, Mu: {}, Sigma: {}, x: {}, nbVar: {}'
+          .format(Pxi.shape, Priors.shape, Mu.shape, \
+                  Sigma.shape, x.shape, nbVar))
     for i in range(nbStates):
+        # print('Sigma[inp,inp,i]: ', Sigma[inp,inp,i].shape)
         gaussOutput = gaussPDF(x, Mu[inp,i], Sigma[inp,inp,i])
-        # print('Priors[i]: {} gaussPDF out: {} '.format(Priors[i], gaussOutput))
-        if gaussOutput.ndim > 1:
-            Pxi[:,i] = Priors[i] * gaussOutput
-        else:
-            Pxi[:,i] = Priors[i] * gaussOutput
+        Pxi[:,i] = Priors[i] * gaussOutput
 
-    if gaussOutput.ndim > 1:
-        beta = Pxi / np.tile(np.sum(Pxi,axis=1) + np.finfo(np.float32).min, [1,nbStates])
-    else:
-        beta = Pxi / np.tile(np.sum(Pxi,axis=1) + np.finfo(np.float32).min, [x.shape[0],2])
+    # print('Pxi: {} Pxi tiled: {} '.format(Pxi.shape, \
+    #       np.tile(np.sum(Pxi,axis=1) + \
+    #             np.finfo(np.float32).min,\
+    #             [nbStates,1]).T.shape))
 
-    #########################################################################
-    y_tmp = np.zeros((nbData, nbData, nbStates))
-    for j in range(nbStates):
-        if gaussOutput.ndim > 1:
-            y_tmp[:,:,j] = np.tile(Mu[out,j],[1,nbData])  + \
-                            Sigma[out,inp,j]/(Sigma[inp,inp,j]).dot(x-np.tile(Mu[inp,j],[1,nbData]))
-        else:
-            # print('Mu[out,j]: {} | nbData: {}'.format(Mu[out,j].shape, nbData))
-            # print('np.tile(Mu[out,j],[1,nbData]): {} | Sigma[out,inp,j]: {} | Sigma[inp,inp,j]: {} | x: {} |'
-            #       ' np.tile(Mu[inp,j],[1,nbData]): {}'
-            #       .format(np.tile(Mu[out,j],[1,nbData]).shape, Sigma[out,inp,j].shape,
-            #               Sigma[inp,inp,j].shape, x, np.tile(Mu[inp,j],[1,nbData]).shape))
-            y_tmp[:,:,j] = np.tile(Mu[out,j],[nbData, 1])  + \
-                            Sigma[out,inp,j]/(Sigma[inp,inp,j]).dot(\
-                            x-np.tile(Mu[inp,j],[nbData, 1]))
+    beta = np.divide(Pxi, np.tile(np.sum(Pxi,axis=1) + 1e-10, [nbStates, 1]).T)
 
-    beta_tmp = np.expand_dims(beta, 0)
-    y_tmp2   = np.tile(beta_tmp,[len(out), 1, 1]) * y_tmp
-    print('y_tmp2: ', y_tmp2.shape, ' y_tmp: ', y_tmp.shape)
-    y        = np.sum(y_tmp2, axis=2)
-    print('y: ', y.shape)
-    ## Compute expected covariance matrices Sigma_y, given input x
-    #########################################################################
-    if nargout > 1:
+    # Compute expected output distribution, given input x
+    y = np.zeros((Pxi.shape[0], nbData))
+    Sigma_y = np.zeros((Pxi.shape[0], Pxi.shape[0], nbData))
+    # for 1D experiments, account for it in x
+    if x.ndim < 2:
+        x = np.expand_dims(x, -1)
+    for i in range(nbData):
+        # compute expected means y, given input x
         for j in range(nbStates):
-            print('Sigma[out,out,j]: {} | Sigma[out,inp,j]: {} | Sigma[inp,inp,j]: {} | Sigma[inp,out,j]: {}'
-                  .format(Sigma[out,out,j].shape, Sigma[out,inp,j].shape, Sigma[inp,inp,j].shape, Sigma[inp,out,j].shape))
-            temp = Sigma[out,out,j] - (Sigma[out,inp,j]/(Sigma[inp,inp,j])  \
-                                   * Sigma[inp,out,j])
-            print('temp: ', temp.shape)
-            Sigma_y_tmp[:,:,0,j] = None
-
-        beta_tmp                = beta.reshape(1, 1, beta.shape)
-        Sigma_y_tmp2            = np.tile(beta_tmp * beta_tmp, \
-                                   [matlength(out), matlength(out), 1, 1]) * \
-                                    np.tile(Sigma_y_tmp,[1, 1, nbData, 1])
-        Sigma_y = np.sum(Sigma_y_tmp2, axis=3)
+            try:
+                sigma_inv = np.linalg.inv(Sigma[inp, inp, j])
+            except np.linalg.LinAlgError as e:
+                logger.debug('LinAlgError: %s', e)
+            yj_tmp = Mu[out, j] + Sigma[out, inp, j].dot(\
+                        sigma_inv).dot(\
+                        x[:,i]-Mu[inp, j])
+            y[:,i] += beta[j,i] * yj_tmp
+        # compute the expected covariance matrices Sigma_y, given input x
+        for j in range(nbStates):
+            # print('beta: {} | Sigma[inp, inp, j]: {}'
+            #       .format(beta.shape, Sigma[inp, inp, j].shape))
+            Sigmaj_y_tmp = Sigma[out, out, j] - (Sigma[out, inp, j].dot(np.linalg.inv(\
+                                                Sigma[inp, inp, j])).dot(Sigma[inp, out, j]))
+            Sigma_y[:,:,i] += Sigma_y[:,:,i] + (beta[j,i]**2) * Sigmaj_y_tmp
 
     return y, Sigma_y, beta
 
@@ -158,20 +143,19 @@ def shape_DS(p,d,L,options):
     return Vxf
 
 def gmr_lyapunov(x, Priors, Mu, P):
-    # print('x.shape: ', x.shape)
-    nbData = x.shape[1]
+    nbData   = x.shape[-1] if x.ndim > 1 else 1
     d = x.shape[0]
     L = P.shape[-1]-1;
 
-
+    # print('x: ', x.shape, 'P: ', P_cur[:,:, 1].shape)
     # Compute the influence of each GMM component, given input x
     for k in range(L):
         P_cur               = P[:,:,k+1]
-        x                   = x - np.expand_dims(x[:, -1], 1)     # subtract target from each x
+        if x.ndim > 1: # training
+            x                   = x - np.expand_dims(x[:, -1], 1)     # subtract target from each x
 
         if k                == 0:
             V_k             = np.sum(x * (P_cur.dot(x)), axis=0)  # will be 1 x 10,000
-            # V_k[V_k < 0]    = 0
             V               = Priors[k+1] * V_k                   # will be
             Vx              = Priors[k+1]*((P_cur+P_cur.T).dot(x))
         else:
