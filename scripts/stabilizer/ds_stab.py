@@ -10,7 +10,7 @@ __status__ 		= "Testing"
 
 import time
 import numpy as np
-from cost import Cost
+from cost.cost import Cost
 
 def dsStabilizer(X, gmr_handle, Vxf, rho0, kappa0):
     """

@@ -24,7 +24,7 @@ options = {
     'num_clusters': 10, # number of gmm clusters
     'tol_stopping': 1e-10,
     'max_iter': 500,
-    'int_lyap_random': True,
+    'int_lyap_random': False,
     'optimizePriors': True,
     'upperBoundEigenValue': True,
 }
