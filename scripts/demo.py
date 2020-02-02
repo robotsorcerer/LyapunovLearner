@@ -57,7 +57,6 @@ def load_saved_mat_file(x, **kwargs):
 
 
 def main(Vxf0, urdf, options):
-    gmm = GMM(num_clusters=options['num_clusters'])
     modelNames = ['w.mat', 'Sshape.mat']  # Two example models provided by Khansari
     modelNumber = 0  # could be zero or one depending on the experiment the user is running
 
@@ -97,7 +96,6 @@ def main(Vxf0, urdf, options):
     plt.xlabel('x (mm)', fontsize=15)
     plt.ylabel('y (mm)', fontsize=15)
     h = [h1, h2, h3]
-    plt.show()
 
     # Run DS
     opt_sim = dict()
@@ -120,26 +118,16 @@ def main(Vxf0, urdf, options):
     inp = list(range(Vxf['d']))
     output = np.arange(Vxf['d'], 2 * Vxf['d'])
 
-    xd, _ = dsStabilizer(x0_all, Vxf, rho0, kappa0, Priors_EM, Mu_EM, Sigma_EM, inp, output)
-
-    #x, xd = Simulation(x0_all, np.array(()), fn_handle, opt_sim) #running the simulator
+    xd, _ = dsStabilizer(x0_all, Vxf, rho0, kappa0, Priors_EM, Mu_EM, Sigma_EM, inp, output, cost)
 
     # Evalute DS
-    obs_bool = False
-    obs = np.array(())
-    x_obs = np.nan
     xT = np.array([])
-
     d = x0_all.shape[0]  # dimension of the model
     if not xT:
         xT = np.zeros((d, 1))
 
     # initialization
     nbSPoint = x0_all.shape[1]
-    #for i in range(nbSPoint):
-     #   x[:,0,i] = x0_all[:, i]
-
-    #x = np.reshape(x0_all.T, [nbSPoint, d, 1])
     x = []
     x0_all[0, 1] = -180  # modify starting point a bit to see performance in further regions
     x0_all[1, 1] = -130
@@ -150,10 +138,10 @@ def main(Vxf0, urdf, options):
     else:
         XT = np.tile(xT, [1, nbSPoint])   # a matrix of target location (just to simplify computation)
 
-    t = 0 # starting time
+    t = 0  # starting time
     dt = 0.01
     for i in range(4000):
-        xd.append(dsStabilizer(x[i] - XT, Vxf, rho0, kappa0, Priors_EM, Mu_EM, Sigma_EM, inp, output)[0])
+        xd.append(dsStabilizer(x[i] - XT, Vxf, rho0, kappa0, Priors_EM, Mu_EM, Sigma_EM, inp, output, cost)[0])
 
         x.append(x[i] + xd[i] * dt)
         t += dt

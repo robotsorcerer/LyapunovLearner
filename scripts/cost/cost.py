@@ -184,7 +184,7 @@ class Cost(object):
             rospy.logwarn('Rerun the optimization w/diff initial; guesses to handle this issue')
             rospy.logwarn('increasing the # of P could help')
 
-    def computeEnergy(self, X,Xd,Vxf, nargout=2):
+    def computeEnergy(self, X, Xd, Vxf, nargout=2):
         d = X.shape[0]
         nDemo = 1
         if nDemo>1:

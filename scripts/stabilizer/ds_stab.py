@@ -8,45 +8,101 @@ __maintainer__ 	= "Olalekan Ogunmolu"
 __email__ 		= "patlekano@gmail.com"
 __status__ 		= "Testing"
 
-import time
 import numpy as np
-from cost.cost import Cost
 
 
-def dsStabilizer(X, gmr_handle, Vxf, rho0, kappa0):
-    """
-    This function takes the position and generates the cartesian velocity
-    """
+def gaussPDF(data, mu, sigma):
+    a = data.shape
+    nbVar, nbdata = data.shape
+
+    data = data.T - np.tile(mu.T, [nbdata, 1])
+    prob = np.sum(np.linalg.lstsq(sigma, data.T)[0].T * data, axis=1)
+    prob = np.exp(-0.5 * prob) / np.sqrt((2 * np.pi)**nbVar * np.abs(np.linalg.det(sigma) + 1e-300))
+
+    return prob.T
+
+
+def GMR(Priors, Mu, Sigma, x, inp, out, nargout=0):
+    nbData = x.shape[1]
+    nbVar = Mu.shape[0]
+    nbStates = Sigma.shape[2]
+
+    ## Fast matrix computation (see the commented code for a version involving
+    ## one-by-one computation, which is easier to understand).
+    ##
+    ## Compute the influence of each GMM component, given input x
+    #########################################################################
+    Pxi = []
+    for i in range(nbStates):
+      Pxi.append(Priors[0, i] * gaussPDF(x, Mu[inp, i], Sigma[inp[0]:(inp[1] + 1), inp[0]:(inp[1] + 1), i]))
+
+    Pxi = np.reshape(Pxi, [len(Pxi), -1]).T
+    beta = Pxi / np.tile(np.sum(Pxi, axis=1) + 1e-300, [nbStates, 1]).T
+
+    #########################################################################
+    y_tmp = []
+    for j in range(nbStates):
+        a = np.tile(Mu[out, j], [nbData, 1]).T
+        b = Sigma[out, inp[0]:(inp[1] + 1), j]
+        c = x - np.tile(Mu[inp[0]:(inp[1] + 1), j], [nbData, 1]).T
+        d = Sigma[inp[0]:(inp[1] + 1), inp[0]:(inp[1] + 1), j]
+        e = np.linalg.lstsq(d, b.T)[0].T
+        y_tmp.append(a + e.dot(c))
+
+    y_tmp = np.reshape(y_tmp, [nbStates, len(out), nbData])
+
+    beta_tmp = beta.T.reshape([beta.shape[1], 1, beta.shape[0]])
+    y_tmp2 = np.tile(beta_tmp, [1, len(out), 1]) * y_tmp
+    y = np.sum(y_tmp2, axis=0)
+    ## Compute expected covariance matrices Sigma_y, given input x
+    #########################################################################
+    Sigma_y_tmp = []
+    Sigma_y = []
+    if nargout > 1:
+        for j in range(nbStates):
+            Sigma_y_tmp.append(Sigma[out,out,j] - (Sigma[out,inp,j]/(Sigma[inp,inp,j]) * Sigma[inp,out,j]))
+
+        beta_tmp = beta.reshape(1, 1, beta.shape)
+        Sigma_y_tmp2 = np.tile(beta_tmp * beta_tmp, [len(out), len(out), 1, 1]) * np.tile(Sigma_y_tmp, [1, 1, nbData, 1])
+        Sigma_y = np.sum(Sigma_y_tmp2, axis=3)
+    return y, Sigma_y, beta
+
+
+def dsStabilizer(x, Vxf, rho0, kappa0, Priors_EM, Mu_EM, Sigma_EM, inp, output, cost, *args):
     d = Vxf['d']
-    if X.shape[0] == 2*d:
-        Xd     = X[d:2*d,:]
-        X      = X[:d,:]
+    if x.shape[0] == 2*d:
+        xd = x[d+1:2*d, :]
+        x = x[:d, :]
     else:
-        Xd, _, _ = gmr_handle(X)
+        xd, _, _ = GMR(Priors_EM, Mu_EM, Sigma_EM, x, inp, output)
+    V, Vx = cost.computeEnergy(x, np.array(()), Vxf)
+    norm_Vx = np.sum(Vx * Vx, axis=0)
+    norm_x = np.sum(x * x, axis=0)
+    Vdot = np.sum(Vx * xd, axis=0)
+    rho = rho0 * (1-np.exp(-kappa0 * norm_x)) * np.sqrt(norm_Vx)
+    ind = Vdot + rho >= 0
+    u = xd * 0
 
-    cost = Cost()
-    V,Vx    = cost.computeEnergy(X,[],Vxf)
+    if np.sum(ind) > 0:
+        lambder = (Vdot[ind] + rho[ind]) / norm_Vx[ind]
+        u[:, ind] = -np.tile(lambder, [d, 1]) * Vx[:, ind]
+        xd[:, ind] = xd[:, ind] + u[:, ind]
 
-    norm_Vx = np.sum(Vx ** 2, axis=0)
-    norm_x  = np.sum(X ** 2,axis=0)
+    if args:
+        dt = args[0]
+        xn = x + np.dot(xd, dt)
+        Vn = cost.computeEnergy(xn, np.array(()), Vxf)
+        ind = Vn >= V
+        i = 0
 
-    Vdot    = np.sum(Vx * Xd,axis=0)
-    rho     = rho0 * (1-np.exp(-kappa0*norm_x)) * np.sqrt(norm_Vx)
-    ind     = np.where((Vdot + rho) >= 0)#[0]
-    # ind     = (Vdot + rho) >= 0
-    u       = Xd * 0
-    print('u: ', u)
-    print(' ind: {}'.format(ind))
-    if np.sum(ind)>0:  # we need to correct the unstable points
-        lambder   = (Vdot[ind] + rho[ind]) / (norm_Vx[ind] + 1e-10)
-        if u.shape[-1] != 1:  # account for testing
-            print('lambder: {}, Vx: {}, u: {}'.format(np.tile(lambder,[d,1]).shape, Vx[:,ind].shape, u.shape))
-            u[:,ind]  = -np.tile(lambder,[d,1]) * Vx[:,ind]
-        else:
-            print('lambder: {}, Vx: {}, u: {}'.format(lambder.shape, Vx[:,ind].shape, u.shape))
-            u = lambder * Vx[ind]
-            print('u: ', u)
+        while np.any(ind) and i < 10:
+            alpha = V[ind]/Vn[ind]
+            xd[:,ind] = np.tile(alpha, [d, 1]) * xd[:, ind] - \
+                        np.tile(alpha * np.sum(xd[:, ind] * \
+                        Vx[:, ind], axis=0)/norm_Vx[ind], [d, 1])*Vx[:, ind]
+            xn = x + np.dot(xd, dt)
+            Vn = cost.computeEnergy(xn, np.array(()), Vxf)
+            ind = Vn >= V
+            i = i + 1
 
-        Xd[:,ind] = Xd[:,ind] + u[:,ind]
-
-    return Xd, u
+    return xd, u
