@@ -17,6 +17,7 @@ import scipy.linalg as LA
 from scipy.optimize import minimize, linprog, NonlinearConstraint, BFGS
 from gmm import gmm_2_parameters, parameters_2_gmm, \
                 shape_DS, gmr_lyapunov
+import matplotlib.pyplot as plt
 log_level = rospy.logdebug
 LOGGER = logging.getLogger(__name__)
 
@@ -57,12 +58,14 @@ class Cost(object):
         J[np.where(Vdot > 0)] = J[np.where(Vdot > 0)] ** 2
         J[np.where(Vdot < 0)] = -w * J[np.where(Vdot < 0)] ** 2
         J = np.sum(J, axis=1)
+        print('J:', J[0])
         return J
 
     def optimize(self, obj_handle, ctr_handle_ineq, ctr_handle_eq, p0):
         nonl_cons_ineq = NonlinearConstraint(ctr_handle_ineq, -np.inf, 0, jac='3-point', hess=BFGS())
         nonl_cons_eq = NonlinearConstraint(ctr_handle_eq, 0, 0, jac='3-point', hess=BFGS())
 
+        rospy.loginfo('Optimizing the lyapunov function')
         solution = minimize(obj_handle, np.reshape(p0, [len(p0)]), hess=BFGS(), constraints=[nonl_cons_eq, nonl_cons_ineq],
                             method='trust-constr', options={'disp': True, 'initial_constr_penalty': 1.5})
 
@@ -95,7 +98,7 @@ class Cost(object):
                 c[k * d:(k + 1) * d] = -lambder.real + options['tol_mat_bias']
 
         if L > 0 and options['optimizePriors']:
-            c[(L + 1) * d:(L + 1) * d + L + 1] = np.reshape(-Vxf['Priors'], [3, 1])
+            c[(L + 1) * d:(L + 1) * d + L + 1] = np.reshape(-Vxf['Priors'], [L + 1, 1])
 
         return np.reshape(c, [len(c)])
 
@@ -110,7 +113,7 @@ class Cost(object):
             Vxf['SOS'] = 1
             ceq = np.array(())
         else:
-            Vxf = shape_DS(p, options, d, L)
+            Vxf = shape_DS(p, d, L, options)
             if L > 0:
                 if options['upperBoundEigenValue']:
                     ceq = np.zeros((L + 1, 1))
@@ -181,7 +184,6 @@ class Cost(object):
             rospy.logwarn('Rerun the optimization w/diff initial; guesses to handle this issue')
             rospy.logwarn('increasing the # of P could help')
 
-
     def computeEnergy(self, X,Xd,Vxf, nargout=2):
         d = X.shape[0]
         nDemo = 1
@@ -241,7 +243,7 @@ class Cost(object):
         ctr_handle_ineq = lambda p: self.ctr_eigenvalue_ineq(p, d, Vxf0['L'], options)
         ctr_handle_eq = lambda p: self.ctr_eigenvalue_eq(p, d, Vxf0['L'], options)
 
-        optim_res, J = self.optimize(obj_handle, ctr_handle_ineq, ctr_handle_eq, p0)
+        popt, J = self.optimize(obj_handle, ctr_handle_ineq, ctr_handle_eq, p0)
         # popt, J = optim_res.x, optim_res.fun
 
         #while not optim_res.success:
@@ -262,7 +264,9 @@ class Cost(object):
             Vxf['L']        = Vxf0['L']
             Vxf['d']        = Vxf0['d']
             Vxf['w']        = Vxf0['w']
-            self.check_constraints(popt,ctr_handle,d,Vxf['L'],options)
+#            self.check_constraints(popt,ctr_handle,d,Vxf['L'],options) TODO: check check_constraints method
+        self.success = True
+
 
         sumDet = 0
         for l in range(Vxf['L'] + 1):
@@ -272,3 +276,37 @@ class Cost(object):
         Vxf['P'][1:, :, :] = Vxf['P'][1:, :, :] / np.sqrt(sumDet)
 
         return Vxf, J
+
+    def energyContour(self, Vxf, D, *args):
+        quality='low'
+        b_plot_contour = True
+        contour_levels = np.array([])
+
+        if quality == 'high':
+            nx, ny = 0.1, 0.1
+        elif quality == 'medium':
+            nx, ny = 1, 1
+        else:
+            nx, ny = 2, 2
+
+        x = np.arange(D[0], D[1], nx)
+        y = np.arange(D[2], D[3], ny)
+        x_len = len(x)
+        y_len = len(y)
+        X, Y = np.meshgrid(x, y)
+        x = np.stack([np.ravel(X), np.ravel(Y)])
+
+        V, dV = self.computeEnergy(x, np.array(()), Vxf, nargout=2)
+
+        if not contour_levels.size:
+            contour_levels = np.arange(0, np.log(np.max(V)), 0.5)
+            contour_levels = np.exp(contour_levels)
+            if np.max(V) > 40:
+                contour_levels = np.round(contour_levels)
+
+        V = V.reshape(y_len, x_len)
+
+        if b_plot_contour:
+            h = plt.contour(X, Y, V, contour_levels, colors='k', origin='upper', linewidths=2, labelspacing=200)
+
+        return h

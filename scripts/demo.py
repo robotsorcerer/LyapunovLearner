@@ -83,25 +83,91 @@ def main(Vxf0, urdf, options):
             print('optimization succeeded without violating constraints')
             break
 
-    # get gmm params
-    gmm.update(data.T, K=options['num_clusters'], max_iterations=100)
-    mu, sigma, priors = gmm.mu, gmm.sigma, gmm.logmass
+    # Plot the result of V
+    h1 = plt.plot(data[0, :], data[1, :], 'r.', label='demonstrations')
 
-    if options['disp']:
-        logging.debug(' mu {}, sigma {}, priors: {}'.
-                        format(mu.shape, sigma.shape, priors.shape))
+    extra = 30
 
-    inp = slice(0, Vxf['d']) #np.array(range(0, Vxf['d']))
-    out = slice(Vxf['d'], 2* Vxf['d']) #np.array(range(Vxf['d'], 2* Vxf['d']))
-    rho0, kappa0 = 1.0, 1.0
+    axes_limits = [np.min(data[0, :]) - extra, np.max(data[0, :]) + extra,
+                   np.min(data[1, :]) - extra, np.max(data[1, :]) + extra]
 
-    gmr_handle = lambda x: GMR(priors, mu, sigma, x, inp, out)
-    stab_handle = lambda dat: dsStabilizer(dat, gmr_handle, Vxf, rho0, kappa0)
+    h3 = cost.energyContour(Vxf, axes_limits, np.array(()), np.array(()), np.array(()), False)
+    h2 = plt.plot(0, 0, 'g*', markersize=15, linewidth=3, label='target')
+    plt.title('Energy Levels of the learned Lyapunov Functions', fontsize=12)
+    plt.xlabel('x (mm)', fontsize=15)
+    plt.ylabel('y (mm)', fontsize=15)
+    h = [h1, h2, h3]
+    plt.show()
 
-    x0_all = data[0, :]
-    XT     = data[-1, :]
+    # Run DS
+    opt_sim = dict()
+    opt_sim['dt'] = 0.01
+    opt_sim['i_max'] = 4000
+    opt_sim['tol'] = 1
 
-    logger.debug('XT: {} x0: {} '.format(XT.shape, x0_all.shape))
+    d = data.shape[0]/2  # dimension of data
+    x0_all = data[:int(d), demoIdx[0, :-1] - 1]  # finding initial points of all demonstrations
+
+    data, demoIdx, Priors_EM, Mu_EM, Sigma_EM = load_saved_mat_file(lyap + '/' + 'example_models/' +
+                                     modelNames[modelNumber], Priors_EM=None,
+                                     Mu_EM=None, Sigma_EM=None)
+
+    # rho0 and kappa0 impose minimum acceptable rate of decrease in the energy
+    # function during the motion. Refer to page 8 of the paper for more information
+    rho0 = 1
+    kappa0 = 0.1
+
+    inp = list(range(Vxf['d']))
+    output = np.arange(Vxf['d'], 2 * Vxf['d'])
+
+    xd, _ = dsStabilizer(x0_all, Vxf, rho0, kappa0, Priors_EM, Mu_EM, Sigma_EM, inp, output)
+
+    #x, xd = Simulation(x0_all, np.array(()), fn_handle, opt_sim) #running the simulator
+
+    # Evalute DS
+    obs_bool = False
+    obs = np.array(())
+    x_obs = np.nan
+    xT = np.array([])
+
+    d = x0_all.shape[0]  # dimension of the model
+    if not xT:
+        xT = np.zeros((d, 1))
+
+    # initialization
+    nbSPoint = x0_all.shape[1]
+    #for i in range(nbSPoint):
+     #   x[:,0,i] = x0_all[:, i]
+
+    #x = np.reshape(x0_all.T, [nbSPoint, d, 1])
+    x = []
+    x0_all[0, 1] = -180  # modify starting point a bit to see performance in further regions
+    x0_all[1, 1] = -130
+    x.append(x0_all)
+    xd = []
+    if xT.shape == x0_all.shape:
+        XT = xT
+    else:
+        XT = np.tile(xT, [1, nbSPoint])   # a matrix of target location (just to simplify computation)
+
+    t = 0 # starting time
+    dt = 0.01
+    for i in range(4000):
+        xd.append(dsStabilizer(x[i] - XT, Vxf, rho0, kappa0, Priors_EM, Mu_EM, Sigma_EM, inp, output)[0])
+
+        x.append(x[i] + xd[i] * dt)
+        t += dt
+
+    for i in range(nbSPoint):
+        # Choose one trajectory
+        x = np.reshape(x, [len(x), d, nbSPoint])
+        x0 = x[:, :, i]
+        if i == 0:
+            plt.plot(x0[:, 0], x0[:, 1], linestyle='--', label='DS eval', color='blue')
+        else:
+            plt.plot(x0[:, 0], x0[:, 1], linestyle='--', color='blue')
+    plt.legend()
+    plt.show()
 
 
 if __name__ == '__main__':

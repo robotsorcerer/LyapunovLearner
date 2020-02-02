@@ -44,6 +44,7 @@ args = parser.parse_args()
 
 print(args)
 
+
 def main(Vxf0, urdf, options):
 	gmm = GMM(num_clusters=options['num_clusters'])
 
@@ -69,7 +70,6 @@ def main(Vxf0, urdf, options):
 	# cost.success = False
 	while cost.success:
 		# cost.success = False
-		rospy.loginfo('Optimizing the lyapunov function')
 		Vxf, J = cost.learnEnergy(Vxf0, data, options)
 		# if not cost.success:
 		# increase L and restart the optimization process

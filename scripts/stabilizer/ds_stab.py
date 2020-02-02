@@ -12,6 +12,7 @@ import time
 import numpy as np
 from cost.cost import Cost
 
+
 def dsStabilizer(X, gmr_handle, Vxf, rho0, kappa0):
     """
     This function takes the position and generates the cartesian velocity

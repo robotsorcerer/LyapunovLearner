@@ -9,7 +9,7 @@ __status__ 		= "Testing"
 import numpy as np
 
 Vxf0 = {
-    'L': 4,
+    'L': 2,
     'd': 2,
     'w': 1e-4, #A positive scalar weight regulating the priority between the two objectives of the opitmization. Please refer to the page 7 of the paper for further information.
     'Mu': np.array(()),
