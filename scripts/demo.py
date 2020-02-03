@@ -8,27 +8,21 @@ __maintainer__ 	= "Olalekan Ogunmolu"
 __email__ 		= "patlekano@gmail.com"
 __status__ 		= "Testing"
 
-import os
 import sys
-import h5py
-import time
 import argparse
 import logging
 import numpy as np
 import scipy.io as sio
-import matplotlib as mpl
 import matplotlib.pyplot as plt
+from gmm.gmm import GMM
 
 from os.path import dirname, abspath
 lyap = dirname(dirname(abspath(__file__)))
 sys.path.append(lyap)
 
-from gmm.gmm import GMM
-from gmm.gmm_utils import GMR
 from cost.cost import Cost
 from config import Vxf0, options, opt_exec
-from utils.utils import guess_init_lyap, BundleType
-from utils.data_prepro import format_data
+from utils.utils import guess_init_lyap
 from stabilizer.ds_stab import dsStabilizer
 
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
@@ -106,9 +100,13 @@ def main(Vxf0, urdf, options):
     d = data.shape[0]/2  # dimension of data
     x0_all = data[:int(d), demoIdx[0, :-1] - 1]  # finding initial points of all demonstrations
 
-    data, demoIdx, Priors_EM, Mu_EM, Sigma_EM = load_saved_mat_file(lyap + '/' + 'example_models/' +
-                                     modelNames[modelNumber], Priors_EM=None,
-                                     Mu_EM=None, Sigma_EM=None)
+    # get gmm params
+    gmm = GMM(num_clusters=options['num_clusters'])
+    gmm.update(data.T, K=options['num_clusters'], max_iterations=100)
+    mu, sigma, priors = gmm.mu, gmm.sigma, gmm.logmass
+    mu = mu.T
+    sigma = sigma.T
+    priors = priors.T
 
     # rho0 and kappa0 impose minimum acceptable rate of decrease in the energy
     # function during the motion. Refer to page 8 of the paper for more information
@@ -118,7 +116,7 @@ def main(Vxf0, urdf, options):
     inp = list(range(Vxf['d']))
     output = np.arange(Vxf['d'], 2 * Vxf['d'])
 
-    xd, _ = dsStabilizer(x0_all, Vxf, rho0, kappa0, Priors_EM, Mu_EM, Sigma_EM, inp, output, cost)
+    xd, _ = dsStabilizer(x0_all, Vxf, rho0, kappa0, priors, mu, sigma, inp, output, cost)
 
     # Evalute DS
     xT = np.array([])
@@ -129,8 +127,8 @@ def main(Vxf0, urdf, options):
     # initialization
     nbSPoint = x0_all.shape[1]
     x = []
-    x0_all[0, 1] = -180  # modify starting point a bit to see performance in further regions
-    x0_all[1, 1] = -130
+    #x0_all[0, 1] = -180  # modify starting point a bit to see performance in further regions
+    #x0_all[1, 1] = -130
     x.append(x0_all)
     xd = []
     if xT.shape == x0_all.shape:
@@ -141,7 +139,7 @@ def main(Vxf0, urdf, options):
     t = 0  # starting time
     dt = 0.01
     for i in range(4000):
-        xd.append(dsStabilizer(x[i] - XT, Vxf, rho0, kappa0, Priors_EM, Mu_EM, Sigma_EM, inp, output, cost)[0])
+        xd.append(dsStabilizer(x[i] - XT, Vxf, rho0, kappa0, priors, mu, sigma, inp, output, cost)[0])
 
         x.append(x[i] + xd[i] * dt)
         t += dt

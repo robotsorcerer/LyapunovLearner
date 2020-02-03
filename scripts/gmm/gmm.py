@@ -4,15 +4,18 @@ import logging
 import numpy as np
 import scipy.linalg
 import scipy.linalg as LA
+from scipy.cluster.vq import vq, kmeans2, whiten
 from numpy.linalg import LinAlgError
 
 logger = logging.getLogger(__name__)
+
 
 def logsum(vec, axis=0, keepdims=True):
     #TODO: Add a docstring.
     maxv = np.max(vec, axis=axis, keepdims=keepdims)
     maxv[maxv == -float('inf')] = 0
     return np.log(np.sum(np.exp(vec-maxv), axis=axis, keepdims=keepdims)) + maxv
+
 
 def check_sigma(A):
     """
@@ -30,6 +33,7 @@ def check_sigma(A):
         Anew = low * A + eta * np.eye(A.shape[0])
         return Anew
 
+
 class GMM(object):
     """ Gaussian Mixture Model. """
     def __init__(self, num_clusters=6, init_sequential=False, eigreg=False, warmstart=True):
@@ -43,10 +47,10 @@ class GMM(object):
         self.fail = None
 
         # regularization parameters
-        self.eta   = 1e-6
-        self.delta            = 1e-4
-        self.eta_min           = 1e-6
-        self.delta_nut        = 2
+        self.eta = 1e-6
+        self.delta = 1e-4
+        self.eta_min = 1e-6
+        self.delta_nut = 2
 
     def inference(self, pts):
         """
@@ -120,7 +124,7 @@ class GMM(object):
             for i in range(K):
                 # print('sigma i ', self.sigma[i].shape, np.eye(self.sigma[i].shape[-1]).shape)
                 # print('eta: ', self.eta)
-                self.sigma[i] +=  self.eta * np.eye(self.sigma[i].shape[-1])
+                self.sigma[i] += self.eta * np.eye(self.sigma[i].shape[-1])
                 mu, sigma = self.mu[i], self.sigma[i]
                 # logger.debug('sigma: {}\n'.format(sigma))
                 try:
@@ -200,19 +204,23 @@ class GMM(object):
             N = self.N
 
             # Set initial cluster indices.
-            if not self.init_sequential:
+            use_kmeans = True
+            if not self.init_sequential and not use_kmeans:
                 cidx = np.random.randint(0, K, size=(1, N))
+                for i in range(K):
+                    cluster_idx = (cidx == i)[0]
+                    mu = np.mean(data[cluster_idx, :], axis=0)
+                    diff = (data[cluster_idx, :] - mu).T
+                    sigma = (1.0 / K) * (diff.dot(diff.T))
+                    self.mu[i, :] = mu
+                    self.sigma[i, :, :] = sigma + np.eye(Do) * 2e-6
             else:
-                raise NotImplementedError()
-
-            # Initialize.
-            for i in range(K):
-                cluster_idx = (cidx == i)[0]
-                mu = np.mean(data[cluster_idx, :], axis=0)
-                diff = (data[cluster_idx, :] - mu).T
-                sigma = (1.0 / K) * (diff.dot(diff.T))
-                self.mu[i, :] = mu
-                self.sigma[i, :, :] = sigma + np.eye(Do) * 2e-6
+                # Initialize clusters with kmeans
+                self.mu, cidx = kmeans2(data, K)
+                for i in range(K):
+                    cluster_idx = (np.reshape(cidx, [1, len(cidx)]) == i)[0]
+                    sigma = np.cov(data[cluster_idx, :].T, data[cluster_idx, :].T)[:Do, :Do]
+                    self.sigma[i, :, :] = sigma + np.eye(Do) * 2e-6
 
         prevll = -float('inf')
         for itr in range(max_iterations):
