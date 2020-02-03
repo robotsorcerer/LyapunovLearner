@@ -20,8 +20,8 @@ Vxf0 = {
 options = {
     'tol_mat_bias': 1e-1,
     'disp': True,
-    'use_6d': True,
-    'num_clusters': 10, # number of gmm clusters
+    'use_6d': False,
+    'num_clusters': 5,  # number of gmm clusters
     'tol_stopping': 1e-10,
     'max_iter': 500,
     'int_lyap_random': False,
