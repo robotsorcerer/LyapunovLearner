@@ -15,12 +15,9 @@ import rospy
 import rospkg
 import logging
 import numpy as np
-from config import ik_config
 from geometry_msgs.msg import Twist
 from os.path import join, expanduser
 from torobo_forward import forward_kinematics
-from trac_ik_python.trac_ik_wrap import TRAC_IK
-from trac_ik_python.trac_ik import IK
 from torobo_ik.srv import SolveDiffIK, SolveDiffIKRequest, SolveDiffIKResponse
 
 rp = rospkg.RosPack()
