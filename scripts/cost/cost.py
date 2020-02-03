@@ -28,6 +28,7 @@ class Cost(object):
         """
             Class that estimates lyapunov energy function
         """
+        self.Nfeval = 0
         self.success = True   # boolean indicating if constraints were violated
 
     def matVecNorm(self, x):
@@ -58,16 +59,24 @@ class Cost(object):
         J[np.where(Vdot > 0)] = J[np.where(Vdot > 0)] ** 2
         J[np.where(Vdot < 0)] = -w * J[np.where(Vdot < 0)] ** 2
         J = np.sum(J, axis=1)
-        print('J:', J[0])
+        #print('J:', J[0])
         return J
+
+    def callback_opt(self, Xi, y):
+        print('Iteration: {0:4d}   Cost: {1: 3.6f}'.format(self.Nfeval, y.fun[0]))
+        self.Nfeval += 1
 
     def optimize(self, obj_handle, ctr_handle_ineq, ctr_handle_eq, p0):
         nonl_cons_ineq = NonlinearConstraint(ctr_handle_ineq, -np.inf, 0, jac='3-point', hess=BFGS())
         nonl_cons_eq = NonlinearConstraint(ctr_handle_eq, 0, 0, jac='3-point', hess=BFGS())
 
         rospy.loginfo('Optimizing the lyapunov function')
-        solution = minimize(obj_handle, np.reshape(p0, [len(p0)]), hess=BFGS(), constraints=[nonl_cons_eq, nonl_cons_ineq],
-                            method='trust-constr', options={'disp': True, 'initial_constr_penalty': 1.5})
+        solution = minimize(obj_handle,
+                            np.reshape(p0, [len(p0)]),
+                            hess=BFGS(),
+                            constraints=[nonl_cons_eq, nonl_cons_ineq],
+                            method='trust-constr', options={'disp': True, 'initial_constr_penalty': 1.5},
+                            callback=self.callback_opt)
 
         return solution.x, solution.fun
 
@@ -266,7 +275,6 @@ class Cost(object):
             Vxf['w']        = Vxf0['w']
 #            self.check_constraints(popt,ctr_handle,d,Vxf['L'],options) TODO: check check_constraints method
         self.success = True
-
 
         sumDet = 0
         for l in range(Vxf['L'] + 1):
