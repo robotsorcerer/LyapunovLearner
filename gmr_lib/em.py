@@ -1,6 +1,7 @@
 import numpy as np
 from .gauss_pdf import gaussPDF
 
+
 def EM(data, priors0, mu0, sigma0):
     """
      This function learns the parameters of a Gaussian Mixture Model

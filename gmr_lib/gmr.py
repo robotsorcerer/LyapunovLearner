@@ -2,6 +2,7 @@ import numpy as np
 from .gauss_pdf import gaussPDF
 from clfm_lib.learn_energy import matlength
 
+
 def GMR(Priors, Mu, Sigma, x, inp, out, nargout=3):
     """
      This function performs Gaussian Mixture Regression (GMR), using the
@@ -84,12 +85,12 @@ def GMR(Priors, Mu, Sigma, x, inp, out, nargout=3):
     ## Compute expected means y, given input x
     #########################################################################
     for j in range(nbStates):
-      y_tmp[:,:,j] = np.tile(Mu[out,j],[1,nbData]) \
-                     + Sigma[out,inp,j]/(Sigma[inp,inp,j]).dot(x-np.tile(Mu[inp,j],[1,nbData]))
+      y_tmp[:, :, j] = np.tile(Mu[out, j], [1, nbData]) \
+                     + Sigma[out, inp, j]/(Sigma[inp, inp, j]).dot(x-np.tile(Mu[inp, j],[1, nbData]))
 
     beta_tmp = beta.reshape(1, beta.shape)
     y_tmp2 = np.tile(beta_tmp,[matlength(out), 1, 1]) * y_tmp
-    y = np.sum(y_tmp2,axis=2)
+    y = np.sum(y_tmp2, axis=2)
     ## Compute expected covariance matrices Sigma_y, given input x
     #########################################################################
     if nargout > 1:

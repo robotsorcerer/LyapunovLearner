@@ -216,11 +216,20 @@ class GMM(object):
                     self.sigma[i, :, :] = sigma + np.eye(Do) * 2e-6
             else:
                 # Initialize clusters with kmeans
-                self.mu, cidx = kmeans2(data, K)
-                for i in range(K):
-                    cluster_idx = (np.reshape(cidx, [1, len(cidx)]) == i)[0]
-                    sigma = np.cov(data[cluster_idx, :].T, data[cluster_idx, :].T)[:Do, :Do]
-                    self.sigma[i, :, :] = sigma + np.eye(Do) * 2e-6
+                iter = 100000
+                for j in range(iter):
+                    self.mu, cidx = kmeans2(data, K)
+                    for i in range(K):
+                        cluster_idx = (np.reshape(cidx, [1, len(cidx)]) == i)[0]
+                        sigma = np.cov(data[cluster_idx, :].T, data[cluster_idx, :].T)[:Do, :Do]
+                        self.sigma[i, :, :] = sigma + np.eye(Do) * 2e-6
+
+                    if not np.isnan(self.sigma).any():
+                        break
+
+                    if j == (iter - 1):
+                        print('Initialization of gaussians in GMM failed.')
+                        exit()
 
         prevll = -float('inf')
         for itr in range(max_iterations):
