@@ -75,7 +75,8 @@ class Cost(object):
                             np.reshape(p0, [len(p0)]),
                             hess=BFGS(),
                             constraints=[nonl_cons_eq, nonl_cons_ineq],
-                            method='trust-constr', options={'disp': True, 'initial_constr_penalty': 1.5},
+                            method='trust-constr',
+                            options={'disp': True, 'initial_constr_penalty': 1.5},
                             callback=self.callback_opt)
 
         return solution.x, solution.fun
@@ -244,20 +245,11 @@ class Cost(object):
             Vxf0['P'] = Vxf0['P'][idx, :, :]
             p0 = gmm_2_parameters(Vxf0, options)
 
-        # account for targets in x and xd
-        # x = x - np.expand_dims(x[:, -1], 1)
-        # xd = xd - np.expand_dims(xd[:, -1], 1)
-
         obj_handle = lambda p: self.obj(p, x, xd, d, Vxf0['L'], Vxf0['w'], options)
         ctr_handle_ineq = lambda p: self.ctr_eigenvalue_ineq(p, d, Vxf0['L'], options)
         ctr_handle_eq = lambda p: self.ctr_eigenvalue_eq(p, d, Vxf0['L'], options)
 
         popt, J = self.optimize(obj_handle, ctr_handle_ineq, ctr_handle_eq, p0)
-        # popt, J = optim_res.x, optim_res.fun
-
-        #while not optim_res.success:
-         #   optim_res   = self.optimize(obj_handle, ctr_handle, p0)
-          #  popt, J     = optim_res.x, optim_res.fun
 
         if Vxf0['SOS']:
             Vxf['d']    = d
@@ -273,7 +265,6 @@ class Cost(object):
             Vxf['L']        = Vxf0['L']
             Vxf['d']        = Vxf0['d']
             Vxf['w']        = Vxf0['w']
-#            self.check_constraints(popt,ctr_handle,d,Vxf['L'],options) TODO: check check_constraints method
         self.success = True
 
         sumDet = 0

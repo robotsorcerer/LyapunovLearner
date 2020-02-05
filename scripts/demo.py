@@ -20,10 +20,10 @@ from os.path import dirname, abspath
 lyap = dirname(dirname(abspath(__file__)))
 sys.path.append(lyap)
 
-from cost.cost import Cost
+from cost import Cost
 from config import Vxf0, options, opt_exec
 from utils.utils import guess_init_lyap
-from stabilizer.ds_stab import dsStabilizer
+from stabilizer import dsStabilizer
 
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -39,7 +39,6 @@ print(args)
 def load_saved_mat_file(x, **kwargs):
     matFile = sio.loadmat(x)
 
-    #print(matFile)
     data = matFile['Data']
     demoIdx = matFile['demoIndices']
 
@@ -52,7 +51,7 @@ def load_saved_mat_file(x, **kwargs):
 
 def main(Vxf0, urdf, options):
     modelNames = ['w.mat', 'Sshape.mat']  # Two example models provided by Khansari
-    modelNumber = 0  # could be zero or one depending on the experiment the user is running
+    modelNumber = 1  # could be zero or one depending on the experiment the user is running
 
     data, demoIdx = load_saved_mat_file(lyap + '/' + 'example_models/' + modelNames[modelNumber])
 
@@ -62,13 +61,9 @@ def main(Vxf0, urdf, options):
     Vxf0 = guess_init_lyap(data, Vxf0, options['int_lyap_random'])
     cost = Cost()
 
-    # cost.success = False
     while cost.success:
-        # cost.success = False
         print('Optimizing the lyapunov function')
         Vxf, J = cost.learnEnergy(Vxf0, data, options)
-        # if not cost.success:
-        # increase L and restart the optimization process
         old_l = Vxf0['L']
         Vxf0['L'] += 1
         print('Constraints violated. increasing the size of L from {} --> {}'.format(old_l, Vxf0['L']))

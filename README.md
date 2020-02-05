@@ -26,6 +26,10 @@
 
  + It is expected that your robot's `urdf` file is uploaded to the ros parameter server under the `param` name `/robot_description`. This would be used by `trac_ik` and `dr_kdl` in computing the real-time IK joint positions of the arm.
 
+ + If you run the [demo.py](/scripts/demo.py) file, you should obtain a chart similar to this:
+
+   ![results_python](/scripts/docs/energy_levels.png)
+
 
 ##### Run the move it launcher.
 
