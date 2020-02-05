@@ -98,10 +98,7 @@ def main(Vxf0, urdf, options):
     # get gmm params
     gmm = GMM(num_clusters=options['num_clusters'])
     gmm.update(data.T, K=options['num_clusters'], max_iterations=100)
-    mu, sigma, priors = gmm.mu, gmm.sigma, gmm.logmass
-    mu = mu.T
-    sigma = sigma.T
-    priors = priors.T
+    mu, sigma, priors = gmm.mu.T, gmm.sigma.T, gmm.logmass.T
 
     # rho0 and kappa0 impose minimum acceptable rate of decrease in the energy
     # function during the motion. Refer to page 8 of the paper for more information

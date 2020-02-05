@@ -2,6 +2,8 @@
 
 + This experiment was implemented on the Tokyo Robotics 7-DoF arm.
 
++ First be sure to install all the dependencies in [requirements.txt](/requirements.txt): pip install -r requirements.txt --user.
+
 + I expect that the experiment should be reproducible on any other 7-DoF arm.
 
 ### Generating data
@@ -26,10 +28,13 @@
 
  + It is expected that your robot's `urdf` file is uploaded to the ros parameter server under the `param` name `/robot_description`. This would be used by `trac_ik` and `dr_kdl` in computing the real-time IK joint positions of the arm.
 
- + If you run the [demo.py](/scripts/demo.py) file, you should obtain a chart similar to this:
+ + If you run the [demo.py](/scripts/demo.py) file with the `w` model, you should obtain a chart similar to this:
 
    ![results_python](/scripts/docs/energy_levels.png)
 
+or with the `s` model, you should obtain a chart similar to this:
+
+   ![results_python](/scripts/docs/energy_levels_sshape.png)
 
 ##### Run the move it launcher.
 

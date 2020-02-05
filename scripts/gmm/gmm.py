@@ -1,5 +1,5 @@
 from __future__ import print_function
-import rospy
+#import rospy
 import logging
 import numpy as np
 import scipy.linalg
@@ -143,13 +143,13 @@ class GMM(object):
             if self.fail:
                 old_eta = self.eta
                 self.reg_sched(increase=True)
-                rospy.logdebug("Hessian became non positive definite")
-                rospy.logdebug('Increasing mu: {} -> {}'.format(old_eta, self.eta))
+                logger.debug("Hessian became non positive definite")
+                logger.debug('Increasing mu: {} -> {}'.format(old_eta, self.eta))
             else:
                 # if successful, decrese mu
                 old_eta = self.eta
                 self.reg_sched(increase=False)
-                rospy.logdebug('Decreasing mu: {} -> {}'.format(old_eta, self.eta))
+                logger.debug('Decreasing mu: {} -> {}'.format(old_eta, self.eta))
 
         logobs += self.logmass.T
         return logobs
