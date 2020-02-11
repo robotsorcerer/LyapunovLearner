@@ -77,6 +77,8 @@ Here, we will run a Gaussian Mixture Regression on samples of data that we gathe
 
 If you used `LyapunovLearner` in your work, please cite it:
 
+
+```tex
 @misc{Savitzky-Golay,
   author = {Ogunmolu, Olalekan},
   title = {{Savitzky-Golay Filter in C++}},
@@ -84,7 +86,7 @@ If you used `LyapunovLearner` in your work, please cite it:
   howpublished = {\url{https://github.com/lakehanne/Savitzky-Golay}},
   note = {Accessed August 15, 2015}
 }
-
+```
 
 ### Issues
 
