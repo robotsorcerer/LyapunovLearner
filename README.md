@@ -79,12 +79,12 @@ If you used `LyapunovLearner` in your work, please cite it:
 
 
 ```tex
-@misc{Savitzky-Golay,
-  author = {Ogunmolu, Olalekan},
-  title = {{Savitzky-Golay Filter in C++}},
-  year = {2015},
-  howpublished = {\url{https://github.com/lakehanne/Savitzky-Golay}},
-  note = {Accessed August 15, 2015}
+@misc{LyapunovLearner,
+  author = {Ogunmolu, Olalekan and Thompson, Rachel Skye and Dattari, Rodrigo Pérez},
+  title = {{Learning Control Lyapunov Functions in Python}},
+  year = {2020},
+  howpublished = {\url{https://github.com/lakehanne/lyapunovearner}},
+  note = {Accessed February 10, 2020}
 }
 ```
 
