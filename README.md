@@ -73,6 +73,20 @@ Here, we will run a Gaussian Mixture Regression on samples of data that we gathe
 
   + Otherwise, check to be sure the ik service is actually online.
 
+### Citation
+
+If you used `LyapunovLearner` in your work, please cite it:
+
+@misc{Savitzky-Golay,
+  author = {Ogunmolu, Olalekan},
+  title = {{Savitzky-Golay Filter in C++}},
+  year = {2015},
+  howpublished = {\url{https://github.com/lakehanne/Savitzky-Golay}},
+  note = {Accessed August 15, 2015}
+}
+
+
+### Issues
 
 + Please open an issue if you are having trouble running this package.
 
