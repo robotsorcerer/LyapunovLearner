@@ -83,7 +83,7 @@ If you used `LyapunovLearner` in your work, please cite it:
   author = {Ogunmolu, Olalekan and Thompson, Rachel Skye and Pérez-Dattari, Rodrigo},
   title = {{Learning Control Lyapunov Functions in Python}},
   year = {2020},
-  howpublished = {\url{https://github.com/lakehanne/lyapunovearner}},
+  howpublished = {\url{https://github.com/lakehanne/LyapunovLearner}},
   note = {Accessed February 10, 2020}
 }
 ```
