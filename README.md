@@ -24,6 +24,8 @@
 
 ### Running Lyapunov Learner
 
+ + Please run in a python 3.6 environment.
+
  + Note that depending on the joint limits of your robot arm and the maximum torque each joint's servo is allowed to accept, your robot might react haphazardly while the learning algorithm is running. Please calibrate your robot to the currents before deploying on the real robot.
 
  + It is expected that your robot's `urdf` file is uploaded to the ros parameter server under the `param` name `/robot_description`. This would be used by `trac_ik` and `dr_kdl` in computing the real-time IK joint positions of the arm.

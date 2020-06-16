@@ -18,6 +18,7 @@ from gmm.gmm import GMM
 
 from os.path import dirname, abspath
 lyap = dirname(dirname(abspath(__file__)))
+# print(lyap)
 sys.path.append(lyap)
 
 from cost import Cost
@@ -51,7 +52,7 @@ def load_saved_mat_file(x, **kwargs):
 
 def main(Vxf0, urdf, options):
     modelNames = ['w.mat', 'Sshape.mat']  # Two example models provided by Khansari
-    modelNumber = 1  # could be zero or one depending on the experiment the user is running
+    modelNumber = 0  # could be zero or one depending on the experiment the user is running
 
     data, demoIdx = load_saved_mat_file(lyap + '/' + 'example_models/' + modelNames[modelNumber])
 
@@ -81,9 +82,9 @@ def main(Vxf0, urdf, options):
 
     h3 = cost.energyContour(Vxf, axes_limits, np.array(()), np.array(()), np.array(()), False)
     h2 = plt.plot(0, 0, 'g*', markersize=15, linewidth=3, label='target')
-    plt.title('Energy Levels of the learned Lyapunov Functions', fontsize=12)
-    plt.xlabel('x (mm)', fontsize=15)
-    plt.ylabel('y (mm)', fontsize=15)
+    plt.title('Energy Levels of the learned Lyapunov Functions', fontsize=20, fontweight='bold')
+    plt.xlabel('x (mm)', fontsize=20, fontweight='bold')
+    plt.ylabel('y (mm)', fontsize=20, fontweight='bold')
     h = [h1, h2, h3]
 
     # Run DS
@@ -141,9 +142,9 @@ def main(Vxf0, urdf, options):
         x = np.reshape(x, [len(x), d, nbSPoint])
         x0 = x[:, :, i]
         if i == 0:
-            plt.plot(x0[:, 0], x0[:, 1], linestyle='--', label='DS eval', color='blue')
+            plt.plot(x0[:, 0], x0[:, 1], linestyle='--', linewidth=4, label='DS eval', color='blue')
         else:
-            plt.plot(x0[:, 0], x0[:, 1], linestyle='--', color='blue')
+            plt.plot(x0[:, 0], x0[:, 1], linestyle='--', linewidth=4, color='blue')
     plt.legend()
     plt.show()
 
