@@ -25,6 +25,7 @@ from cost import Cost
 from config import Vxf0, options, opt_exec
 from utils.utils import guess_init_lyap
 from stabilizer import dsStabilizer
+from visualization.visualizer import energy_contour
 
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -37,8 +38,8 @@ args = parser.parse_args()
 print(args)
 
 
-def load_saved_mat_file(x, **kwargs):
-    matFile = sio.loadmat(x)
+def load_saved_mat_file(file_path, **kwargs):
+    matFile = sio.loadmat(file_path)
 
     data = matFile['Data']
     demoIdx = matFile['demoIndices']
@@ -80,7 +81,7 @@ def main(Vxf0, urdf, options):
     axes_limits = [np.min(data[0, :]) - extra, np.max(data[0, :]) + extra,
                    np.min(data[1, :]) - extra, np.max(data[1, :]) + extra]
 
-    h3 = cost.energyContour(Vxf, axes_limits, np.array(()), np.array(()), np.array(()), False)
+    h3 = energyContour(Vxf, axes_limits, cost, np.array(()), np.array(()), np.array(()), False)
     h2 = plt.plot(0, 0, 'g*', markersize=15, linewidth=3, label='target')
     plt.title('Energy Levels of the learned Lyapunov Functions', fontsize=20, fontweight='bold')
     plt.xlabel('x (mm)', fontsize=20, fontweight='bold')

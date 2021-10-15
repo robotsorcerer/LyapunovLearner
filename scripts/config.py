@@ -9,14 +9,15 @@ __status__ 		= "Testing"
 import numpy as np
 
 Vxf0 = {
-    'L': 2,
-    'd': 2,
-    'w': 1e-4, #A positive scalar weight regulating the priority between the two objectives of the opitmization. Please refer to the page 7 of the paper for further information.
+    'L': 2, # the number of asymmetric quadratic components L>=0.
+    'd': 2, # the number of asymmetric quadratic components L>=0.
+    'w': 1e-4, # A positive scalar weight regulating the priority between the two objectives of the opitmization. Please refer to the page 7 of the paper for further information.
     'Mu': np.array(()),
     'P': np.array(()),
     'SOS': False
 }
 
+# A set of options that will be passed to the solver.
 options = {
     'tol_mat_bias': 1e-1,
     'disp': True,

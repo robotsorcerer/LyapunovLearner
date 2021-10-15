@@ -111,7 +111,9 @@ def parameters_2_gmm(popt, d, L, options):
 
 
 def shape_DS(p, d, L, options):
-    # transforming the column of parameters into Priors, Mu, and P
+    """
+        Transform the column of parameters into Priors, Mu, and P
+    """
     P = np.zeros((L + 1, d, d))
     optimizePriors = options['optimizePriors']
     # print('options', optimizePriors)
@@ -143,7 +145,6 @@ def shape_DS(p, d, L, options):
 
 
 def gmr_lyapunov(x, Priors, Mu, P):
-    # print('x.shape: ', x.shape)
     nbData = x.shape[1]
     d = x.shape[0]
     L = P.shape[0]-1

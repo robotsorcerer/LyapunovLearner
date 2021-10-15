@@ -7,6 +7,7 @@ __license__ 	= "MIT"
 __maintainer__ 	= "Olalekan Ogunmolu"
 __email__ 		= "patlekano@gmail.com"
 __status__ 		= "Testing"
+__doc__ 		= "This file for learning the stability dynamics for Torobo robot"
 
 import os
 import sys
