@@ -5,12 +5,12 @@ This code largely reimplements Learning CLFs using the SEDS paper by Khansari-Za
 + Khansari-Zadeh has a subtle example that illustrates the advantages of SEDS over DMPs, LWPRs, GMRs etc in his [2014 Autonomous Systems paper](scripts/docs/AUS.pdf), and reproduced below:
 
 <div align="center">
- <img src="/scripts/docs/seds_gmr.jpg" height="540px" width="520">
+ <img src="/scripts/docs/seds_gmr.jpg" height="680px" width="600">
 </div>
 
 ### Example Results on a Robot's Task Space Trajectories.
 
-+ For the pre-recorded trajectories of the end-effector pointsd in a 2D plane for the WAM robot (see the `*mat` files in the folder [scripts/data/](/scripts/data/)) if we run the [demo.py](/scripts/demo.py) file with the `w` model (resp. with the `s` model), you should obtain a chart with trajectories converging to the correct region of attractor  similar to what we have on the left (resp. on the right) below
++ For the pre-recorded trajectories of the end-effector points in a 2D plane for the WAM robot (see the `*mat` files in the folder [scripts/data/](/scripts/data/)), if we run the [demo.py](/scripts/demo.py) file with the `w` model (resp. with the `s` model), you should obtain a chart with trajectories converging to the correct region of attractor  similar to what we have on the left (resp. on the right) below
 
 <div align="center">
  <img src="/scripts/docs/energy_levels.png" height="333px" width="333px">
