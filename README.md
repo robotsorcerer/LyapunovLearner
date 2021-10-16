@@ -12,7 +12,7 @@ This code largely reimplements Learning CLFs using the SEDS paper by Khansari-Za
 + Khansari has a subtle example that illustrates the advantages of SEDS over in his 2014 Autonomous Systems paper. See [Aus](scripts/docs/AUS.pdf), and reproduced below:
 
 <div align="center">
- <img src="docs/seds_gmr.jpg" height="223px" width="223px">
+ <img src="/scriptsdocs/seds_gmr.jpg" height="480px" width="320">
 </div>
 
 
