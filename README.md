@@ -20,17 +20,17 @@ This code largely reimplements Learning CLFs using the SEDS paper by Khansari-Za
 
 ### Setup.
 
-  Dependencies:
+Dependencies:
 
-      + scipy
++ scipy
 
-      + sklearn #>=0.19.0
++ sklearn #>=0.19.0
 
-      + numpy
++ numpy
 
-      + matplotlib
++ matplotlib
 
-  And that about wraps it up!
+And that about wraps it up!
 
 
 ### Usage
