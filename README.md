@@ -24,13 +24,17 @@ Dependencies:
 
 + scipy
 
-+ sklearn #>=0.19.0
-
 + numpy
 
 + matplotlib
 
-And that about wraps it up!
+All of these can be installed with
+
+```
+  pip install -r requirements.txt
+```
+
+And that about wraps up setting up!
 
 
 ### Usage
@@ -41,11 +45,13 @@ Basic Usage:
   python scripts/demo.py
 ```
 
-Usage with Options:
+Advanced Usage [with Options]:
 
   ```
-    python scripts/demo.py --silent --model s  -pz 2 --visualize
+    python scripts/demo.py [--silent|-si] [--model|-md] <s|w>  [--pause|-pz] <2> [--visualize|-vz] [--kappa0|-kp] <.1> [--rho0|-rh] <1.0>
   ```
+
+  where angle brackets denote defaults.
 
 #### Options
 
