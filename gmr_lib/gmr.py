@@ -51,7 +51,7 @@ def GMR(Priors, Mu, Sigma, x, inp, out, nargout=3):
        number="5"
      }
      Ported to python by Lekan Ogunmolu & Rachel Thompson
-                          patlekano@gmail.com
+                          patlekno@icloud.com
                           August 12, 2017
     """
 

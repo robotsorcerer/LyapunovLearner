@@ -1,11 +1,11 @@
 from __future__ import print_function
 
-__author__ 		= "Olalekan Ogunmolu"
+__author__ 		= "Lekan Molu"
 __copyright__ 	= "2018, One Hell of a Lyapunov Solver"
 __credits__  	= "Rachel Thompson (MIT), Jethro Tan (PFN)"
 __license__ 	= "MIT"
-__maintainer__ 	= "Olalekan Ogunmolu"
-__email__ 		= "patlekano@gmail.com"
+__maintainer__ 	= "Lekan Molu"
+__email__ 		= "patlekno@icloud.com"
 __status__ 		= "Testing"
 
 import numpy as np
@@ -16,7 +16,7 @@ def gaussPDF(data, mu, sigma):
     nbVar, nbdata = data.shape
 
     data = data.T - np.tile(mu.T, [nbdata, 1])
-    prob = np.sum(np.linalg.lstsq(sigma, data.T)[0].T * data, axis=1)
+    prob = np.sum(np.linalg.lstsq(sigma, data.T, rcond=None)[0].T * data, axis=1)
     prob = np.exp(-0.5 * prob) / np.sqrt((2 * np.pi)**nbVar * np.abs(np.linalg.det(sigma) + 1e-300))
 
     return prob.T
@@ -46,7 +46,7 @@ def GMR(Priors, Mu, Sigma, x, inp, out, nargout=0):
         b = Sigma[out, inp[0]:(inp[1] + 1), j]
         c = x - np.tile(Mu[inp[0]:(inp[1] + 1), j], [nbData, 1]).T
         d = Sigma[inp[0]:(inp[1] + 1), inp[0]:(inp[1] + 1), j]
-        e = np.linalg.lstsq(d, b.T)[0].T
+        e = np.linalg.lstsq(d, b.T, rcond=None)[0].T
         y_tmp.append(a + e.dot(c))
 
     y_tmp = np.reshape(y_tmp, [nbStates, len(out), nbData])
@@ -68,7 +68,14 @@ def GMR(Priors, Mu, Sigma, x, inp, out, nargout=0):
     return y, Sigma_y, beta
 
 
-def dsStabilizer(x, Vxf, rho0, kappa0, Priors_EM, Mu_EM, Sigma_EM, inp, output, cost, *args):
+def stabilizer(x, Vxf, rho0, kappa0, \
+                    Priors_EM, Mu_EM, Sigma_EM, \
+                    inp, output, cost, *args):
+    """
+        Given a Trajectory, this computes the control commands
+        that ensures that the trajectory is stable according to the
+        second method of Lyapunov.
+    """
     d = Vxf['d']
     if x.shape[0] == 2*d:
         xd = x[d+1:2*d, :]

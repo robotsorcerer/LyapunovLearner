@@ -28,7 +28,7 @@ def emInitKmeans(data, nbStates):
                    Switzerland, http://lasa.epfl.ch
 
      Ported to Python by Lekan Ogunmolu
-                         patlekano@gmail.com
+                         patlekno@icloud.com
                          August 12, 2017
     """
     nbVar, nbdata = data.shape

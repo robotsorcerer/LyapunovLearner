@@ -26,7 +26,7 @@ def plotGMM(mu, sigma, color, display_mode, *args):
                    Switzerland, http://lasa.epfl.ch
 
     Ported to Python by Lekan Ogunmolu & Rachael Thompson
-                        patlekano@gmail.com
+                        patlekno@icloud.com
                         August 12, 2016
     '''
     nbData = mu.shape[1]

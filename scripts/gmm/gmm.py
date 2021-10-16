@@ -1,5 +1,12 @@
-from __future__ import print_function
-#import rospy
+__author__ 		= "Lekan Molu"
+__copyright__ 	= "2018, One Hell of a Lyapunov Solver"
+__credits__  	= "Rachel Thomson (MIT), Pérez-Dattari, Rodrigo (TU Delft)"
+__license__ 	= "MIT"
+__maintainer__ 	= "Lekan Molu"
+__email__ 		= "patlekno@icloud.com"
+__status__ 		= "Completed"
+
+
 import logging
 import numpy as np
 import scipy.linalg
@@ -16,7 +23,6 @@ def logsum(vec, axis=0, keepdims=True):
     maxv[maxv == -float('inf')] = 0
     return np.log(np.sum(np.exp(vec-maxv), axis=axis, keepdims=keepdims)) + maxv
 
-
 def check_sigma(A):
     """
         checks if the sigma matrix is symmetric
@@ -32,7 +38,6 @@ def check_sigma(A):
         low = np.amin(np.sort(eigval))
         Anew = low * A + eta * np.eye(A.shape[0])
         return Anew
-
 
 class GMM(object):
     """ Gaussian Mixture Model. """

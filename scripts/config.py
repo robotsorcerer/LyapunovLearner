@@ -1,13 +1,22 @@
-__author__ 		= "Olalekan Ogunmolu"
-__copyright__ 	= "2018, One Hell of a Lyapunov Solver"
-__credits__  	= "Rachel Thomson (MIT), Jethro Tan (PFN)"
+__author__ 		= "Lekan Molu"
+__copyright__ 	= "2018, One Hell of a Lyapunov Learning Solver"
+__credits__  	= "Rachel Thomson (MIT), Pérez-Dattari, Rodrigo (TU Delft)"
 __license__ 	= "MIT"
-__maintainer__ 	= "Olalekan Ogunmolu"
-__email__ 		= "patlekano@gmail.com"
-__status__ 		= "Testing"
+__maintainer__ 	= "Lekan Molu"
+__email__ 		= "patlekno@icloud.com"
+__status__ 		= "Completed"
 
 import numpy as np
 
+"""
+    Contains the following parameters:
+    'L':  the number of asymmetric quadratic components L>=0.
+    'd': the number of asymmetric quadratic components L>=0.
+    'w':  A positive scalar weight regulating the priority between the two objectives of the opitmization. Please refer to the page 7 of the paper for further information.
+    'Mu': The mean of the Gaussian parameterization,
+    'P': A SPD Hurwitz matrix
+    'SOS': Whether we are using  Sum of Squares for the optimization
+"""
 Vxf0 = {
     'L': 2, # the number of asymmetric quadratic components L>=0.
     'd': 2, # the number of asymmetric quadratic components L>=0.
@@ -30,14 +39,20 @@ options = {
     'upperBoundEigenValue': True,
 }
 
+"""
+    Stabilization Options: After estimating the trajos, we now must
+    stabilize those trajos at each time step.
+"""
+ds_options = {
+    'traj_nums': 4000, # Why did KZ choose this?
+    'dt': 0.01,
+    'tol': 1,
+    }
+
+# These for the Torobo Robot
 opt_exec = {
 'dt': 0.1,
 'i_max': 4000,
 'tol': 1,
 'stop_tol': 1e-4,
-}
-
-
-hyperparams = {
-    'use_cvxopt': True, #whether to use cvxopt package, fmincon or otherwise
 }

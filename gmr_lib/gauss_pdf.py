@@ -18,7 +18,7 @@ def gaussPDF(data, mu, sigma):
                    Switzerland, http://lasa.epfl.ch
 
     Ported to python by Lekan Ogunmolu & Rachel Thompson
-                        patlekano@gmail.com
+                        patlekno@icloud.com
                         August 12, 2017
     """
 
