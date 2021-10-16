@@ -5,11 +5,11 @@ This code largely reimplements Learning CLFs using the SEDS paper by Khansari-Za
 + If you run the [demo.py](/scripts/demo.py) file with the `w` model (resp. with the `s` model), you should obtain a chart similar to what we have on the left (resp. on the right) below
 
 <div align="center">
- <img src="/scripts/docs/energy_levels.png" height="223px" width="223px">
-  <img src="/scripts/docs/energy_levels_sshape.png" height="223px" width="223px">
+ <img src="/scripts/docs/energy_levels.png" height="333px" width="333px">
+  <img src="/scripts/docs/energy_levels_sshape.png" height="333px" width="333px">
 </div>
 
-+ Khansari has a subtle example that illustrates the advantages of SEDS over in his 2014 Autonomous Systems paper. See [Aus](docs/AUS.pdf), and reproduced below:
++ Khansari has a subtle example that illustrates the advantages of SEDS over in his 2014 Autonomous Systems paper. See [Aus](scripts/docs/AUS.pdf), and reproduced below:
 
 <div align="center">
  <img src="docs/seds_gmr.jpg" height="223px" width="223px">
@@ -57,22 +57,6 @@ Usage with Options:
 
 + `--rho0/-rh`: coeff. of class-Kappa function.
 
-### Citation
-
-If you used `LyapunovLearner` in your work, please cite it:
-
-
-```tex
-@misc{LyapunovLearner,
-  author = {Ogunmolu, Olalekan and Thompson, Rachel Skye and Pérez-Dattari, Rodrigo},
-  title = {{Learning Control Lyapunov Functions}},
-  year = {2021},
-  howpublished = {\url{https://github.com/lakehanne/LyapunovLearner}},
-  note = {Accessed February 10, 2020}
-}
-```
-
-
 ### FAQS
 
 + Why Consider this CLF correcction mechanism for stabilizing trajectories over Statistical Learning Methods or Dynamic Movement Primitives?
@@ -97,8 +81,18 @@ If you used `LyapunovLearner` in your work, please cite it:
 
 + Add options for plotting different level sets for the Lyapunov Function.
 
-### Issues
 
-+ Please open an issue if you are having trouble running this package.
+### Citation
 
-+ Email: patlekno@icloud.com
+If you used `LyapunovLearner` in your work, please cite it:
+
+
+```tex
+@misc{LyapunovLearner,
+  author = {Ogunmolu, Olalekan and Thompson, Rachel Skye and Pérez-Dattari, Rodrigo},
+  title = {{Learning Control Lyapunov Functions}},
+  year = {2021},
+  howpublished = {\url{https://github.com/lakehanne/LyapunovLearner}},
+  note = {Accessed February 10, 2020}
+}
+```
