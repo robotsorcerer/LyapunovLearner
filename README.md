@@ -1,13 +1,6 @@
-### One Hell of a Lyapunov Learner
+### One Hell of a Lyapunov Learner.
 
 This code largely reimplements Learning CLFs using the SEDS paper by Khansari-Zadeh. See original code in [matlab here](https://bitbucket.org/khansari/clfdm/src/master/demo_CLFDM_Learning.m).
-
-+ If you run the [demo.py](/scripts/demo.py) file with the `w` model (resp. with the `s` model), you should obtain a chart similar to what we have on the left (resp. on the right) below
-
-<div align="center">
- <img src="/scripts/docs/energy_levels.png" height="333px" width="333px">
-  <img src="/scripts/docs/energy_levels_sshape.png" height="333px" width="333px">
-</div>
 
 + Khansari has a subtle example that illustrates the advantages of SEDS over in his 2014 Autonomous Systems paper. See [Aus](scripts/docs/AUS.pdf), and reproduced below:
 
@@ -15,8 +8,17 @@ This code largely reimplements Learning CLFs using the SEDS paper by Khansari-Za
  <img src="/scripts/docs/seds_gmr.jpg" height="540px" width="520">
 </div>
 
+### Example Results on a Robot's Task Space Trajectories.
 
-### Setup
++ For the pre-recorded trajectories of the end-effector pointsd in a 2D plane for the WAM robot (see the `*mat` files in the folder [scripts/data/](/scripts/data/)) if we run the [demo.py](/scripts/demo.py) file with the `w` model (resp. with the `s` model), you should obtain a chart with trajectories converging to the correct region of attractor  similar to what we have on the left (resp. on the right) below
+
+<div align="center">
+ <img src="/scripts/docs/energy_levels.png" height="333px" width="333px">
+  <img src="/scripts/docs/energy_levels_sshape.png" height="333px" width="333px">
+</div>
+
+
+### Setup.
 
   Dependencies:
 
