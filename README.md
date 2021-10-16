@@ -2,7 +2,7 @@
 
 This code largely reimplements Learning CLFs using the SEDS paper by Khansari-Zadeh. See original code in [matlab here](https://bitbucket.org/khansari/clfdm/src/master/demo_CLFDM_Learning.m).
 
-+ Khansari has a subtle example that illustrates the advantages of SEDS over in his 2014 Autonomous Systems paper. See [Aus](scripts/docs/AUS.pdf), and reproduced below:
++ Khansari-Zadeh has a subtle example that illustrates the advantages of SEDS over DMPs, LWPRs, GMRs etc in his [2014 Autonomous Systems paper](scripts/docs/AUS.pdf), and reproduced below:
 
 <div align="center">
  <img src="/scripts/docs/seds_gmr.jpg" height="540px" width="520">
