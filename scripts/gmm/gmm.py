@@ -41,7 +41,8 @@ def check_sigma(A):
 
 class GMM(object):
     """ Gaussian Mixture Model. """
-    def __init__(self, num_clusters=6, init_sequential=False, eigreg=False, warmstart=True):
+    def __init__(self, num_clusters=6, init_sequential=False,\
+                    eigreg=False, warmstart=True):
         self.init_sequential = init_sequential
         self.eigreg = eigreg
         self.warmstart = warmstart

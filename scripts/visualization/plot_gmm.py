@@ -31,20 +31,19 @@ def plotGMM(mu, sigma, color, display_mode, *args):
     '''
     nbData = mu.shape[1]
     if not args:
-        lightcolor = color + [0.6,0.6,0.6] #remove *5/3
+        lightcolor = color + np.asarray([0.6,0.6,0.6]) #remove *5/3
         lightcolor[np.where(lightcolor>1.0)] = 1.0
     else:
         lightcolor=args[0]
     if display_mode==1:
-      nbDrawingSeg = 40
-      t = np.arange(-pi, pi, nbDrawingSeg).T
-      for j in range(nbData):
-        stdev = LA.sqrtm(3.0*sigma[:,:,j])
-        X = np.r_[np.cos(t), np.sin(t)] * stdev.real() + np.tile(mu[:,j].T, [nbDrawingSeg,1])
-        if lightcolor:
-            # patch(X(:,1), X(:,2), lightcolor, 'line', 'none'); #linewidth=2
-            NotImplemented
-        plt.hold(True)  #hold on
+        nbDrawingSeg = 40
+        t = np.arange(-pi, pi, nbDrawingSeg).T
+        for j in range(nbData):
+            stdev = LA.sqrtm(3.0*sigma[:,:,j])
+            X = np.r_[np.cos(t), np.sin(t)] * stdev.real() + np.tile(mu[:,j].T, [nbDrawingSeg,1])
+            if lightcolor:
+                # patch(X(:,1), X(:,2), lightcolor, 'line', 'none'); #linewidth=2
+                NotImplemented
         plt.plot(X[:,1], X[:,2],'c')
       plt.plot(mu[1,:], mu[2,:], 'cx', linewidth=2, markersize=6)
     elif display_mode==2:

@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 __author__ 		= "Lekan Molu"
 __copyright__ 	= "2018, One Hell of a Lyapunov Solver"
 __credits__  	= "Rachel Thompson (MIT), Jethro Tan (PFN)"
@@ -10,106 +8,128 @@ __status__ 		= "Testing"
 
 import numpy as np
 
-
-def gaussPDF(data, mu, sigma):
-    a = data.shape
-    nbVar, nbdata = data.shape
-
-    data = data.T - np.tile(mu.T, [nbdata, 1])
-    prob = np.sum(np.linalg.lstsq(sigma, data.T, rcond=None)[0].T * data, axis=1)
-    prob = np.exp(-0.5 * prob) / np.sqrt((2 * np.pi)**nbVar * np.abs(np.linalg.det(sigma) + 1e-300))
-
-    return prob.T
-
-
-def GMR(Priors, Mu, Sigma, x, inp, out, nargout=0):
-    nbData = x.shape[1]
-    nbVar = Mu.shape[0]
-    nbStates = Sigma.shape[2]
-
-    ## Fast matrix computation (see the commented code for a version involving
-    ## one-by-one computation, which is easier to understand).
-    ##
-    ## Compute the influence of each GMM component, given input x
-    #########################################################################
-    Pxi = []
-    for i in range(nbStates):
-      Pxi.append(Priors[0, i] * gaussPDF(x, Mu[inp, i], Sigma[inp[0]:(inp[1] + 1), inp[0]:(inp[1] + 1), i]))
-
-    Pxi = np.reshape(Pxi, [len(Pxi), -1]).T
-    beta = Pxi / np.tile(np.sum(Pxi, axis=1) + 1e-300, [nbStates, 1]).T
-
-    #########################################################################
-    y_tmp = []
-    for j in range(nbStates):
-        a = np.tile(Mu[out, j], [nbData, 1]).T
-        b = Sigma[out, inp[0]:(inp[1] + 1), j]
-        c = x - np.tile(Mu[inp[0]:(inp[1] + 1), j], [nbData, 1]).T
-        d = Sigma[inp[0]:(inp[1] + 1), inp[0]:(inp[1] + 1), j]
-        e = np.linalg.lstsq(d, b.T, rcond=None)[0].T
-        y_tmp.append(a + e.dot(c))
-
-    y_tmp = np.reshape(y_tmp, [nbStates, len(out), nbData])
-
-    beta_tmp = beta.T.reshape([beta.shape[1], 1, beta.shape[0]])
-    y_tmp2 = np.tile(beta_tmp, [1, len(out), 1]) * y_tmp
-    y = np.sum(y_tmp2, axis=0)
-    ## Compute expected covariance matrices Sigma_y, given input x
-    #########################################################################
-    Sigma_y_tmp = []
-    Sigma_y = []
-    if nargout > 1:
-        for j in range(nbStates):
-            Sigma_y_tmp.append(Sigma[out,out,j] - (Sigma[out,inp,j]/(Sigma[inp,inp,j]) * Sigma[inp,out,j]))
-
-        beta_tmp = beta.reshape(1, 1, beta.shape)
-        Sigma_y_tmp2 = np.tile(beta_tmp * beta_tmp, [len(out), len(out), 1, 1]) * np.tile(Sigma_y_tmp, [1, 1, nbData, 1])
-        Sigma_y = np.sum(Sigma_y_tmp2, axis=3)
-    return y, Sigma_y, beta
-
-
-def stabilizer(x, Vxf, rho0, kappa0, \
-                    Priors_EM, Mu_EM, Sigma_EM, \
-                    inp, output, cost, *args):
+def stabilizer(X, gmr_handle, Vxf, rho0, kappa0, **kwargs):
     """
-        Given a Trajectory, this computes the control commands
-        that ensures that the trajectory is stable according to the
-        second method of Lyapunov.
+         Syntax:
+
+               [Xd u] = stabilizer(x,gmr_handle,Vxf,rho0,kappa0,kwargs)
+
+         For a given (unstable) dynamical system f, this function computes a
+         corrective command u such that Xd = f + u becomes globally asymptotically
+         stable. Note that f could be autonomous (i.e. xd = f(x)) or
+         non-autonomous (i.e. xd = f(t,x)).
+
+         Inputs -----------------------------------------------------------------
+           o X:       If f is an autonomous DS, then X is d by N matrix
+                      representing N different query point(s) (each column of X
+                      corresponds to each query point). If f is a non-autonomous
+                      function, then X is a (d+1) by N matrix. In this case the
+                      last row of X corresponds to time, for example X(d+1,10)
+                      corresponds to the time at the 10th query point.
+
+           o gmr_handle: This is a function handle that evaluates either f(t,x) or
+                        f(x).
+
+           o Vxf:     A structure variable representing the energy function. This
+                      structure should follow the format explained in learnEnergy.m
+
+           o rho0, kappa0: These parameters impose minimum acceptable rate of decrease
+                           in the energy function during the motion. It computes
+                           this lower bound from the following class \mathcal{K}
+                           function:
+                                   rho(\|x\|) = rho0 * ( 1 - exp(-kappa0 * \|x\|) )
+                           Please refer to page 8 of the paper for more information.
+
+           o kwargs:  An optional variable that provides dt (integration time
+                        step) to the function, i.e. kwargs{1} = dt, dt>0.
+                        Providing dt is useful, especially when using large
+                        integration time step. Note that our whole stability proof
+                        is based on continuous space assumption. When using large
+                        time step, the effect of discretization become more
+                        dominant and could cause oscillation. Bt providing dt, we
+                        could alleviate this issue.
+
+         Outputs ----------------------------------------------------------------
+
+           o Xd:       A d x N matrix providing the output velocity after stabilization,
+                       i.e. Xd = f + u
+
+           o u:        A d x N matrix corresponding to the stabilizing command that
+                       were generated to ensure stability of the dynamical system.
+                       When u(:,i) = 0, it means the function f is stable by
+                       itself at that query point, and no stabilizing command was
+                       necessary. Note: we provide u as an output just for
+                       information, you do NOT need to add it to the output
+                       velocity!
+
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        %%%         Copyright (c) 2014 Mohammad Khansari, LASA Lab, EPFL,       %%%
+        %%%          CH-1015 Lausanne, Switzerland, http://lasa.epfl.ch         %%%
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+         The program is free for non-commercial academic use. Please contact the
+         author if you are interested in using the software for commercial purposes.
+         The software must not be modified or distributed without prior permission
+         of the authors. Please acknowledge the authors in any academic publications
+         that have made use of this code or part of it. Please use this BibTex
+         reference:
+
+         S.M. Khansari-Zadeh and A. Billard (2014), "Learning Control Lyapunov Function
+         to Ensure Stability of Dynamical System-based Robot Reaching Motions."
+         Robotics and Autonomous Systems, vol. 62, num 6, p. 752-765.
+
+         To get latest update of the software please visit
+                                  http://cs.stanford.edu/people/khansari/
+
+         Please send your feedbacks or questions to:
+                                  khansari_at_cs.stanford.edu
     """
-    d = Vxf['d']
-    if x.shape[0] == 2*d:
-        xd = x[d+1:2*d, :]
-        x = x[:d, :]
+    d = Vxf['d'];
+    if X.shape[0] == 2*d:
+        Xd = X[d:2*d, :]
+        X = X[:d, :]
     else:
-        xd, _, _ = GMR(Priors_EM, Mu_EM, Sigma_EM, x, inp, output)
-    V, Vx = cost.computeEnergy(x, np.array(()), Vxf)
-    norm_Vx = np.sum(Vx * Vx, axis=0)
-    norm_x = np.sum(x * x, axis=0)
-    Vdot = np.sum(Vx * xd, axis=0)
+        if 'time_varying' in kwargs and not kwargs['time_varying']:
+            Xd = gmr_handle(X);
+        elif 'time_varying' and kwargs['time_varying']:
+            t = X[d,:]
+            X = X[d,:];
+            Xd = gmr_handle(t,X);
+        else:
+            disp('Unknown GMR function handle!')
+            return;
+
+    V, Vx = cost.computeEnergy(X, np.array(()), Vxf)
+
+    norm_Vx = np.sum(Vx**2, axis=0)
+    norm_x = np.sum(X**2, axis=0)
+
+    Vdot = np.sum(Vx * Xd, axis=0)
     rho = rho0 * (1-np.exp(-kappa0 * norm_x)) * np.sqrt(norm_Vx)
-    ind = Vdot + rho >= 0
-    u = xd * 0
+
+    ind = np.nonzero((Vdot + rho)>=0)
+    u = Xd * 0
 
     if np.sum(ind) > 0:
-        lambder = (Vdot[ind] + rho[ind]) / norm_Vx[ind]
+        lambder = (Vdot[ind] + rho[ind]) / (norm_Vx[ind]+ realmin) # sys issues bruh)
         u[:, ind] = -np.tile(lambder, [d, 1]) * Vx[:, ind]
-        xd[:, ind] = xd[:, ind] + u[:, ind]
+        Xd[:, ind] = Xd[:, ind] + u[:, ind]
 
-    if args:
-        dt = args[0]
-        xn = x + np.dot(xd, dt)
-        Vn = cost.computeEnergy(xn, np.array(()), Vxf)
-        ind = Vn >= V
+    if 'dt' in kwargs:
+        dt = kwargs['dt']
+        Xn = X + np.dot(Xd, dt)
+        Vn = cost.computeEnergy(Xn, np.array(()), Vxf)
+        ind = (Vn >= V)
         i = 0
 
         while np.any(ind) and i < 10:
             alpha = V[ind]/Vn[ind]
-            xd[:,ind] = np.tile(alpha, [d, 1]) * xd[:, ind] - \
-                        np.tile(alpha * np.sum(xd[:, ind] * \
+            Xd[:,ind] = np.tile(alpha, [d, 1]) * Xd[:, ind] - \
+                        np.tile(alpha * np.sum(Xd[:, ind] * \
                         Vx[:, ind], axis=0)/norm_Vx[ind], [d, 1])*Vx[:, ind]
-            xn = x + np.dot(xd, dt)
-            Vn = cost.computeEnergy(xn, np.array(()), Vxf)
+            Xn = x + np.dot(Xd, dt)
+            Vn = cost.computeEnergy(Xn, np.array(()), Vxf)
             ind = Vn >= V
             i = i + 1
 
-    return xd, u
+    return Xd, u
