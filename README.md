@@ -13,15 +13,15 @@ This code largely implements Learning CLFs using the SEDS paper by Khansari-Zade
 + For the pre-recorded trajectories (demos) of the end-effector points in a 2D plane for the WAM robot (see the `*mat` files in the folder [scripts/data/](/scripts/data/)), if we run the [demo.py](/scripts/demo.py) file with the `w` model (resp. with the `s` model), we should have trajectory demos converging to a region of attractor at the origin  similar to  the left (resp. on the right) figure below
 
 <div align="center">
- <img src="/scripts/docs/demos_w.jpg" height="400px" width="400px">
-  <img src="/scripts/docs/demos_s.jpg" height="400px" width="400px">
+ <img src="/scripts/docs/demos_w.jpg" height="400px" width="350px">
+  <img src="/scripts/docs/demos_s.jpg" height="400px" width="350px">
 </div>
 
 Correcting the trajectories with Control Lyapunov Function, we will obtain the following:
 
 <div align="center">
- <img src="/matlab/Doc/w_corrrections.gif" height="400px" width="400px">
-  <img src="/matlab/Doc/s_corrrections.gif" height="400px" width="400px">
+ <img src="/matlab/Doc/w_corrections.gif" height="400px" width="350px">
+  <img src="/matlab/Doc/s_corrections.gif" height="400px" width="350px">
 </div>
 
 ### Setup.
