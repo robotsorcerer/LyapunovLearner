@@ -1,6 +1,8 @@
 ### One Hell of a Lyapunov Learner.
 
-This code largely implements Learning CLFs using the SEDS paper by Khansari-Zadeh. See original code in [matlab](https://bitbucket.org/khansari/clfdm/src/master/demo_CLFDM_Learning.m).
+This code largely implements Learning CLFs using the SEDS paper by Khansari-Zadeh. See original code in [matlab](/matlab)
+
+<!-- (https://bitbucket.org/khansari/clfdm/src/master/demo_CLFDM_Learning.m). -->
 
 + Khansari-Zadeh's has a subtle example that illustrates the advantages of SEDS over DMPs, LWPRs, GMRs etc in his [2014 Autonomous Systems paper](/scripts/docs/AUS.pdf), and reproduced below:
 
