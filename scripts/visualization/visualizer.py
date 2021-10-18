@@ -7,6 +7,7 @@ __email__ 		= "patlekno@icloud.com"
 __status__ 		= "Completed"
 
 import os
+from os.path import join
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
@@ -89,7 +90,7 @@ class Visualizer():
 		self._ax.legend(loc='upper left')#, bbox_to_anchor=(0, 1.15))
 		self._ax.grid('on')
 
-	def init_demos(self):
+	def init_demos(self, save=False):
 		data = self.data
 		if not self._init:
 			self.init(data)
@@ -102,13 +103,16 @@ class Visualizer():
 		ax1.legend(loc='upper right')
 		ax1.set_xlabel('Trajs', fontdict=self._fontdict)
 		ax1.set_ylabel('Dt(Trajs)', fontdict=self._fontdict)
-		ax1.set_title('WAM Robot Task Space Demos', fontsize=self._fontdict['fontsize'])
+		ax1.set_title('WAM Robot Task Space Demos', fontdict=self._fontdict)
 
+		if save:
+			fig.savefig(join(self.savedict["savepath"],self.savedict["savename"]),
+						bbox_inches='tight',facecolor='None')
 		self._plots.append(demo_handle)
 
 
 	def level_sets(self, Vxf,  cost_obj, num_points=None,
-					 disp=False, levels = [],
+					 disp=False, levels = [], save=False,
 					 odeFun=None):
 		"""
 			Computes the energy function of a Lyapunov Function's
@@ -178,13 +182,16 @@ class Visualizer():
 				handles.extend([h3])
 			self._fig.tight_layout()
 
+			if save:
+				self._fig.savefig(join(self.savedict["savepath"],self.savedict["savename"]),
+		                    bbox_inches='tight',facecolor='None')
+
 		return handles
 
 	def draw(self):
 		self._ax.draw_artist(self._ax.patch)
 		for plot in self._plots:
 			self._ax.draw_artist(plot)
-		self._fig.canvas.update()
 		self._fig.canvas.flush_events()
 
 # plt.ion()

@@ -77,17 +77,18 @@ def main(Vxf0, options):
 		# https://matplotlib.org/stable/users/interactive.html
 		plt.ion()
 
-		# fig = plt.figure(figsize=(12, 7))
-		viz = Visualizer(winsize=(12, 7), savedict={'save': None}, data=data,
-						labels=['Trajs', 'Dt(Trajs)']*2, alphas = [.15]*4,
-						fontdict=fontdict)
+		savedict = dict(save=True, savename='demos_w.jpg',\
+                savepath=join("..", "scripts/docs"))
+		viz = Visualizer(winsize=(12, 7), savedict=savedict, data=data,
+		                labels=['Trajs', 'Dt(Trajs)']*2, alphas = [.15]*4,
+		                fontdict=fontdict)
 
-		level_args = dict(disp=True, levels = [])
-		viz.init_demos()
+		level_args = dict(disp=True, levels = [], save=True)
+		viz.init_demos(save=True)
 		# Optimize and plot the level sets of the Lyapunov function
+		viz.savedict["savename"]="level_sets_w.jpg"
 		handles = viz.level_sets(Vxf, cost, **level_args)
 		viz.draw()
-		plt.pause(args.pause_time)
 
 	rho0 = args.rho0
 	kappa0 = 0.1

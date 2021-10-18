@@ -10,13 +10,19 @@ This code largely implements Learning CLFs using the SEDS paper by Khansari-Zade
 
 ### Example Results on a Robot's Task Space Trajectories.
 
-+ For the pre-recorded trajectories of the end-effector points in a 2D plane for the WAM robot (see the `*mat` files in the folder [scripts/data/](/scripts/data/)), if we run the [demo.py](/scripts/demo.py) file with the `w` model (resp. with the `s` model), you should obtain a chart with trajectories converging to the correct region of attractor  similar to what we have on the left (resp. on the right) below
++ For the pre-recorded trajectories (demos) of the end-effector points in a 2D plane for the WAM robot (see the `*mat` files in the folder [scripts/data/](/scripts/data/)), if we run the [demo.py](/scripts/demo.py) file with the `w` model (resp. with the `s` model), we should have trajectory demos converging to a region of attractor at the origin  similar to  the left (resp. on the right) figure below
 
 <div align="center">
- <img src="/scripts/docs/energy_levels.png" height="400px" width="400px">
-  <img src="/scripts/docs/energy_levels_sshape.png" height="400px" width="400px">
+ <img src="/scripts/docs/demos_w.jpg" height="400px" width="400px">
+  <img src="/scripts/docs/demos_s.jpg" height="400px" width="400px">
 </div>
 
+Correcting the trajectories with Control Lyapunov Function, we will obtain the following:
+
+<div align="center">
+ <img src="/matlab/Doc/w_corrrections.gif" height="400px" width="400px">
+  <img src="/matlab/Doc/s_corrrections.gif" height="400px" width="400px">
+</div>
 
 ### Setup.
 

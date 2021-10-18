@@ -26,7 +26,10 @@ def logsum(vec, axis=0, keepdims=True):
 def check_sigma(A):
     """
         checks if the sigma matrix is symmetric
-        positive definite before inverting via cholesky decomposition
+        positive definite before inverting via
+        cholesky decomposition
+
+        Lekan Molux. Circa, Summer 2018.
     """
     eigval = np.linalg.eigh(A)[0]
     if np.array_equal(A, A.T) and np.all(eigval>0):
@@ -40,7 +43,12 @@ def check_sigma(A):
         return Anew
 
 class GMM(object):
-    """ Gaussian Mixture Model. """
+    """
+        Gaussian Mixture Model.
+
+        Includes regularization term for when cholesky
+        factorization decreases.
+    """
     def __init__(self, num_clusters=6, init_sequential=False,\
                     eigreg=False, warmstart=True):
         self.init_sequential = init_sequential
@@ -48,7 +56,7 @@ class GMM(object):
         self.warmstart = warmstart
         self.sigma = None
 
-        # mine June 26
+        # Lekan June 26, 2018
         self.K    = num_clusters
         self.fail = None
 
