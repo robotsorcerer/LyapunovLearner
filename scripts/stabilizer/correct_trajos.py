@@ -149,7 +149,8 @@ def CorrectTrajectories(x0,xT,stab_handle,kwargs):
 	while True:
 		#Finding xd using stab_handle.
 		print(f'x: {x.shape} XT: {XT.shape}, d: {d}, npSPoint: {nbSPoint}')
-		temp = stab_handle(np.squeeze(x[:,i,:])-XT)
+		x_tilde = np.squeeze(x[:,i,:])-XT
+		temp = stab_handle(x_tilde)
 		print(f'temp: {temp.size} xd: {xd.shape}, d: {d}, npSPoint: {nbSPoint}')
 		xd[:,i,:]=np.reshape(temp,(d,1,nbSPoint))
 

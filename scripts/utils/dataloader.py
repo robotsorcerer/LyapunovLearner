@@ -8,14 +8,11 @@ __status__ 		= "Completed"
 
 import scipy.io as sio
 
-def load_saved_mat_file(file_path, **kwargs):
-    matFile = sio.loadmat(file_path)
+def load_saved_mat_file(x): #, **kwargs):
+    matFile = sio.loadmat(x)
 
     data = matFile['Data']
-    demoIdx = matFile['demoIndices']
+    demoIdx = matFile['demoIndices']-1
 
-    if ('Priors_EM' or 'Mu_EM' or 'Sigma_EM') in kwargs:
-        Priors_EM, Mu_EM, Sigma_EM = matFile['Priors_EM'], matFile['Mu_EM'], matFile['Sigma_EM']
-        return data, demoIdx, Priors_EM, Mu_EM, Sigma_EM
-    else:
-        return data, demoIdx
+    Priors_EM, Mu_EM, Sigma_EM = matFile['Priors_EM'], matFile['Mu_EM'], matFile['Sigma_EM']
+    return data, demoIdx, Priors_EM, Mu_EM, Sigma_EM

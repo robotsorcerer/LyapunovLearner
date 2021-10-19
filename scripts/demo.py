@@ -48,13 +48,8 @@ print(args)
 
 def main(Vxf0, options):
 	models = {'w': 'w.mat', 's': 'Sshape.mat'}
-	if args.off_priors:
-		data_args = {'Priors_EM': None}
-		data, demoIdx, Priors_EM, Mu_EM, Sigma_EM = load_saved_mat_file(join('scripts/data', models[args.model]), **data_args)
-	else:
-		data, demoIdx = load_saved_mat_file(join('scripts/data', models[args.model]))
+	data, demoIdx, Priors_EM, Mu_EM, Sigma_EM = load_saved_mat_file(join('scripts/data', models[args.model]))
 
-	demoIdx -= 1 # account for matlab indexing
 	Vxf0['d'] = data.shape[0]//2
 	Vxf0.update(Vxf0)
 
@@ -91,10 +86,7 @@ def main(Vxf0, options):
 		viz.draw()
 
 	rho0 = args.rho0
-	kappa0 = 0.1
-
-	traj = list(range(Vxf['d']))
-	traj_derivs = np.arange(Vxf['d'], 2 * Vxf['d'])
+	kappa0 = args.kappa0 #0.1
 
 	# get gmm params
 	if args.off_priors:
@@ -105,8 +97,11 @@ def main(Vxf0, options):
 		mu, sigma, priors = gmm.mu.T, gmm.sigma.T, gmm.logmass.T
 
 	"Now stabilize the learned dynamics"
+	traj = list(range(Vxf['d']))
+	traj_derivs = np.arange(Vxf['d'], 2 * Vxf['d'])
+	# print(f'demoIdx: {demoIdx}')
 	Xinit = data[:Vxf['d'], demoIdx[0, :-1]]
-	stab_args = {'time_varying': False}
+	stab_args = {'time_varying': False, 'cost': cost}
 	gmr_handle = lambda x: GMR(priors, mu, sigma, x, traj, traj_derivs)
 	stab_handle = lambda x: stabilizer(x, gmr_handle, Vxf, rho0, kappa0, **stab_args) #, priors, mu, sigma
 

@@ -84,6 +84,10 @@ def stabilizer(X, gmr_handle, Vxf, rho0, kappa0, **kwargs):
          Please send your feedbacks or questions to:
                                   khansari_at_cs.stanford.edu
     """
+    if not 'cost' in kwargs:
+        error('User must supply the Control Lyapunov Function Cost.')
+    cost = kwargs['cost']
+    
     d = Vxf['d'];
     if X.shape[0] == 2*d:
         Xd = X[d:2*d, :]
