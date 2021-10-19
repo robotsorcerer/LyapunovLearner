@@ -114,15 +114,16 @@ def stabilizer(X, gmr_handle, Vxf, rho0, kappa0, **kwargs):
     rho = rho0 * (1-np.exp(-kappa0 * norm_x)) * np.sqrt(norm_Vx)
 
     # print(f'Vdot: {Vdot}, rho: {rho}')
-    ind = np.nonzero((Vdot + rho)>=0)
+    ind = np.nonzero((Vdot + rho)>=0)[0] # not sure of this indexing
     # print(f'ind: {ind}')
     u = np.zeros_like(Xd, dtype=np.float64)
-    print('u: ', u.shape)
+    # print('u: ', u.shape)
 
     if np.sum(ind) > 0:
         lambder = np.expand_dims(np.divide(Vdot[ind] + rho[ind], norm_Vx[ind]), 0) #+ realmin) # sys issues bruh)
-        print(f'lambder: {lambder.shape}')
-        u[:, ind] = -np.tile(lambder, [d, 1]) * Vx[:, ind]
+        # print(f'u[:, ind]: {u[:, ind].shape}, np.tile(lambder, [d, 1]): \
+        #         {np.tile(lambder, [d, 1]).shape}, Vx: {Vx[:, ind].shape}')
+        u[:, ind] = -np.tile(lambder, [d, 1]) * np.squeeze(Vx[:, ind])
         Xd[:, ind] = Xd[:, ind] + u[:, ind]
 
     if 'dt' in kwargs:

@@ -29,12 +29,6 @@ from utils.dataloader import load_saved_mat_file
 from utils.gen_utils import *
 from visualization.visualizer import Visualizer
 
-logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
-logger = logging.getLogger(__name__)
-
-# Turn off pyplot's spurious dumps on screen
-logging.getLogger('matplotlib.font_manager').disabled = True
-
 parser = argparse.ArgumentParser(description='Learning SEDs')
 parser.add_argument('--silent', '-si', action='store_true', default=True, help='silent debug print outs' )
 parser.add_argument('--pause_time', '-pz', type=float, default=0.3, help='pause time between successive updates of plots' )
@@ -45,6 +39,17 @@ parser.add_argument('--off_priors', '-op', action='store_true', default=True, he
 parser.add_argument('--visualize', '-vz', action='store_true', default=True, help='visualize ROAs?' )
 args = parser.parse_args()
 print(args)
+
+
+if args.silent:
+    logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
+else:
+    logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
+
+logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
+# Turn off pyplot's spurious dumps on screen
+logging.getLogger('matplotlib.font_manager').disabled = True
+logger = logging.getLogger(__name__)
 
 def main(Vxf0, options):
 	models = {'w': 'w.mat', 's': 'Sshape.mat'}
@@ -105,7 +110,8 @@ def main(Vxf0, options):
 	gmr_handle = lambda x: GMR(priors, mu, sigma, x, traj, traj_derivs)
 	stab_handle = lambda x: stabilizer(x, gmr_handle, Vxf, rho0, kappa0, **stab_args) #, priors, mu, sigma
 
-	x, xdot, _, _, _ = CorrectTrajectories(Xinit, [], stab_handle, Bundle(ds_options))
+	ds_options['pause_time'] = args.pause_time
+	traj_corr = CorrectTrajectories(Xinit, [], stab_handle, Bundle(ds_options))
 
 
 	# x[0] = Xinit

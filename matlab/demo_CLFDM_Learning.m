@@ -2,7 +2,7 @@
 % an arbitrary model from a set of demonstrations.
 
 %Reference paper:
-% S.M. Khansari-Zadeh and A. Billard (2014), "Learning Control Lyapunov Function to Ensure Stability 
+% S.M. Khansari-Zadeh and A. Billard (2014), "Learning Control Lyapunov Function to Ensure Stability
 % of Dynamical System-based Robot Reaching Motions." Robotics and Autonomous Systems, vol. 62, num 6, p. 752-765.
 
 %%
@@ -34,19 +34,19 @@ switch modelNumber
         Vxf0.L = 1; %the number of asymmetric quadratic components L>=0.
 end
 Vxf0.d = size(Data,1)/2;
-Vxf0.w = 1e-4; %A positive scalar weight regulating the priority between the 
+Vxf0.w = 1e-4; %A positive scalar weight regulating the priority between the
                %two objectives of the opitmization. Please refer to the
                %page 7 of the paper for further information.
 
-% A set of options that will be passed to the solver. Please type 
+% A set of options that will be passed to the solver. Please type
 % 'doc preprocess_demos' in the MATLAB command window to get detailed
 % information about other possible options.
 options.tol_mat_bias = 10^-1; % a very small positive scalar to avoid
                               % having a zero eigen value in matrices P^l [default: 10^-15]
-                              
+
 options.display = 1;          % An option to control whether the algorithm
                               % displays the output of each iterations [default: true]
-                              
+
 options.tol_stopping=10^-10;  % A small positive scalar defining the stoppping
                               % tolerance for the optimization solver [default: 10^-10]
 
@@ -56,10 +56,10 @@ options.optimizePriors = true;% This is an added feature that is not reported in
                               % the new CLFDM model now allows to add a prior weight to each quadratic
                               % energy term. IF optimizePriors sets to false, unifrom weight is considered;
                               % otherwise, it will be optimized by the sovler.
-                              
+
 options.upperBoundEigenValue = true; %This is also another added feature that is impelemnted recently.
-                                     %When set to true, it forces the sum of eigenvalues of each P^l 
-                                     %matrix to be equal one. 
+                                     %When set to true, it forces the sum of eigenvalues of each P^l
+                                     %matrix to be equal one.
 
 
 
@@ -106,7 +106,7 @@ title('Energy Levels of the learned Lyapunov Functions')
 legend(h,'demonstrations','target','energy levels','location','southwest')
 %% Simulation
 
-% A set of options that will be passed to the Simulator. Please type 
+% A set of options that will be passed to the Simulator. Please type
 % 'doc preprocess_demos' in the MATLAB command window to get detailed
 % information about each option.
 opt_sim.dt = 0.01;
