@@ -1,7 +1,7 @@
 import numpy as np
 import sys
+from utils.utils import realmin
 
-realmin = sys.float_info.epsilon
 
 def gaussPDF(data, mu, sigma):
     """

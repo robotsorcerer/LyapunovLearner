@@ -1,5 +1,8 @@
 import numpy as np
 import scipy.linalg as LA
+import sys
+
+realmin = sys.float_info.epsilon
 
 
 def guess_init_lyap(data, Vxf0, b_initRandom=False):

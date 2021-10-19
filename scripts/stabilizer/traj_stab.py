@@ -6,7 +6,9 @@ __maintainer__ 	= "Lekan Molu"
 __email__ 		= "patlekno@icloud.com"
 __status__ 		= "Testing"
 
+import sys
 import numpy as np
+from utils.utils import realmin
 
 def stabilizer(X, gmr_handle, Vxf, rho0, kappa0, **kwargs):
     """
@@ -87,18 +89,18 @@ def stabilizer(X, gmr_handle, Vxf, rho0, kappa0, **kwargs):
     if not 'cost' in kwargs:
         error('User must supply the Control Lyapunov Function Cost.')
     cost = kwargs['cost']
-    
+
     d = Vxf['d'];
     if X.shape[0] == 2*d:
         Xd = X[d:2*d, :]
         X = X[:d, :]
     else:
         if 'time_varying' in kwargs and not kwargs['time_varying']:
-            Xd = gmr_handle(X);
+            Xd, _, _ = gmr_handle(X);
         elif 'time_varying' and kwargs['time_varying']:
             t = X[d,:]
             X = X[d,:];
-            Xd = gmr_handle(t,X);
+            Xd, _, _ = gmr_handle(t,X);
         else:
             disp('Unknown GMR function handle!')
             return;
@@ -111,11 +113,15 @@ def stabilizer(X, gmr_handle, Vxf, rho0, kappa0, **kwargs):
     Vdot = np.sum(Vx * Xd, axis=0)
     rho = rho0 * (1-np.exp(-kappa0 * norm_x)) * np.sqrt(norm_Vx)
 
+    # print(f'Vdot: {Vdot}, rho: {rho}')
     ind = np.nonzero((Vdot + rho)>=0)
-    u = Xd * 0
+    # print(f'ind: {ind}')
+    u = np.zeros_like(Xd, dtype=np.float64)
+    print('u: ', u.shape)
 
     if np.sum(ind) > 0:
-        lambder = (Vdot[ind] + rho[ind]) / (norm_Vx[ind]+ realmin) # sys issues bruh)
+        lambder = np.expand_dims(np.divide(Vdot[ind] + rho[ind], norm_Vx[ind]), 0) #+ realmin) # sys issues bruh)
+        print(f'lambder: {lambder.shape}')
         u[:, ind] = -np.tile(lambder, [d, 1]) * Vx[:, ind]
         Xd[:, ind] = Xd[:, ind] + u[:, ind]
 
