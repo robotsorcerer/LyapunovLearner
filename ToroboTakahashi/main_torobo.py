@@ -1,12 +1,12 @@
 from __future__ import print_function
 
-__author__ 		= "Olalekan Ogunmolu"
+__author__ 		= "Lekan Molu"
 __copyright__ 	= "2018, One Hell of a Lyapunov Solver"
-__credits__  	= "Rachel Thomson (MIT), Jethro Tan (PFN)"
+__credits__  	= "Rachel Thomson (MIT), Pérez-Dattari, Rodrigo (TU Delft)"
 __license__ 	= "MIT"
-__maintainer__ 	= "Olalekan Ogunmolu"
-__email__ 		= "patlekano@gmail.com"
-__status__ 		= "Testing"
+__maintainer__ 	= "Lekan Molu"
+__email__ 		= "patlekno@icloud.com"
+__status__ 		= "Completed"
 __doc__ 		= "This file for learning the stability dynamics for Torobo robot"
 
 import os

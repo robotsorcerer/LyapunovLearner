@@ -1,5 +1,12 @@
-from __future__ import print_function
-#import rospy
+__author__ 		= "Lekan Molu"
+__copyright__ 	= "2018, One Hell of a Lyapunov Solver"
+__credits__  	= "Rachel Thomson (MIT), Pérez-Dattari, Rodrigo (TU Delft)"
+__license__ 	= "MIT"
+__maintainer__ 	= "Lekan Molu"
+__email__ 		= "patlekno@icloud.com"
+__status__ 		= "Completed"
+
+
 import logging
 import numpy as np
 import scipy.linalg
@@ -16,11 +23,13 @@ def logsum(vec, axis=0, keepdims=True):
     maxv[maxv == -float('inf')] = 0
     return np.log(np.sum(np.exp(vec-maxv), axis=axis, keepdims=keepdims)) + maxv
 
-
 def check_sigma(A):
     """
         checks if the sigma matrix is symmetric
-        positive definite before inverting via cholesky decomposition
+        positive definite before inverting via
+        cholesky decomposition
+
+        Lekan Molux. Circa, Summer 2018.
     """
     eigval = np.linalg.eigh(A)[0]
     if np.array_equal(A, A.T) and np.all(eigval>0):
@@ -33,16 +42,21 @@ def check_sigma(A):
         Anew = low * A + eta * np.eye(A.shape[0])
         return Anew
 
-
 class GMM(object):
-    """ Gaussian Mixture Model. """
-    def __init__(self, num_clusters=6, init_sequential=False, eigreg=False, warmstart=True):
+    """
+        Gaussian Mixture Model.
+
+        Includes regularization term for when cholesky
+        factorization decreases.
+    """
+    def __init__(self, num_clusters=6, init_sequential=False,\
+                    eigreg=False, warmstart=True):
         self.init_sequential = init_sequential
         self.eigreg = eigreg
         self.warmstart = warmstart
         self.sigma = None
 
-        # mine June 26
+        # Lekan June 26, 2018
         self.K    = num_clusters
         self.fail = None
 

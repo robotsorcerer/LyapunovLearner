@@ -1,11 +1,11 @@
 from __future__ import print_function
 
-__author__ 		= "Olalekan Ogunmolu"
+__author__ 		= "Lekan Molu"
 __copyright__ 	= "2018, One Hell of a Lyapunov Solver"
-__credits__  	= "Rachel Thomson (MIT), Jethro Tan (PFN)"
+__credits__  	= "Rachel Thomson (MIT), Pérez-Dattari, Rodrigo (TU Delft)"
 __license__ 	= "MIT"
-__maintainer__ 	= "Olalekan Ogunmolu"
-__email__ 		= "patlekano@gmail.com"
+__maintainer__ 	= "Lekan Molu"
+__email__ 		= "patlekno@icloud.com"
 __status__ 		= "Testing"
 
 # import rospy
@@ -17,19 +17,26 @@ import scipy.linalg as LA
 from scipy.optimize import minimize, linprog, NonlinearConstraint, BFGS
 from gmm import gmm_2_parameters, parameters_2_gmm, \
                 shape_DS, gmr_lyapunov
-import matplotlib.pyplot as plt
 # log_level = logger.logdebug
 logger = logging.getLogger(__name__)
 
 
 class Cost(object):
 
-    def __init__(self):
+    def __init__(self, nDemo = 1, success=True, Nfeval = 0, verbose=True):
         """
             Class that estimates lyapunov energy function
+
+            Inputs:
+                nDemo: Number of Demos for the robot
+                success: Boolean indicating if optimization constraints got violated
+                Nfeval: Number of function evals required for optimization to
+                be rendered successful.
         """
-        self.Nfeval = 0
-        self.success = True   # boolean indicating if constraints were violated
+        self.Nfeval = Nfeval
+        self.success = success   # b
+        self.nDemo = nDemo
+        self.disp_optim_progress=verbose
 
     def matVecNorm(self, x):
         return np.sqrt(np.sum(x**2, axis=0))
@@ -43,7 +50,7 @@ class Cost(object):
         else:
             Vxf = shape_DS(p, d, L, options)
             Vxf.update(Vxf)
-        _, Vx = self.computeEnergy(x, np.array(()), Vxf, nargout=2)
+        _, Vx = self.computeEnergy(x, None, Vxf, nargout=2)
         Vdot = np.sum(Vx * xd, axis=0)  # derivative of J w.r.t. xd
         norm_Vx = np.sqrt(np.sum(Vx * Vx, axis=0))
         norm_xd = np.sqrt(np.sum(xd * xd, axis=0))
@@ -63,20 +70,20 @@ class Cost(object):
         return J
 
     def callback_opt(self, Xi, y):
-        print('Iteration: {0:4d}   Cost: {1: 3.6f}'.format(self.Nfeval, y.fun[0]))
+        logger.debug('Iteration: {0:4d}   Cost: {1: 3.6f}'.format(self.Nfeval, y.fun[0]))
         self.Nfeval += 1
 
     def optimize(self, obj_handle, ctr_handle_ineq, ctr_handle_eq, p0):
         nonl_cons_ineq = NonlinearConstraint(ctr_handle_ineq, -np.inf, 0, jac='3-point', hess=BFGS())
         nonl_cons_eq = NonlinearConstraint(ctr_handle_eq, 0, 0, jac='3-point', hess=BFGS())
 
-        logger.info('Optimizing the lyapunov function')
+        logger.debug('Optimizing the lyapunov function')
         solution = minimize(obj_handle,
                             np.reshape(p0, [len(p0)]),
                             hess=BFGS(),
                             constraints=[nonl_cons_eq, nonl_cons_ineq],
                             method='trust-constr',
-                            options={'disp': True, 'initial_constr_penalty': 1.5},
+                            options={'disp': self.disp_optim_progress, 'initial_constr_penalty': 1.5},
                             callback=self.callback_opt)
 
         return solution.x, solution.fun
@@ -113,8 +120,10 @@ class Cost(object):
         return np.reshape(c, [len(c)])
 
     def ctr_eigenvalue_eq(self, p, d, L, options):
-        # This function computes the derivative of the constrains w.r.t.
-        # optimization parameters.
+        """
+            This function computes the derivative of the constrains w.r.t.
+            optimization parameters.
+        """
         Vxf = dict()
         if L == -1:  # SOS
             Vxf['d'] = d
@@ -196,8 +205,7 @@ class Cost(object):
 
     def computeEnergy(self, X, Xd, Vxf, nargout=2):
         d = X.shape[0]
-        nDemo = 1
-        if nDemo>1:
+        if self.nDemo>1:
             X = X.reshape(d,-1)
             Xd = Xd.reshape(d,-1)
 
@@ -213,10 +221,10 @@ class Cost(object):
                 Vdot = dV
             else:
                 Vdot = np.sum(Xd*dV, axis=0)
-        if nDemo>1:
-            V = V.reshape(-1, nDemo).T
+        if self.nDemo>1:
+            V = V.reshape(-1, self.nDemo).T
             if nargout > 1:
-                Vdot = Vdot.reshape(-1, nDemo).T
+                Vdot = Vdot.reshape(-1, self.nDemo).T
 
         return V, Vdot
 
@@ -275,37 +283,3 @@ class Cost(object):
         Vxf['P'][1:, :, :] = Vxf['P'][1:, :, :] / np.sqrt(sumDet)
 
         return Vxf, J
-
-    def energyContour(self, Vxf, D, *args):
-        quality='low'
-        b_plot_contour = True
-        contour_levels = np.array([])
-
-        if quality == 'high':
-            nx, ny = 0.1, 0.1
-        elif quality == 'medium':
-            nx, ny = 1, 1
-        else:
-            nx, ny = 2, 2
-
-        x = np.arange(D[0], D[1], nx)
-        y = np.arange(D[2], D[3], ny)
-        x_len = len(x)
-        y_len = len(y)
-        X, Y = np.meshgrid(x, y)
-        x = np.stack([np.ravel(X), np.ravel(Y)])
-
-        V, dV = self.computeEnergy(x, np.array(()), Vxf, nargout=2)
-
-        if not contour_levels.size:
-            contour_levels = np.arange(0, np.log(np.max(V)), 0.5)
-            contour_levels = np.exp(contour_levels)
-            if np.max(V) > 40:
-                contour_levels = np.round(contour_levels)
-
-        V = V.reshape(y_len, x_len)
-
-        if b_plot_contour:
-            h = plt.contour(X, Y, V, contour_levels, colors='k', origin='upper', linewidths=2, labelspacing=200)
-
-        return h

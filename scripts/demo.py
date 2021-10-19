@@ -1,162 +1,158 @@
-from __future__ import print_function
-
-__author__ 		= "Olalekan Ogunmolu"
-__copyright__ 	= "2018, One Hell of a Lyapunov Solver"
-__credits__  	= "Rachel Thomson (MIT), Jethro Tan (PFN)"
+__author__ 		= "Lekan Molu"
+__copyright__ 	= "2018, One Hell of a Lyapunov Learner"
+__credits__  	= "Rachel Thomson (MIT), Pérez-Dattari, Rodrigo (TU Delft)"
 __license__ 	= "MIT"
-__maintainer__ 	= "Olalekan Ogunmolu"
-__email__ 		= "patlekano@gmail.com"
-__status__ 		= "Testing"
+__maintainer__ 	= "Lekan Molu"
+__email__ 		= "patlekno@icloud.com"
+__status__ 		= "Completed"
+
+import matplotlib as mpl
+mpl.use('Qt5Agg')
 
 import sys
 import argparse
 import logging
 import numpy as np
-import scipy.io as sio
 import matplotlib.pyplot as plt
 from gmm.gmm import GMM
+from gmm.gaussian_reg import GMR
 
-from os.path import dirname, abspath
-lyap = dirname(dirname(abspath(__file__)))
-# print(lyap)
-sys.path.append(lyap)
+from os.path import join, dirname, abspath
+sys.path.append(dirname(dirname(abspath(__file__) ) ) )
 
 from cost import Cost
-from config import Vxf0, options, opt_exec
+from config import Vxf0, options, ds_options
+from stabilizer.traj_stab import stabilizer
+from stabilizer.correct_trajos import CorrectTrajectories
 from utils.utils import guess_init_lyap
-from stabilizer import dsStabilizer
+from utils.dataloader import load_saved_mat_file
+from utils.gen_utils import *
+from visualization.visualizer import Visualizer
 
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-parser = argparse.ArgumentParser(description='torobo_parser')
-parser.add_argument('--silent', '-si', type=int, default=0, help='max num iterations' )
-parser.add_argument('--data_type', '-dt', type=str, default='pipe_et_trumpet', help='pipe_et_trumpet | h5_data' )
-args = parser.parse_args()
+# Turn off pyplot's spurious dumps on screen
+logging.getLogger('matplotlib.font_manager').disabled = True
 
+parser = argparse.ArgumentParser(description='Learning SEDs')
+parser.add_argument('--silent', '-si', action='store_true', default=True, help='silent debug print outs' )
+parser.add_argument('--pause_time', '-pz', type=float, default=0.3, help='pause time between successive updates of plots' )
+parser.add_argument('--rho0', '-rh', type=float, default=1.0, help='coeff. of class-Kappa function' )
+parser.add_argument('--kappa0', '-kp', type=float, default=.1, help='exponential coeff. in class-Kappa function' )
+parser.add_argument('--model', '-md', type=str, default='w', help='s|w ==> which model to use in training the data?' )
+parser.add_argument('--off_priors', '-op', action='store_true', default=True, help='use KZ\'s offline priors or use ours')
+parser.add_argument('--visualize', '-vz', action='store_true', default=True, help='visualize ROAs?' )
+args = parser.parse_args()
 print(args)
 
+def main(Vxf0, options):
+	models = {'w': 'w.mat', 's': 'Sshape.mat'}
+	data, demoIdx, Priors_EM, Mu_EM, Sigma_EM = load_saved_mat_file(join('scripts/data', models[args.model]))
 
-def load_saved_mat_file(x, **kwargs):
-    matFile = sio.loadmat(x)
+	Vxf0['d'] = data.shape[0]//2
+	Vxf0.update(Vxf0)
 
-    data = matFile['Data']
-    demoIdx = matFile['demoIndices']
+	Vxf0 = guess_init_lyap(data, Vxf0, options['int_lyap_random'])
+	cost = Cost()
 
-    if ('Priors_EM' or 'Mu_EM' or 'Sigma_EM') in kwargs:
-        Priors_EM, Mu_EM, Sigma_EM = matFile['Priors_EM'], matFile['Mu_EM'], matFile['Sigma_EM']
-        return data, demoIdx, Priors_EM, Mu_EM, Sigma_EM
-    else:
-        return data, demoIdx
+	"Learn Lyapunov Function Strictly from Data"
+	while cost.success:
+		info('Optimizing the lyapunov function')
+		Vxf, J = cost.learnEnergy(Vxf0, data, options)
+		old_l = Vxf0['L']
+		Vxf0['L'] += 1
+		print('Constraints violated. increasing the size of L from {} --> {}'.format(old_l, Vxf0['L']))
+		if cost.success:
+			print('optimization succeeded without violating constraints')
+			break
+
+	if args.visualize:
+		fontdict = {'fontsize':16, 'fontweight':'bold'}
+		# https://matplotlib.org/stable/users/interactive.html
+		plt.ion()
+
+		savedict = dict(save=True, savename='demos_w.jpg',\
+                savepath=join("..", "scripts/docs"))
+		viz = Visualizer(winsize=(12, 7), savedict=savedict, data=data,
+		                labels=['Trajs', 'Dt(Trajs)']*2, alphas = [.15]*4,
+		                fontdict=fontdict)
+
+		level_args = dict(disp=True, levels = [], save=True)
+		viz.init_demos(save=True)
+		# Optimize and plot the level sets of the Lyapunov function
+		viz.savedict["savename"]="level_sets_w.jpg"
+		handles = viz.level_sets(Vxf, cost, **level_args)
+		viz.draw()
+
+	rho0 = args.rho0
+	kappa0 = args.kappa0 #0.1
+
+	# get gmm params
+	if args.off_priors:
+		mu, sigma, priors = Mu_EM, Sigma_EM, Priors_EM
+	else:
+		gmm = GMM(num_clusters=options['num_clusters'])
+		gmm.update(data.T, K=options['num_clusters'], max_iterations=100)
+		mu, sigma, priors = gmm.mu.T, gmm.sigma.T, gmm.logmass.T
+
+	"Now stabilize the learned dynamics"
+	traj = list(range(Vxf['d']))
+	traj_derivs = np.arange(Vxf['d'], 2 * Vxf['d'])
+	# print(f'demoIdx: {demoIdx}')
+	Xinit = data[:Vxf['d'], demoIdx[0, :-1]]
+	stab_args = {'time_varying': False, 'cost': cost}
+	gmr_handle = lambda x: GMR(priors, mu, sigma, x, traj, traj_derivs)
+	stab_handle = lambda x: stabilizer(x, gmr_handle, Vxf, rho0, kappa0, **stab_args) #, priors, mu, sigma
+
+	x, xdot, _, _, _ = CorrectTrajectories(Xinit, [], stab_handle, Bundle(ds_options))
 
 
-def main(Vxf0, urdf, options):
-    modelNames = ['w.mat', 'Sshape.mat']  # Two example models provided by Khansari
-    modelNumber = 0  # could be zero or one depending on the experiment the user is running
-
-    data, demoIdx = load_saved_mat_file(lyap + '/' + 'example_models/' + modelNames[modelNumber])
-
-    Vxf0['d'] = int(data.shape[0]/2)
-    Vxf0.update(Vxf0)
-
-    Vxf0 = guess_init_lyap(data, Vxf0, options['int_lyap_random'])
-    cost = Cost()
-
-    while cost.success:
-        print('Optimizing the lyapunov function')
-        Vxf, J = cost.learnEnergy(Vxf0, data, options)
-        old_l = Vxf0['L']
-        Vxf0['L'] += 1
-        print('Constraints violated. increasing the size of L from {} --> {}'.format(old_l, Vxf0['L']))
-        if cost.success:
-            print('optimization succeeded without violating constraints')
-            break
-
-    # Plot the result of V
-    h1 = plt.plot(data[0, :], data[1, :], 'r.', label='demonstrations')
-
-    extra = 30
-
-    axes_limits = [np.min(data[0, :]) - extra, np.max(data[0, :]) + extra,
-                   np.min(data[1, :]) - extra, np.max(data[1, :]) + extra]
-
-    h3 = cost.energyContour(Vxf, axes_limits, np.array(()), np.array(()), np.array(()), False)
-    h2 = plt.plot(0, 0, 'g*', markersize=15, linewidth=3, label='target')
-    plt.title('Energy Levels of the learned Lyapunov Functions', fontsize=20, fontweight='bold')
-    plt.xlabel('x (mm)', fontsize=20, fontweight='bold')
-    plt.ylabel('y (mm)', fontsize=20, fontweight='bold')
-    h = [h1, h2, h3]
-
-    # Run DS
-    opt_sim = dict()
-    opt_sim['dt'] = 0.01
-    opt_sim['i_max'] = 4000
-    opt_sim['tol'] = 1
-
-    d = data.shape[0]/2  # dimension of data
-    x0_all = data[:int(d), demoIdx[0, :-1] - 1]  # finding initial points of all demonstrations
-
-    # get gmm params
-    gmm = GMM(num_clusters=options['num_clusters'])
-    gmm.update(data.T, K=options['num_clusters'], max_iterations=100)
-    mu, sigma, priors = gmm.mu.T, gmm.sigma.T, gmm.logmass.T
-
-    # rho0 and kappa0 impose minimum acceptable rate of decrease in the energy
-    # function during the motion. Refer to page 8 of the paper for more information
-    rho0 = 1
-    kappa0 = 0.1
-
-    inp = list(range(Vxf['d']))
-    output = np.arange(Vxf['d'], 2 * Vxf['d'])
-
-    xd, _ = dsStabilizer(x0_all, Vxf, rho0, kappa0, priors, mu, sigma, inp, output, cost)
-
-    # Evalute DS
-    xT = np.array([])
-    d = x0_all.shape[0]  # dimension of the model
-    if not xT:
-        xT = np.zeros((d, 1))
-
-    # initialization
-    nbSPoint = x0_all.shape[1]
-    x = []
-    #x0_all[0, 1] = -180  # modify starting point a bit to see performance in further regions
-    #x0_all[1, 1] = -130
-    x.append(x0_all)
-    xd = []
-    if xT.shape == x0_all.shape:
-        XT = xT
-    else:
-        XT = np.tile(xT, [1, nbSPoint])   # a matrix of target location (just to simplify computation)
-
-    t = 0  # starting time
-    dt = 0.01
-    for i in range(4000):
-        xd.append(dsStabilizer(x[i] - XT, Vxf, rho0, kappa0, priors, mu, sigma, inp, output, cost)[0])
-
-        x.append(x[i] + xd[i] * dt)
-        t += dt
-
-    for i in range(nbSPoint):
-        # Choose one trajectory
-        x = np.reshape(x, [len(x), d, nbSPoint])
-        x0 = x[:, :, i]
-        if i == 0:
-            plt.plot(x0[:, 0], x0[:, 1], linestyle='--', linewidth=4, label='DS eval', color='blue')
-        else:
-            plt.plot(x0[:, 0], x0[:, 1], linestyle='--', linewidth=4, color='blue')
-    plt.legend()
-    plt.show()
+	# x[0] = Xinit
+	# if xT.shape == Xinit.shape:
+	# 	XT = xT
+	# else:
+	# 	# a matrix of target location (XT is num_states X initial conditions)
+	# 	XT = np.tile(xT, [1, nbSPoint])
+	#
+	# t = 0; 	dt = ds_options['dt']
+	# for i in range(ds_options["traj_nums"]):
+	# 	xdot[i] = stabilizer(x[i] - XT, Vxf, rho0, kappa0, priors, mu, sigma, traj, traj_derivs, cost)[0]
+	# 	x[i] += xdot[i] * dt
+	# 	t += dt
+	#
+	# plt.close()
+	#
+	# f = plt.figure(figsize=(12, 7))
+	# plt.clf()
+	# f.tight_layout()
+	# fontdict = {'fontsize':12, 'fontweight':'bold'}
+	# plt.ion()
+	#
+	# for i in range(nbSPoint):
+	# 	# Choose one trajectory
+	# 	x = np.reshape(x, [len(x), Vxf['d'], nbSPoint])
+	# 	x0 = x[:, :, i]
+	#
+	# 	plt.clf()
+	# 	ax = f.gca()
+	#
+	# 	if i == 0:
+	# 		ax.plot(x0[:, 0], x0[:, 1], linestyle='--', linewidth=4, label='Corrected Trajectories', color='blue')
+	# 	else:
+	# 		ax.plot(x0[:, 0], x0[:, 1], linestyle='--', linewidth=4, color='blue')
+	# 	ax.set_xlabel('X', fontdict=fontdict)
+	# 	ax.set_ylabel('Y', fontdict=fontdict)
+	# 	ax.set_title('Learned Demonstrations', fontdict=fontdict)
+	# 	ax.grid('on')
+	# 	plt.legend(loc='best')
+	# 	plt.pause(args.pause_time)
 
 
 if __name__ == '__main__':
-        global options
-        # options = BundleType(options)
-        # A set of options that will be passed to the solver
-        options['disp'] = 0
-        options['args'] = args
+		global options
+		options['disp'] = 0
+		options['args'] = args
 
-        options.update()
-
-        urdf = []
-        main(Vxf0, urdf, options)
+		options.update()
+		main(Vxf0, options)

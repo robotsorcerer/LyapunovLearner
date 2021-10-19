@@ -1,79 +1,102 @@
-### Introduction
+### One Hell of a Lyapunov Learner.
 
-+ This experiment was implemented on the Tokyo Robotics 7-DoF arm.
+This code largely implements Learning CLFs using the SEDS paper by Khansari-Zadeh. See original code in [matlab](/matlab)
 
-+ First be sure to install all the dependencies in [requirements.txt](/requirements.txt): pip install -r requirements.txt --user.
+<!-- (https://bitbucket.org/khansari/clfdm/src/master/demo_CLFDM_Learning.m). -->
 
-+ I expect that the experiment should be reproducible on any other 7-DoF arm.
++ Khansari-Zadeh's has a subtle example that illustrates the advantages of SEDS over DMPs, LWPRs, GMRs etc in his [2014 Autonomous Systems paper](/scripts/docs/AUS.pdf), and reproduced below:
 
-### Generating data
+<div align="center">
+ <img src="/scripts/docs/seds_gmr.jpg" height="680px" width="600">
+</div>
 
-+ First turn off the current on all the servos of your manipulator arm
+### Example Results on a Robot's Task Space Trajectories.
 
-+ Then manually move the arm to the world coordinates where you want it to go, recording the joint angles and joint angle velocities in the process. See [Torobo/Takahashi/main.py](Torobo/Takahashi/main.py) for an example in the `set_current` function
++ For the pre-recorded trajectories (demos) of the end-effector points in a 2D plane for the WAM robot (see the `*mat` files in the folder [scripts/data/](/scripts/data/)), if we run the [demo.py](/scripts/demo.py) file with the `w` model (resp. with the `s` model), we should have trajectory demos converging to a region of attractor at the origin  similar to  the left (resp. on the right) figure below
 
-+ Then run the `ik_sub` executable in the `trac_ik_torobo` package to generate the cartesian coordinates from the joint space coordinates that you recorded. Be sure to call `save_to_file` as a `true` parameter:
+<div align="center">
+ <img src="/scripts/docs/demos_w.jpg" height="400px" width="350px">
+  <img src="/scripts/docs/demos_s.jpg" height="400px" width="350px">
+</div>
+
+Correcting the trajectories with Control Lyapunov Function, we will obtain the following:
+
+<div align="center">
+ <img src="/matlab/Doc/w_corrections.gif" height="400px" width="350px">
+  <img src="/matlab/Doc/s_corrections.gif" height="400px" width="350px">
+</div>
+
+### Setup.
+
+Dependencies:
+
++ scipy
+
++ numpy
+
++ matplotlib
+
+All of these can be installed with
 
 ```
-    roslaunch toroboarm_seven_bringup bringup_real.launch save_to_file:=true
+  pip install -r requirements.txt
 ```
 
-- Note that this uses the [KDL](http://www.orocos.org/kdl) and the [dr_kdl](https://github.com/jettan/dr_kdl) packages. Please download and place them in your catkin `src` folder vbefore catkin building
+And that about wraps up setting up!
 
-+ Running the `ik_sub` executable should place the new cartesian coordinate file in your `LyapunovLearner/scripts/data/cart_pos.csv` path.
 
-### Running Lyapunov Learner
+### Usage
 
- + Please run in a python 3.6 environment.
+Basic Usage:
 
- + Note that depending on the joint limits of your robot arm and the maximum torque each joint's servo is allowed to accept, your robot might react haphazardly while the learning algorithm is running. Please calibrate your robot to the currents before deploying on the real robot.
+```
+  python scripts/demo.py
+```
 
- + It is expected that your robot's `urdf` file is uploaded to the ros parameter server under the `param` name `/robot_description`. This would be used by `trac_ik` and `dr_kdl` in computing the real-time IK joint positions of the arm.
+Advanced Usage [with Options]:
 
- + If you run the [demo.py](/scripts/demo.py) file with the `w` model, you should obtain a chart similar to this:
-
-   ![results_python](/scripts/docs/energy_levels.png)
-
-or with the `s` model, you should obtain a chart similar to this:
-
-   ![results_python](/scripts/docs/energy_levels_sshape.png)
-
-##### Run the move it launcher.
-
- + In a separate terminal, launch the `torobo bringup moveit` server
-
-    ```
-      roslaunch toroboarm_seven_bringup bringup_real.launch
-    ```
-
-##### Run the IK calculator and service server executable
-
-+ Then launch the recorded joint angles publisher and run the executor as well as follows:
-
-    ```
-      roslaunch trac_ik_torobo torobo.launch
-    ```
-
-    - it might be a good idea to turn off the data that gets printed out to terminal. Append `disp:=false` to the `roslaunch` command above
-
-##### Running the Lyapunov Learner algorithm
-
-Here, we will run a Gaussian Mixture Regression on samples of data that we gathered from the robot arm. We will then call the `ik_solver` embedded as a service in the Torobo `ik_sub` executable continually in the while loop located in [LyapunovLearner/scripts/ToroboControl/robot_executor/executor.py](LyapunovLearner/scripts/ToroboControl/robot_executor/executor.py).
-
-+ `cd` into the `scripts` folder of `LyapunovLearner` and run `main.py`. Be sure to do this in a `Python2.7` environment where you have exposure to the ros `setup.bash` or `setup.zsh` file.
-
- Good luck.
-
-### Issues
-
-#### ROS Service IK Issues
-
-  + If you are having issues with the ik solver, try seeing if this returns anything in terminal:
   ```
-      rosservice call /torobo/solve_diff_ik "'desired_vel': {'linear': {'x': 0.0, 'y': 0.1, 'z': 0.2}}"
+    python scripts/demo.py [--silent|-si] [--model|-md] <s|w>  [--pause|-pz] <2> [--visualize|-vz] [--kappa0|-kp] <.1> [--rho0|-rh] <1.0>
   ```
 
-  + Otherwise, check to be sure the ik service is actually online.
+  where angle brackets denote defaults.
+
+#### Options
+
++ `--silent/-si`: Optimize the Lyapunov function in silent mode.
+
++ `--visualize/-vz`: Do we want to visualize the regions of attraction of the Lyapunov dynamics as we are updating the system on screen?
+
++ `--pause_time/-pz`: Time between updating the stabilization of the dynamical system on the pyplot display screen.
+
++ `--kappa0/-kp`: exponential coeff. in class-Kappa function.
+
++ `--rho0/-rh`: coeff. of class-Kappa function.
+
+### FAQS
+
++ Why Consider this CLF correcction mechanism for stabilizing trajectories over Statistical Learning Methods or Dynamic Movement Primitives?
+
+  -    Dynamic Movement Primitives are typically laden with disadvantages with learning multiple demos;
+
+  -   Statistical Learning approaches, on the other hand, really do not have a guaranteed way of ensuring learned dynamics are Lyapunov stable;
+
+  - Through a clever re-parameterization of robot trajectories, by so-called weighted sum of asymmetric quadratic functions (WSAQF), and nonlinear optimization, we learn stable attractors for the dynamics of a robot's motion, such that we are guaranteed to settle to correct attractors during optimization;
+
+  - This code leverages a control Lyapunov function in deriving the control laws used to stabilize spurious learned trajectories;
+
++ This code is pretty much easy to follow and adapt for any dynamical system. Matter-of-factly, I used it in learning the dynamics of the Torobo 7-DOF arm in 2018 when I worked in Tokyo.
+
++ What is different between this implementation and Khansari-Zadeh's implementation?
+
+  -  Well, for starters, a cleaner implementation of the Gaussian mixture models used in estimating dynamics along every trajectory sample.
+
+### TODOs
+
++ Add quivers to level sets plot.
+
++ Add options for plotting different level sets for the Lyapunov Function.
+
 
 ### Citation
 
@@ -83,15 +106,9 @@ If you used `LyapunovLearner` in your work, please cite it:
 ```tex
 @misc{LyapunovLearner,
   author = {Ogunmolu, Olalekan and Thompson, Rachel Skye and Pérez-Dattari, Rodrigo},
-  title = {{Learning Control Lyapunov Functions in Python}},
-  year = {2020},
+  title = {{Learning Control Lyapunov Functions}},
+  year = {2021},
   howpublished = {\url{https://github.com/lakehanne/LyapunovLearner}},
   note = {Accessed February 10, 2020}
 }
 ```
-
-### Issues
-
-+ Please open an issue if you are having trouble running this package.
-
-+ Email: lexilighty@gmail.com
