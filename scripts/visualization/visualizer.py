@@ -200,7 +200,7 @@ class Visualizer():
 		xd_hist = np.stack(trajos.xd_hist)
 		t_hist = np.stack(trajos.t_hist)
 		xT = trajos.XT
-		Xinit = traj_corr.Xinit
+		Xinit = trajos.Xinit
 
 		f = plt.figure(figsize=(self.winsize))
 		plt.clf()
@@ -223,17 +223,17 @@ class Visualizer():
 		    ax.plot(x_hist[:, 0, j], x_hist[:, 1, j], color=colors[j], markersize=2,\
 				linewidth=2.5, label=f'CLF Corrected Traj {j}')
 
-		ax.set_xlabel('$\\xi$', fontdict=self.fontdict)
-		ax.set_ylabel('$\\dot{\\xi}$', fontdict=self.fontdict)
+		ax.set_xlabel('$\\xi$', fontdict=self._fontdict)
+		ax.set_ylabel('$\\dot{\\xi}$', fontdict=self._fontdict)
 
 		ax.xaxis.set_tick_params(labelsize=self._labelsize)
 		ax.yaxis.set_tick_params(labelsize=self._labelsize)
 
 		ax.legend(loc='upper left') #, bbox_to_anchor=(-1, .5))
-		ax.set_title(f'Corrected Trajectories in the Interval: [{t_hist[0]:.2f}, {t_hist[-1]:.2f}] secs', fontdict=self.fontdict)
+		ax.set_title(f'Corrected Trajectories in the Interval: [{t_hist[0]:.2f}, {t_hist[-1]:.2f}] secs', fontdict=self._fontdict)
 
 		if save:
-			fig.savefig(join(self.savedict["savepath"], 'corrected_trajo.jpg'),
+			fig.savefig(join(self.savedict["savepath"], f'corrected_traj_{trajos.model}.jpg'),
 						bbox_inches='tight',facecolor='None')
 
 		plt.show()

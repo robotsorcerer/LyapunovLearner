@@ -119,6 +119,7 @@ def main(Vxf0, options):
 
 	if args.visualize:
 		traj_corr.Xinit = Xinit
+		traj_corr.model = args.model
 		viz.corrected_trajos(traj_corr, save=True)
 
 if __name__ == '__main__':
