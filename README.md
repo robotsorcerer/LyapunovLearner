@@ -140,7 +140,7 @@ Please find examples in the file [clf_demos.ipynb](/notes/clf_demos.ipynb).
 
 ### Citation
 
-If you used `LyapunovLearner` in your work, please cite it:
+If you use `LyapunovLearner` in your work, please cite it:
 
 
 ```tex
