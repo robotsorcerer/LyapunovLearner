@@ -28,7 +28,6 @@ Vxf0 = {
 options = {
     'tol_mat_bias': 1e-1,
     'disp': True,
-    'use_6d': False,
     'num_clusters': 5,  # number of gmm clusters
     'tol_stopping': 1e-10,
     'max_iter': 500,
@@ -42,7 +41,7 @@ options = {
     stabilize those trajos at each time step.
 """
 ds_options = {
-    'traj_nums': 4000, # Why did KZ choose this?
+    'traj_nums': 10000, # Why did KZ choose this?
     'dt': 0.01,
     'tol': 1,
     'plot': False,
@@ -51,7 +50,7 @@ ds_options = {
 # These for the Torobo Robot
 opt_exec = {
 'dt': 0.1,
-'i_max': 4000,
+'i_max': 10000,
 'tol': 1,
 'stop_tol': 1e-4,
 }

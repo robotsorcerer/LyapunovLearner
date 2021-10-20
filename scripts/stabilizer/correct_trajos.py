@@ -82,7 +82,6 @@ def CorrectTrajectories(x0,xT,stab_handle,kwargs):
 	Lekan Molux, MSFT Corp.
 	"""
 	## parsing inputs
-	# options = check_options(kwargs)
 	if not kwargs:
 		options = check_options()
 	else:
@@ -170,26 +169,24 @@ def CorrectTrajectories(x0,xT,stab_handle,kwargs):
 		#Finding xd using stab_handle.
 		x_tilde = x - XT
 		temp, u = stab_handle(x_tilde)
-		# print(f'temp: {temp.size} xd: {xd.shape}, d: {d}, npSPoint: {nbSPoint}')
+		# print(f'temp: {temp}') # xd: {xd.shape}, d: {d}, npSPoint: {nbSPoint}')
 		xd = temp.reshape(d,nbSPoint)
 
 		#############################################################################
 		### Integration
-		x +=  xd*options.dt
-		t +=  options.dt
+		x = x + xd*options.dt
+		t = t + options.dt
+
+		# print(f't: {t}, {options.dt}, x: {x}')
 
 		t_hist.append(t)
 		x_hist.append(x)
 		xd_hist.append(xd)
 
-		if i < 10:
-			print(f'x: {x.shape}', end=", ")
-
 		# update(x, XT)
 		if options.plot:
 			realtime_plotter._time_window = t
 			run_demo(realtime_plotter.update(x, xT))
-
 			time.sleep(options.pause_time)
 
 		# ax = f.gca()
@@ -220,10 +217,14 @@ def CorrectTrajectories(x0,xT,stab_handle,kwargs):
 				info(f'Simulation stopped since it reaches the maximum number of allowed iterations {i}')
 				info(f'Exiting without convergence!!! Increase the parameter ''options.i_max'' to handle this error.')
 			break
+		# del t_new, x_new, xd
 		i += 1
 
-	traj_corr = dict(x=x, xd=xd, xdot=xd, t_hist=t_hist, \
-					 xhist=x_hist, xd_hist=xd_hist)
+	# traj_corr = Bundle(dict(x=x, xd=xd, xdot=xd, t_hist=t_hist, \
+	# 				 x_hist=x_hist, xd_hist=xd_hist))
+
+	traj_corr = Bundle(dict(XT=XT, t_hist=t_hist, \
+					 x_hist=x_hist, xd_hist=xd_hist))
 
 	return traj_corr
 
@@ -234,7 +235,7 @@ def  check_options(options=None):
 	if not isfield(options,'dt'): # integration time step
 		options.dt = 0.02
 	if not isfield(options,'i_max'): # maximum number of iterations
-		options.i_max = 1000
+		options.i_max = options.traj_nums
 	if not isfield(options,'tol'): # convergence tolerance
 		options.tol = 0.001
 	if isfield(options,'plot') and options.plot: # shall simulator plot the figure

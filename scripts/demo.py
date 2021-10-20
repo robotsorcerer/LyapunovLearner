@@ -32,13 +32,14 @@ from visualization.visualizer import Visualizer
 parser = argparse.ArgumentParser(description='Learning SEDs')
 parser.add_argument('--silent', '-si', action='store_true', default=True, help='silent debug print outs' )
 parser.add_argument('--pause_time', '-pz', type=float, default=0.3, help='pause time between successive updates of plots' )
+parser.add_argument('--traj_nums', '-tn', type=int, default=1000, help='max # of trajectory stabilizations corrections before quitting' )
 parser.add_argument('--rho0', '-rh', type=float, default=1.0, help='coeff. of class-Kappa function' )
 parser.add_argument('--kappa0', '-kp', type=float, default=.1, help='exponential coeff. in class-Kappa function' )
 parser.add_argument('--model', '-md', type=str, default='w', help='s|w ==> which model to use in training the data?' )
 parser.add_argument('--off_priors', '-op', action='store_true', default=True, help='use KZ\'s offline priors or use ours')
 parser.add_argument('--visualize', '-vz', action='store_true', default=True, help='visualize ROAs?' )
 args = parser.parse_args()
-print(args)
+print('rgs ', args)
 
 
 if args.silent:
@@ -55,7 +56,7 @@ def main(Vxf0, options):
 	models = {'w': 'w.mat', 's': 'Sshape.mat'}
 	data, demoIdx, Priors_EM, Mu_EM, Sigma_EM = load_saved_mat_file(join('scripts/data', models[args.model]))
 
-	Vxf0['L'] = 1 if args.model == 's' else 2
+	Vxf0['L'] = 1 #if args.model == 's' else 2
 	Vxf0['d'] = data.shape[0]//2
 	Vxf0.update(Vxf0)
 
@@ -111,9 +112,14 @@ def main(Vxf0, options):
 	gmr_handle = lambda x: GMR(priors, mu, sigma, x, traj, traj_derivs)
 	stab_handle = lambda x: stabilizer(x, gmr_handle, Vxf, rho0, kappa0, **stab_args) #, priors, mu, sigma
 
+	if args.traj_nums:
+		ds_options['traj_nums'] = args.traj_nums
 	ds_options['pause_time'] = args.pause_time
 	traj_corr = CorrectTrajectories(Xinit, [], stab_handle, Bundle(ds_options))
 
+	if args.visualize:
+		traj_corr.Xinit = Xinit
+		viz.corrected_trajos(traj_corr, save=True)
 
 if __name__ == '__main__':
 		global options

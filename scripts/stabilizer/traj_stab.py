@@ -121,8 +121,8 @@ def stabilizer(X, gmr_handle, Vxf, rho0, kappa0, **kwargs):
 
     if np.sum(ind) > 0:
         lambder = np.expand_dims(np.divide(Vdot[ind] + rho[ind], norm_Vx[ind]), 0) #+ realmin) # sys issues bruh)
-        # print(f'u[:, ind]: {u[:, ind].shape}, np.tile(lambder, [d, 1]): \
-        #         {np.tile(lambder, [d, 1]).shape}, Vx: {Vx[:, ind].shape}')
+        # print(f'u[:, ind]: {u[:, ind].shape}')
+        #', np.tile(lambder, [d, 1]): {np.tile(lambder, [d, 1]).shape}, Vx: {Vx[:, ind].shape}')
         u[:, ind] = -np.tile(lambder, [d, 1]) * np.squeeze(Vx[:, ind])
         Xd[:, ind] = Xd[:, ind] + u[:, ind]
 
