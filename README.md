@@ -10,11 +10,13 @@ This code largely implements Learning CLFs using the SEDS paper by Khansari-Zade
  <img src="/scripts/docs/seds_gmr.jpg" height="680px" width="600">
 </div>
 
-### Example Results on a Robot's Task Space Trajectories.
+### Learning Stable Task-Space Trajectories.
 
-+ For the pre-recorded trajectories (demos) of the end-effector points in a 2D plane for the WAM robot (see the `*mat` files in the folder [scripts/data/](/scripts/data/)), if we run the [demo.py](/scripts/demo.py) file with the `w` model (resp. with the `s` model), we should have trajectory demos converging to a region of attractor at the origin. The left images in the figure denote the demonstrations, while the right images denote the control-Lyapunov Function and Gaussian Mixture Regression corrected trajectories. Pretty cool, init?
+KZ recorded WAM robot end-effector trajectories on a 2D plane. The task is to stabilize pre-recorded trajectories using a combo of GMMs, Gaussian Mixture Regression, and Control Lyapunov Functions.
 
-#### S-Shaped Planar (Task-Space) Demos and Motion Corrections
+This code comes with two pre-recorded demos available in the data directory, i.e., [data](scripts/data). The main file is [demo.py](/scripts/demo.py) which executes the CLF corrected trajectories on the robot. The left image below denote a demonstrations of the robot drawing the letter `S` from three different initial conditions, and converging to an attractor at the origin; while the right image denote the Gaussian Mixture Regression-based CLF that corrects the trajectory in a piecewise manner as we feed the algothm the data.
+
+#### S-Shaped Planar (Task-Space) Demos and Motion Corrections.
 
 <div align="center">
  <img src="/scripts/docs/demos_s.jpg" height="400px" width="350px">
@@ -28,11 +30,20 @@ This code largely implements Learning CLFs using the SEDS paper by Khansari-Zade
   <img src="/scripts/docs/corrected_traj_w.jpg" height="400px" width="350px">
 </div> -->
 
-Correcting the trajectories with Control Lyapunov Function, we will obtain the following:
+### Stable Trajectory Corrections
+
+S-shaped Demo Corrections:
 
 <div align="center">
- <img src="/matlab/Doc/w_corrections.gif" height="400px" width="350px">
+ <img src="/scripts/docs/demos_s.jpg" height="400px" width="350px">
   <img src="/matlab/Doc/s_corrections.gif" height="400px" width="350px">
+</div>
+
+W-shaped Demo Corrections:
+
+<div align="center">
+ <img src="/scripts/docs/demos_w.jpg" height="400px" width="350px">
+  <img src="/matlab/Doc/w_corrections.gif" height="400px" width="350px">
 </div>
 
 ### Setup.
@@ -56,13 +67,13 @@ And that about wraps up setting up!
 
 ### Usage
 
-Basic Usage:
+#### Basic Python Usage:
 
 ```
   python scripts/demo.py
 ```
 
-Advanced Usage [with Options]:
+#### Advanced Python Usage [with Options]:
 
   ```
     python scripts/demo.py [--silent|-si] [--model|-md] <s|w>  [--pause|-pz] <2> [--visualize|-vz] [--kappa0|-kp] <.1> [--rho0|-rh] <1.0> [--traj_num|-tn] <20e3>
@@ -70,11 +81,15 @@ Advanced Usage [with Options]:
 
   where angle brackets denote defaults.
 
-  Easy-peasy-lemon-squeezy run:
+#### Easy-peasy-lemon-squeezy advanced python run:
 
   ```
     python scripts\demo.py -pz .1 --silent --model s -tn 20000                                               
   ```
+
+#### Jupyter Notebook Interactive Example
+
+Please find examples in the file [/notes/clf_demos.ipynb ](/notes/clf_demos.ipynb).
 
 #### Options
 
