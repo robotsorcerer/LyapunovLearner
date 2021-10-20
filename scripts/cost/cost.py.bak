@@ -147,12 +147,6 @@ class Cost(object):
         return ceq.reshape([len(ceq)])
 
     def check_constraints(self, p, ctr_handle, d, L, options):
-        """
-            Checking if every thing goes well. Sometimes if the parameter
-             'options.cons_penalty' is not big enough, the constrains may be violated.
-
-             Then this function notifies the user to increase 'options.cons_penalty'.
-        """
         c = -ctr_handle(p)
 
         if L > 0:
@@ -160,24 +154,23 @@ class Cost(object):
         else:
             c_P = c
 
-        i = np.nonzero(c_P <= 0)[0]
-        self.success = True
+        i = np.where(c_P <= 0)
+        # self.success = True
 
-        if np.any(i):
-            i = np.argsort(i)
+        if i:
             logger.error('Error in P constraints')
             logger.error('Eigen values of P^k violating constraints at ')
-            logger.fatal('{} {}'.format(i, c_P[i]))
+            logger.fatal('{}'.format(c_P[i]))
             self.success = False
         else:
             self.success = True
 
         if L > 1:
             if options['optimizePriors']:
-                c_Priors = c[L*d:L*d+L]
+                c_Priors = c[L*d+1:L*d+L]
                 i = np.nonzero(c_Priors < 0)
 
-                if np.any(i):
+                if i:
                     logger.error('Errors in constraints on priors')
                     logger.error('Values of the priors violates the constraints')
                     logger.fatal('{}'.format(c_Priors[i]))
@@ -274,15 +267,13 @@ class Cost(object):
             Vxf['L']        = Vxf0['L']
             Vxf['d']        = Vxf0['d']
             Vxf['w']        = Vxf0['w']
-            self.check_constraints(popt,ctr_handle_ineq,d,Vxf['L'],options);
-            self.check_constraints(popt,ctr_handle_eq,d,Vxf['L'],options);
         self.success = True
 
         sumDet = 0
-        for l in range(Vxf['L']):
-            sumDet += np.linalg.det(Vxf['P'][:, :,l])
+        for l in range(Vxf['L'] + 1):
+            sumDet += np.linalg.det(Vxf['P'][l, :, :])
 
-        Vxf['P'][:, :, 0] = Vxf['P'][:, :, 0] / sumDet
-        Vxf['P'][:, :, 1:] = Vxf['P'][:, :, 1:] / np.sqrt(sumDet)
+        Vxf['P'][0, :, :] = Vxf['P'][0, :, :] / sumDet
+        Vxf['P'][1:, :, :] = Vxf['P'][1:, :, :] / np.sqrt(sumDet)
 
         return Vxf, J

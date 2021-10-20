@@ -36,7 +36,6 @@ def gmm_2_parameters(Vxf, options):
     p0 = np.vstack((p0, Vxf['P'][:, :, Vxf['L']].reshape(d ** 2, 1)))
     return p0
 
-
 def parameters_2_gmm(popt, d, L, options):
     # transforming the column of parameters into Priors, Mu, and P
     return shape_DS(popt, d, L, options)
@@ -115,6 +114,5 @@ def gmr_lyapunov(x, Priors, Mu, P):
             V_k[V_k < 0]    = 0
             V               += Priors[k]*(V_k**2)
             Vx              += (np.tile(2*Priors[k]*V_k, [d, 1])*(P_cur@x_tmp + P_cur.T@x))
-
 
     return V, Vx

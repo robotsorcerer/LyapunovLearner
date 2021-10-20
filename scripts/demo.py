@@ -55,7 +55,7 @@ def main(Vxf0, options):
 	models = {'w': 'w.mat', 's': 'Sshape.mat'}
 	data, demoIdx, Priors_EM, Mu_EM, Sigma_EM = load_saved_mat_file(join('scripts/data', models[args.model]))
 
-	Vxf0['L'] = 2 if args.model == 's' else 1
+	Vxf0['L'] = 1 if args.model == 's' else 2
 	Vxf0['d'] = data.shape[0]//2
 	Vxf0.update(Vxf0)
 

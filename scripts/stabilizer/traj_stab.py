@@ -114,13 +114,10 @@ def stabilizer(X, gmr_handle, Vxf, rho0, kappa0, **kwargs):
     Vdot = np.sum(Vx * Xd, axis=0)
     rho = rho0 * (1-np.exp(-kappa0 * norm_x)) * np.sqrt(norm_Vx)
 
-    print(f'Vdot: {Vdot}, rho: {rho}')
-    import time
-    time.sleep(50)
+    # print(f'Vdot: {Vdot}, rho: {rho}')
     ind = np.nonzero((Vdot + rho)>=0)[0] # not sure of this indexing
-    print(f'ind: {ind}')
+    # print(f'ind: {ind}')
     u = np.zeros_like(Xd, dtype=np.float64)
-    # print('u: ', u.shape)
 
     if np.sum(ind) > 0:
         lambder = np.expand_dims(np.divide(Vdot[ind] + rho[ind], norm_Vx[ind]), 0) #+ realmin) # sys issues bruh)
