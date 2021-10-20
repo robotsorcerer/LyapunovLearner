@@ -122,6 +122,48 @@ def main(Vxf0, options):
 		traj_corr.model = args.model
 		viz.corrected_trajos(traj_corr, save=True)
 
+	x_hist = np.stack(traj_corr.x_hist)
+	xd_hist = np.stack(traj_corr.xd_hist)
+	t_hist = np.stack(traj_corr.t_hist)
+	xT = traj_corr.XT
+
+	f = plt.figure(figsize=(16, 9))
+	plt.clf()
+	f.tight_layout()
+	_fontdict = {'fontsize':16, 'fontweight':'bold'}
+
+	_labelsize = 18
+	nbSPoint = x_hist.shape[-1]
+	cm = plt.get_cmap('ocean')
+	ax = f.gca()
+	ax.grid('on')
+	colors =['r', 'magenta', 'cyan']
+
+	# plot the target attractors
+	ax.plot(xT[0], xT[1], 'g*',markersize=20,linewidth=1.5, label='Target Attractor')
+
+	for j in range(nbSPoint):
+	    color = cm(1.0 * j / nbSPoint)
+	    ax.plot(Xinit[0, j], Xinit[1, j], 'ko', markersize=20,  linewidth=2.5)
+	    ax.plot(x_hist[:, 0, j], x_hist[:, 1, j], color=colors[j], markersize=2,\
+			linewidth=2.5, label=f'CLF Corrected Traj {j}')
+
+	ax.set_xlabel('$\\xi$', fontdict=_fontdict)
+	ax.set_ylabel('$\\dot{\\xi}$', fontdict=_fontdict)
+
+	ax.xaxis.set_tick_params(labelsize=_labelsize)
+	ax.yaxis.set_tick_params(labelsize=_labelsize)
+
+	ax.legend(loc='upper left') #, bbox_to_anchor=(-1, .5))
+	ax.set_title(f'Corrected Trajectories in the Interval: [{t_hist[0]:.2f}, {t_hist[-1]:.2f}] secs', fontdict=_fontdict)
+
+	savepath=join("scripts", "docs")
+	f.savefig(join(savepath, f'corrected_traj_{traj_corr.model}.jpg'),
+					bbox_inches='tight',facecolor='None')
+
+	plt.show()
+
+
 if __name__ == '__main__':
 		global options
 		options['disp'] = 0

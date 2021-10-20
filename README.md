@@ -65,6 +65,8 @@ Advanced Usage [with Options]:
 
 + `--silent/-si`: Optimize the Lyapunov function in silent mode.
 
++ `--model/-md`: Which saved model to use? `w` or `s`.
+
 + `--visualize/-vz`: Do we want to visualize the regions of attraction of the Lyapunov dynamics as we are updating the system on screen?
 
 + `--pause_time/-pz`: Time between updating the stabilization of the dynamical system on the pyplot display screen.
