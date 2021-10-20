@@ -233,7 +233,7 @@ class Visualizer():
 		ax.set_title(f'Corrected Trajectories in the Interval: [{t_hist[0]:.2f}, {t_hist[-1]:.2f}] secs', fontdict=self._fontdict)
 
 		if save:
-			fig.savefig(join(self.savedict["savepath"], f'corrected_traj_{trajos.model}.jpg'),
+			f.savefig(join(self.savedict["savepath"], f'corrected_traj_{trajos.model}.jpg'),
 						bbox_inches='tight',facecolor='None')
 
 		plt.show()
