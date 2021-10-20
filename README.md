@@ -65,10 +65,16 @@ Basic Usage:
 Advanced Usage [with Options]:
 
   ```
-    python scripts/demo.py [--silent|-si] [--model|-md] <s|w>  [--pause|-pz] <2> [--visualize|-vz] [--kappa0|-kp] <.1> [--rho0|-rh] <1.0>
+    python scripts/demo.py [--silent|-si] [--model|-md] <s|w>  [--pause|-pz] <2> [--visualize|-vz] [--kappa0|-kp] <.1> [--rho0|-rh] <1.0> [--traj_num|-tn] <20e3>
   ```
 
   where angle brackets denote defaults.
+
+  Easy-peasy-lemon-squeezy run:
+
+  ```
+    python scripts\demo.py -pz .1 --silent --model s -tn 20000                                               
+  ```
 
 #### Options
 
