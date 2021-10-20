@@ -223,7 +223,7 @@ def CorrectTrajectories(x0,xT,stab_handle,kwargs):
 		i += 1
 
 	traj_corr = dict(x=x, xd=xd, xdot=xd, t_hist=t_hist, \
-					 xhist=xhist, xd_hist=xd_hist)
+					 xhist=x_hist, xd_hist=xd_hist)
 
 	return traj_corr
 
@@ -233,19 +233,14 @@ def  check_options(options=None):
 		options = Bundle({})
 	if not isfield(options,'dt'): # integration time step
 		options.dt = 0.02
-	if not isfield(options,'winsize'): # integration time step
-		options.winsize = (12, 7)
-		options.labelsize=18
-		options.linewidth=6
-		options.fontdict = {'fontsize':16, 'fontweight':'bold'}
-
 	if not isfield(options,'i_max'): # maximum number of iterations
 		options.i_max = 1000
 	if not isfield(options,'tol'): # convergence tolerance
 		options.tol = 0.001
-	if not isfield(options,'plot'): # shall simulator plot the figure
-		options.plot = True
-	else:
-		options.plot = options.plot > 0
+	if isfield(options,'plot') and options.plot: # shall simulator plot the figure
+		options.winsize = (12, 7)
+		options.labelsize=18
+		options.linewidth=6
+		options.fontdict = {'fontsize':16, 'fontweight':'bold'}
 
 	return options

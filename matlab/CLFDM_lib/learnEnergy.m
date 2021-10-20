@@ -279,7 +279,8 @@ else
 end
 
 for k = 0:L
-    P(:,:,k+1) = reshape(p(i_c+k*d^2:i_c+(k+1)*d^2-1),d,d);% + eye(d)*options.tol_mat_bias;
+    idx = i_c+k*d^2:i_c+(k+1)*d^2-1;
+    P(:,:,k+1) = reshape(p(idx),d,d);% + eye(d)*options.tol_mat_bias;
 %     for i=1:d
 %         P(i:d,i,k) = p(i_c:i_c+d-i);
 %         i_c = i_c + d - i + 1;
@@ -309,6 +310,7 @@ if Vxf.L > 0
 else
     p0=[];
 end
+
 for k = 0:Vxf.L
     p0 = [p0;reshape(Vxf.P(:,:,k+1),d^2,1)]; %#ok<*AGROW>
 %     tmp_mat = Vxf.P(:,:,k) - diag(diag(Vxf.P(:,:,k))/2);

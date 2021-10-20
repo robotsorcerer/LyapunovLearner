@@ -18,8 +18,6 @@ import numpy as np
     'SOS': Whether we are using  Sum of Squares for the optimization
 """
 Vxf0 = {
-    'L': 2, # the number of asymmetric quadratic components L>=0.
-    'd': 2, # the number of asymmetric quadratic components L>=0.
     'w': 1e-4, # A positive scalar weight regulating the priority between the two objectives of the opitmization. Please refer to the page 7 of the paper for further information.
     'Mu': np.array(()),
     'P': np.array(()),
@@ -47,6 +45,7 @@ ds_options = {
     'traj_nums': 4000, # Why did KZ choose this?
     'dt': 0.01,
     'tol': 1,
+    'plot': False,
     }
 
 # These for the Torobo Robot

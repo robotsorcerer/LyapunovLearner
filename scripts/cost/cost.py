@@ -1,14 +1,3 @@
-from __future__ import print_function
-
-__author__ 		= "Lekan Molu"
-__copyright__ 	= "2018, One Hell of a Lyapunov Solver"
-__credits__  	= "Rachel Thomson (MIT), Pérez-Dattari, Rodrigo (TU Delft)"
-__license__ 	= "MIT"
-__maintainer__ 	= "Lekan Molu"
-__email__ 		= "patlekno@icloud.com"
-__status__ 		= "Testing"
-
-# import rospy
 import logging, time
 import numpy as np
 import numpy.random as npr
@@ -50,6 +39,7 @@ class Cost(object):
         else:
             Vxf = shape_DS(p, d, L, options)
             Vxf.update(Vxf)
+        #print('Vxf.P in obj', Vxf['P'][:,:,0])
         _, Vx = self.computeEnergy(x, None, Vxf, nargout=2)
         Vdot = np.sum(Vx * xd, axis=0)  # derivative of J w.r.t. xd
         norm_Vx = np.sqrt(np.sum(Vx * Vx, axis=0))
@@ -66,7 +56,7 @@ class Cost(object):
         J[np.where(Vdot > 0)] = J[np.where(Vdot > 0)] ** 2
         J[np.where(Vdot < 0)] = -w * J[np.where(Vdot < 0)] ** 2
         J = np.sum(J, axis=1)
-        #print('J:', J[0])
+
         return J
 
     def callback_opt(self, Xi, y):
@@ -101,23 +91,26 @@ class Cost(object):
         else:
             Vxf = shape_DS(p, d, L, options)
             if L > 0:
-                c = np.zeros(((L + 1) * d + (L + 1) * options['optimizePriors'], 1))  # +options.variableSwitch
+                c = np.zeros(((L+1)*d+(L+1)*options['optimizePriors'], 1))  # +options.variableSwitch
             else:
                 c = np.zeros((d, 1))
 
         if L == -1:  # SOS
             c = -np.linalg.eigvals(Vxf['P'] + Vxf['P'].T - np.eye(Vxf['n'] * d) * options['tol_mat_bias'])
         else:
-            for k in range(L + 1):
-                lambder = sp.linalg.eigvals(Vxf['P'][k, :, :] + (Vxf['P'][k, :, :]).T)
-                lambder = np.divide(lambder.real, 2.0)
-                lambder = np.expand_dims(lambder, axis=1)
-                c[k * d:(k + 1) * d] = -lambder.real + options['tol_mat_bias']
+            for k in range(L):
+                lambder = sp.linalg.eigvals(Vxf['P'][ :, :, k] + (Vxf['P'][ :, :, k]).T)
+                lambder = np.expand_dims(lambder.real/2.0, axis=1)
+                idx = slice(k*d, ((k+1)*d))
+                #print(f'lambder: {lambder.shape} idx: {idx}  c: {c[idx]}')
+                c[idx] = -lambder.real + options['tol_mat_bias']
 
         if L > 0 and options['optimizePriors']:
-            c[(L + 1) * d:(L + 1) * d + L + 1] = np.reshape(-Vxf['Priors'], [L + 1, 1])
+            idx = slice((L+1)*d, (L+1)*d+L+1)
+            #print('Priors: ', {Vxf['Priors'].shape}) #, ' c[idx] ', {c[idx]})
+            c[idx] = np.expand_dims(-Vxf['Priors'], 1) #np.reshape(-Vxf['Priors'], [L + 1, 1])
 
-        return np.reshape(c, [len(c)])
+        return c.reshape([len(c)])
 
     def ctr_eigenvalue_eq(self, p, d, L, options):
         """
@@ -139,19 +132,19 @@ class Cost(object):
                 else:
                     ceq = np.array(())  # zeros(L+1,1);
             else:
+                c = np,zeros((d, 1))
                 ceq = (np.ravel(Vxf['P']).T).dot(np.ravel(Vxf['P'])) - 2
 
         if L == -1:  # SOS
-            pass
+            c = -sp.linalg.eigvals(Vxf['P'] + Vxf['P'].T - np.eye(Vxf['n']*Vxf['d'])*options['tol_mat_bias'])
         else:
-            for k in range(L + 1):
-                lambder = sp.linalg.eigvals(Vxf['P'][k, :, :] + (Vxf['P'][k, :, :]).T)
-                lambder = np.divide(lambder.real, 2.0)
-                lambder = np.expand_dims(lambder, axis=1)
+            for k in range(L):
+                lambder = sp.linalg.eigvals(Vxf['P'][ :, :, k] + (Vxf['P'][ :, :, k]).T)
+                lambder = np.expand_dims(lambder.real/2.0, axis=1)
                 if options['upperBoundEigenValue']:
                     ceq[k] = 1.0 - np.sum(lambder.real)  # + Vxf.P(:,:,k+1)'
 
-        return np.reshape(ceq, [len(ceq)])
+        return ceq.reshape([len(ceq)])
 
     def check_constraints(self, p, ctr_handle, d, L, options):
         c = -ctr_handle(p)
@@ -205,9 +198,11 @@ class Cost(object):
 
     def computeEnergy(self, X, Xd, Vxf, nargout=2):
         d = X.shape[0]
+        # self.nDemo = X.shape[-1]
+
         if self.nDemo>1:
             X = X.reshape(d,-1)
-            Xd = Xd.reshape(d,-1)
+            Xd = Xd.reshape(d,-1) if np.any(Xd) else Xd
 
         if Vxf['SOS']:
             V, dV = sos_lyapunov(X, Vxf['P'], Vxf['d'], Vxf['n'])
@@ -215,43 +210,42 @@ class Cost(object):
                 V -= Vxf['p0']
         else:
             V, dV = gmr_lyapunov(X, Vxf['Priors'], Vxf['Mu'], Vxf['P'])
+        # if nargout > 1:
+        if not Xd:
+            Vdot = dV
+        else:
+            Vdot = np.sum(Xd*dV, axis=0)
 
-        if nargout > 1:
-            if not Xd:
-                Vdot = dV
-            else:
-                Vdot = np.sum(Xd*dV, axis=0)
         if self.nDemo>1:
             V = V.reshape(-1, self.nDemo).T
-            if nargout > 1:
-                Vdot = Vdot.reshape(-1, self.nDemo).T
+            Vdot = Vdot.reshape(-1, self.nDemo).T
 
         return V, Vdot
 
     def learnEnergy(self, Vxf0, Data, options):
-        d = Vxf0['d']
+        d = Data.shape[0]//2
         x = Data[:d, :]
-        xd = Data[d:, :]
+        xd = Data[d:2*d, :]
 
         # Transform the Lyapunov model to a vector of optimization parameters
         if Vxf0['SOS']:
             p0 = npr.randn(d * Vxf0['n'], d * Vxf0['n'])
-            p0 = p0.dot(p0.T)
+            p0 = p0@(p0.T)
             p0 = np.ravel(p0)
             Vxf0['L'] = -1  # to distinguish sos from other methods
         else:
             for l in range(Vxf0['L']):
                 try:
-                    Vxf0['P'][l + 1, :, :] = sp.linalg.solve(Vxf0['P'][l + 1, :, :], sp.eye(d))
+                    Vxf0['P'][:, :, l] = sp.linalg.solve(Vxf0['P'][:, :, l], np.eye(d))
                 except sp.linalg.LinAlgError as e:
                     LOGGER.debug('LinAlgError: %s', e)
 
             # in order to set the first component to be the closest Gaussian to origin
-            to_sort = self.matVecNorm(Vxf0['Mu'])
-            idx = np.argsort(to_sort, kind='mergesort')
+            idx = np.argsort(self.matVecNorm(Vxf0['Mu']), kind='mergesort')
             Vxf0['Mu'] = Vxf0['Mu'][:, idx]
-            Vxf0['P'] = Vxf0['P'][idx, :, :]
+            Vxf0['P'] = Vxf0['P'][:, :, idx]
             p0 = gmm_2_parameters(Vxf0, options)
+            #correct
 
         obj_handle = lambda p: self.obj(p, x, xd, d, Vxf0['L'], Vxf0['w'], options)
         ctr_handle_ineq = lambda p: self.ctr_eigenvalue_ineq(p, d, Vxf0['L'], options)

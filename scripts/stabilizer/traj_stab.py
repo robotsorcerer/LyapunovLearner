@@ -90,20 +90,21 @@ def stabilizer(X, gmr_handle, Vxf, rho0, kappa0, **kwargs):
         error('User must supply the Control Lyapunov Function Cost.')
     cost = kwargs['cost']
 
-    d = Vxf['d'];
+    # print('X ', X)
+    d = Vxf['d']
     if X.shape[0] == 2*d:
         Xd = X[d:2*d, :]
         X = X[:d, :]
     else:
         if 'time_varying' in kwargs and not kwargs['time_varying']:
-            Xd, _, _ = gmr_handle(X);
+            Xd, _, _ = gmr_handle(X)
         elif 'time_varying' and kwargs['time_varying']:
             t = X[d,:]
-            X = X[d,:];
-            Xd, _, _ = gmr_handle(t,X);
+            X = X[d,:]
+            Xd, _, _ = gmr_handle(t,X)
         else:
             disp('Unknown GMR function handle!')
-            return;
+            return
 
     V, Vx = cost.computeEnergy(X, np.array(()), Vxf)
 
@@ -113,9 +114,11 @@ def stabilizer(X, gmr_handle, Vxf, rho0, kappa0, **kwargs):
     Vdot = np.sum(Vx * Xd, axis=0)
     rho = rho0 * (1-np.exp(-kappa0 * norm_x)) * np.sqrt(norm_Vx)
 
-    # print(f'Vdot: {Vdot}, rho: {rho}')
+    print(f'Vdot: {Vdot}, rho: {rho}')
+    import time
+    time.sleep(50)
     ind = np.nonzero((Vdot + rho)>=0)[0] # not sure of this indexing
-    # print(f'ind: {ind}')
+    print(f'ind: {ind}')
     u = np.zeros_like(Xd, dtype=np.float64)
     # print('u: ', u.shape)
 

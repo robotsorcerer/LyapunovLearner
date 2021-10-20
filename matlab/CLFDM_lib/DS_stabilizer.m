@@ -90,7 +90,7 @@ else
     end
 end
 
-[V,Vx] = computeEnergy(X,[],Vxf);
+[V,Vx] = computeEnergy(X,[],Vxf)
 
 norm_Vx = sum(Vx.^2,1);
 norm_x = sum(X.^2,1);

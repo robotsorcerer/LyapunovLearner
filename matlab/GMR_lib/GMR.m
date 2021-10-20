@@ -1,17 +1,17 @@
 function [y, Sigma_y, beta] = GMR(Priors, Mu, Sigma, x, in, out)
 %
-% This function performs Gaussian Mixture Regression (GMR), using the 
-% parameters of a Gaussian Mixture Model (GMM). Given partial input data, 
-% the algorithm computes the expected distribution for the resulting 
-% dimensions. By providing temporal values as inputs, it thus outputs a 
-% smooth generalized version of the data encoded in GMM, and associated 
+% This function performs Gaussian Mixture Regression (GMR), using the
+% parameters of a Gaussian Mixture Model (GMM). Given partial input data,
+% the algorithm computes the expected distribution for the resulting
+% dimensions. By providing temporal values as inputs, it thus outputs a
+% smooth generalized version of the data encoded in GMM, and associated
 % constraints expressed by covariance matrices.
 %
 % Inputs -----------------------------------------------------------------
-%   o Priors:  1 x K array representing the prior probabilities of the K GMM 
+%   o Priors:  1 x K array representing the prior probabilities of the K GMM
 %              components.
 %   o Mu:      D x K array representing the centers of the K GMM components.
-%   o Sigma:   D x D x K array representing the covariance matrices of the 
+%   o Sigma:   D x D x K array representing the covariance matrices of the
 %              K GMM components.
 %   o x:       P x N array representing N datapoints of P dimensions.
 %   o in:      1 x P array representing the dimensions to consider as
@@ -19,27 +19,27 @@ function [y, Sigma_y, beta] = GMR(Priors, Mu, Sigma, x, in, out)
 %   o out:     1 x Q array representing the dimensions to consider as
 %              outputs (D=P+Q).
 % Outputs ----------------------------------------------------------------
-%   o y:       Q x N array representing the retrieved N datapoints of 
+%   o y:       Q x N array representing the retrieved N datapoints of
 %              Q dimensions, i.e. expected means.
-%   o Sigma_y: Q x Q x N array representing the N expected covariance 
-%              matrices retrieved. 
+%   o Sigma_y: Q x Q x N array representing the N expected covariance
+%              matrices retrieved.
 %
 % Copyright (c) 2006 Sylvain Calinon, LASA Lab, EPFL, CH-1015 Lausanne,
 %               Switzerland, http://lasa.epfl.ch
 %
-% The program is free for non-commercial academic use. 
-% Please contact the authors if you are interested in using the 
-% software for commercial purposes. The software must not be modified or 
+% The program is free for non-commercial academic use.
+% Please contact the authors if you are interested in using the
+% software for commercial purposes. The software must not be modified or
 % distributed without prior permission of the authors.
-% Please acknowledge the authors in any academic publications that have 
-% made use of this code or part of it. Please use this BibTex reference: 
-% 
+% Please acknowledge the authors in any academic publications that have
+% made use of this code or part of it. Please use this BibTex reference:
+%
 % @article{Calinon06SMC,
-%   title="On Learning, Representing and Generalizing a Task in a Humanoid 
+%   title="On Learning, Representing and Generalizing a Task in a Humanoid
 %     Robot",
 %   author="S. Calinon and F. Guenter and A. Billard",
-%   journal="IEEE Transactions on Systems, Man and Cybernetics, Part B. 
-%     Special issue on robot learning by observation, demonstration and 
+%   journal="IEEE Transactions on Systems, Man and Cybernetics, Part B.
+%     Special issue on robot learning by observation, demonstration and
 %     imitation",
 %   year="2006",
 %   volume="36",
@@ -50,27 +50,17 @@ nbData = size(x,2);
 nbVar = size(Mu,1);
 nbStates = size(Sigma,3);
 
-%% Fast matrix computation (see the commented code for a version involving 
+%% Fast matrix computation (see the commented code for a version involving
 %% one-by-one computation, which is easier to understand).
 %%
 %% Compute the influence of each GMM component, given input x
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 for i=1:nbStates
-  Pxi(:,i) = Priors(i).*gaussPDF(x, Mu(in,i), Sigma(in,in,i));
+    pdf = gaussPDF(x, Mu(in,i), Sigma(in,in,i));
+  Pxi(:,i) = Priors(i).*pdf;
 end
 beta = Pxi./repmat(sum(Pxi,2)+realmin,1,nbStates);
 
-% ind = find(sum(beta,2) == 0);
-% if ~isempty(ind)
-%     for i=1:nbStates
-%         tmp = x(:,ind)' - repmat(Mu(in,i)',length(ind),1);
-%         score(i,:) = Priors(i)*(sum((tmp/Sigma(in,in,i)).*tmp, 2));
-%     end
-%     [i i]=min(score);
-%     beta=beta';
-%     beta(nbStates.*(ind-1)+i')=1;
-%     beta=beta';
-% end
 %% Compute expected means y, given input x
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 for j=1:nbStates
@@ -91,7 +81,7 @@ if nargout > 1
 end
 
 
-% %% Slow one-by-one computation (better suited to understand the algorithm) 
+% %% Slow one-by-one computation (better suited to understand the algorithm)
 % %%
 % %% Compute the influence of each GMM component, given input x
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -55,6 +55,7 @@ def main(Vxf0, options):
 	models = {'w': 'w.mat', 's': 'Sshape.mat'}
 	data, demoIdx, Priors_EM, Mu_EM, Sigma_EM = load_saved_mat_file(join('scripts/data', models[args.model]))
 
+	Vxf0['L'] = 2 if args.model == 's' else 1
 	Vxf0['d'] = data.shape[0]//2
 	Vxf0.update(Vxf0)
 
@@ -112,47 +113,6 @@ def main(Vxf0, options):
 
 	ds_options['pause_time'] = args.pause_time
 	traj_corr = CorrectTrajectories(Xinit, [], stab_handle, Bundle(ds_options))
-
-
-	# x[0] = Xinit
-	# if xT.shape == Xinit.shape:
-	# 	XT = xT
-	# else:
-	# 	# a matrix of target location (XT is num_states X initial conditions)
-	# 	XT = np.tile(xT, [1, nbSPoint])
-	#
-	# t = 0; 	dt = ds_options['dt']
-	# for i in range(ds_options["traj_nums"]):
-	# 	xdot[i] = stabilizer(x[i] - XT, Vxf, rho0, kappa0, priors, mu, sigma, traj, traj_derivs, cost)[0]
-	# 	x[i] += xdot[i] * dt
-	# 	t += dt
-	#
-	# plt.close()
-	#
-	# f = plt.figure(figsize=(12, 7))
-	# plt.clf()
-	# f.tight_layout()
-	# fontdict = {'fontsize':12, 'fontweight':'bold'}
-	# plt.ion()
-	#
-	# for i in range(nbSPoint):
-	# 	# Choose one trajectory
-	# 	x = np.reshape(x, [len(x), Vxf['d'], nbSPoint])
-	# 	x0 = x[:, :, i]
-	#
-	# 	plt.clf()
-	# 	ax = f.gca()
-	#
-	# 	if i == 0:
-	# 		ax.plot(x0[:, 0], x0[:, 1], linestyle='--', linewidth=4, label='Corrected Trajectories', color='blue')
-	# 	else:
-	# 		ax.plot(x0[:, 0], x0[:, 1], linestyle='--', linewidth=4, color='blue')
-	# 	ax.set_xlabel('X', fontdict=fontdict)
-	# 	ax.set_ylabel('Y', fontdict=fontdict)
-	# 	ax.set_title('Learned Demonstrations', fontdict=fontdict)
-	# 	ax.grid('on')
-	# 	plt.legend(loc='best')
-	# 	plt.pause(args.pause_time)
 
 
 if __name__ == '__main__':

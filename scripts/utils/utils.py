@@ -33,15 +33,12 @@ def guess_init_lyap(data, Vxf0, b_initRandom=False):
     else:
         Vxf0['Priors'] = np.ones((Vxf0['L']+1, 1))
         Vxf0['Priors'] = Vxf0['Priors']/np.sum(Vxf0['Priors'])
-        # Vxf0['Mu'] = np.zeros((Vxf0['d'], Vxf0['d'], Vxf0['L']+1))
+        Vxf0['Mu'] = np.zeros((Vxf0['d'],  Vxf0['L']+1))
 
         # allocate Vxf0['P']
-        # Vxf0['P']   =  np.zeros(( Vxf0[ 'd'], Vxf0['d'], Vxf0['L']+1)) # wil be 2x2x3
-        Vxf0['P'] = []
+        Vxf0['P']   =  np.zeros(( Vxf0['d'], Vxf0['d'], Vxf0['L']+1)) # wil be 2x2x3
         for l in range(Vxf0['L']+1):
-            Vxf0['P'].append(np.eye(Vxf0['d'], Vxf0['d']))
-
-        Vxf0['P'] = np.reshape(Vxf0['P'], [Vxf0['L'] + 1, Vxf0[ 'd'], Vxf0['d']])
+            Vxf0['P'][:,:,l] = np.eye(Vxf0['d'])
 
     Vxf0.update(Vxf0)
 
