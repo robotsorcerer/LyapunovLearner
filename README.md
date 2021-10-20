@@ -81,7 +81,7 @@ And that about wraps up setting up!
 
   where angle brackets denote defaults.
 
-#### Easy-peasy-lemon-squeezy advanced python run:
+#### Easy-peasy-lemon-squeezy advanced python usage:
 
   ```
     python scripts\demo.py -pz .1 --silent --model s -tn 20000                                               
@@ -89,7 +89,7 @@ And that about wraps up setting up!
 
 #### Jupyter Notebook Interactive Example
 
-Please find examples in the file [/notes/clf_demos.ipynb ](/notes/clf_demos.ipynb).
+Please find examples in the file [clf_demos.ipynb](/notes/clf_demos.ipynb).
 
 #### Options
 
@@ -101,9 +101,11 @@ Please find examples in the file [/notes/clf_demos.ipynb ](/notes/clf_demos.ipyn
 
 + `--pause_time/-pz`: Time between updating the stabilization of the dynamical system on the pyplot display screen.
 
-+ `--kappa0/-kp`: exponential coeff. in class-Kappa function.
++ `--kappa0/-kp`: Exponential coeff. in class-Kappa function.
 
-+ `--rho0/-rh`: coeff. of class-Kappa function.
++ `--traj_num/-tn`: Length of time to simulate trajectory corrections.
+
++ `--rho0/-rh`: Coeff. of class-Kappa function.
 
 ### FAQS
 
@@ -122,6 +124,12 @@ Please find examples in the file [/notes/clf_demos.ipynb ](/notes/clf_demos.ipyn
 + What is different between this implementation and Khansari-Zadeh's implementation?
 
   -  Well, for starters, a cleaner implementation of the Gaussian mixture models used in estimating dynamics along every trajectory sample.
+
+  - A straightforward nonlinear optimization of the CLF cost
+
+  - Better handling of constraints.
+
+  - Written in python and easy to port to other open-source robot libraries.
 
 ### TODOs
 
