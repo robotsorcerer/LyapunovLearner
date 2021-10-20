@@ -9,6 +9,7 @@ __status__ 		= "Testing"
 import sys
 import numpy as np
 from utils.utils import realmin
+from utils.gen_utils import *
 
 def stabilizer(X, gmr_handle, Vxf, rho0, kappa0, **kwargs):
     """
@@ -103,7 +104,7 @@ def stabilizer(X, gmr_handle, Vxf, rho0, kappa0, **kwargs):
             X = X[d,:]
             Xd, _, _ = gmr_handle(t,X)
         else:
-            disp('Unknown GMR function handle!')
+            debug('Unknown GMR function handle!')
             return
 
     V, Vx = cost.computeEnergy(X, np.array(()), Vxf)
@@ -114,17 +115,15 @@ def stabilizer(X, gmr_handle, Vxf, rho0, kappa0, **kwargs):
     Vdot = np.sum(Vx * Xd, axis=0)
     rho = rho0 * (1-np.exp(-kappa0 * norm_x)) * np.sqrt(norm_Vx)
 
-    # print(f'Vdot: {Vdot}, rho: {rho}')
-    ind = np.nonzero((Vdot + rho)>=0)[0] # not sure of this indexing
-    # print(f'ind: {ind}')
+    ind = np.nonzero((Vdot + rho)>=0)
+    ind = [x.astype(np.int64).tolist() for x in ind][0]
     u = np.zeros_like(Xd, dtype=np.float64)
+    indices = (tuple(range(u.shape[0])),  ind)
 
     if np.sum(ind) > 0:
         lambder = np.expand_dims(np.divide(Vdot[ind] + rho[ind], norm_Vx[ind]), 0) #+ realmin) # sys issues bruh)
-        # print(f'u[:, ind]: {u[:, ind].shape}')
-        #', np.tile(lambder, [d, 1]): {np.tile(lambder, [d, 1]).shape}, Vx: {Vx[:, ind].shape}')
-        u[:, ind] = -np.tile(lambder, [d, 1]) * np.squeeze(Vx[:, ind])
-        Xd[:, ind] = Xd[:, ind] + u[:, ind]
+        u[np.ix_(*indices)] = -np.tile(lambder, [d, 1]) * Vx[np.ix_(*indices)]
+        Xd[np.ix_(*indices)] = Xd[np.ix_(*indices)] + u[np.ix_(*indices)]
 
     if 'dt' in kwargs:
         dt = kwargs['dt']
@@ -135,9 +134,9 @@ def stabilizer(X, gmr_handle, Vxf, rho0, kappa0, **kwargs):
 
         while np.any(ind) and i < 10:
             alpha = V[ind]/Vn[ind]
-            Xd[:,ind] = np.tile(alpha, [d, 1]) * Xd[:, ind] - \
-                        np.tile(alpha * np.sum(Xd[:, ind] * \
-                        Vx[:, ind], axis=0)/norm_Vx[ind], [d, 1])*Vx[:, ind]
+            Xd[np.ix_(*indices)] = np.tile(alpha, [d, 1]) * Xd[np.ix_(*indices)] - \
+                        np.tile(alpha * np.sum(Xd[np.ix_(*indices)] * \
+                        Vx[np.ix_(*indices)], axis=0)/norm_Vx[ind], [d, 1])*Vx[np.ix_(*indices)]
             Xn = x + np.dot(Xd, dt)
             Vn = cost.computeEnergy(Xn, np.array(()), Vxf)
             ind = Vn >= V

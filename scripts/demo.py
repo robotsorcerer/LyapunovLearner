@@ -32,14 +32,14 @@ from visualization.visualizer import Visualizer
 parser = argparse.ArgumentParser(description='Learning SEDs')
 parser.add_argument('--silent', '-si', action='store_true', default=True, help='silent debug print outs' )
 parser.add_argument('--pause_time', '-pz', type=float, default=0.3, help='pause time between successive updates of plots' )
-parser.add_argument('--traj_nums', '-tn', type=int, default=1000, help='max # of trajectory stabilizations corrections before quitting' )
+parser.add_argument('--traj_nums', '-tn', type=int, default=10000, help='max # of trajectory stabilizations corrections before quitting' )
 parser.add_argument('--rho0', '-rh', type=float, default=1.0, help='coeff. of class-Kappa function' )
 parser.add_argument('--kappa0', '-kp', type=float, default=.1, help='exponential coeff. in class-Kappa function' )
 parser.add_argument('--model', '-md', type=str, default='w', help='s|w ==> which model to use in training the data?' )
 parser.add_argument('--off_priors', '-op', action='store_true', default=True, help='use KZ\'s offline priors or use ours')
 parser.add_argument('--visualize', '-vz', action='store_true', default=True, help='visualize ROAs?' )
 args = parser.parse_args()
-print('rgs ', args)
+print('args ', args)
 
 
 if args.silent:
@@ -112,21 +112,28 @@ def main(Vxf0, options):
 	gmr_handle = lambda x: GMR(priors, mu, sigma, x, traj, traj_derivs)
 	stab_handle = lambda x: stabilizer(x, gmr_handle, Vxf, rho0, kappa0, **stab_args) #, priors, mu, sigma
 
-	if args.traj_nums:
+	# if args.traj_nums:
+	# Hatrdcoding this since I know what to expect from the prerecorded demos
+	if args.model =='s':
+		args.traj_nums = 20e3
+	elif args.model == 'w':
+		args.traj_nums = 50e3
 		ds_options['traj_nums'] = args.traj_nums
 	ds_options['pause_time'] = args.pause_time
 	traj_corr = CorrectTrajectories(Xinit, [], stab_handle, Bundle(ds_options))
 
-	if args.visualize:
-		traj_corr.Xinit = Xinit
-		traj_corr.model = args.model
-		viz.corrected_trajos(traj_corr, save=True)
+	# if args.visualize:
+	# 	traj_corr.Xinit = Xinit
+	# 	traj_corr.model = args.model
+	# 	viz.corrected_trajos(traj_corr, save=True)
 
 	x_hist = np.stack(traj_corr.x_hist)
 	xd_hist = np.stack(traj_corr.xd_hist)
 	t_hist = np.stack(traj_corr.t_hist)
 	xT = traj_corr.XT
 
+	plt.ioff()
+	plt.close('all')
 	f = plt.figure(figsize=(16, 9))
 	plt.clf()
 	f.tight_layout()
@@ -134,6 +141,7 @@ def main(Vxf0, options):
 
 	_labelsize = 18
 	nbSPoint = x_hist.shape[-1]
+	plt.close('all')
 	cm = plt.get_cmap('ocean')
 	ax = f.gca()
 	ax.grid('on')
