@@ -1,6 +1,14 @@
 ### One Hell of a Lyapunov Learner.
 
-This code largely implements Learning CLFs using the SEDS paper by Khansari-Zadeh. See original code in [matlab](/matlab)
+This code largely implements Learning CLFs using the SEDS paper by Khansari-Zadeh:
+
+```
+   S.M. Khansari-Zadeh and A. Billard (2014), "Learning Control Lyapunov Function
+   to Ensure Stability of Dynamical System-based Robot Reaching Motions."
+   Robotics and Autonomous Systems, vol. 62, num 6, p. 752-765.
+```
+
+MATLAB version in [matlab](/matlab).
 
 <!-- (https://bitbucket.org/khansari/clfdm/src/master/demo_CLFDM_Learning.m). -->
 
