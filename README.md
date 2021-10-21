@@ -8,7 +8,7 @@ This code largely implements Learning CLFs using the SEDS paper by Khansari-Zade
    Robotics and Autonomous Systems, vol. 62, num 6, p. 752-765.
 ```
 
-MATLAB version in [matlab](/matlab).
+One may find the MATLAB version of this implementation in the [matlab](/matlab) subfolde.
 
 <!-- (https://bitbucket.org/khansari/clfdm/src/master/demo_CLFDM_Learning.m). -->
 
