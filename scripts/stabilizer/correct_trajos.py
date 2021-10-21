@@ -1,3 +1,12 @@
+__author__ 		= "Lekan Molu"
+__copyright__ 	= "Lekan Molu, One Hell of a Lyapunov Solver"
+__credits__  	= "Rachel Thomson (MIT), Pérez-Dattari, Rodrigo (TU Delft)"
+__license__ 	= "MIT"
+__maintainer__ 	= "Lekan Molu"
+__email__ 		= "patlekno@icloud.com"
+__status__ 		= "Completed"
+
+
 import time
 import copy
 import threading
@@ -79,7 +88,8 @@ def CorrectTrajectories(x0,xT,stab_handle,kwargs):
 	   o xT:      A matrix recording the change in the target position. Useful
 				  only when 'tcp' or 'tdp' perturbations applied.
 
-	Lekan Molux, MSFT Corp.
+	   Copyright (c) Lekan Molux. https://scriptedonachip.com
+	   2021.
 	"""
 	## parsing inputs
 	if not kwargs:
