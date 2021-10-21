@@ -8,7 +8,7 @@ This code largely implements Learning CLFs using the SEDS paper by Khansari-Zade
    Robotics and Autonomous Systems, vol. 62, num 6, p. 752-765.
 ```
 
-One may find the MATLAB version of this implementation in the [matlab](/matlab) subfolde.
+One may find the MATLAB version of this implementation in the [matlab](/matlab) subfolder.
 
 <!-- (https://bitbucket.org/khansari/clfdm/src/master/demo_CLFDM_Learning.m). -->
 
@@ -22,7 +22,7 @@ One may find the MATLAB version of this implementation in the [matlab](/matlab) 
 
 KZ recorded WAM robot end-effector trajectories on a 2D plane. The task is to stabilize pre-recorded trajectories using a combo of GMMs, Gaussian Mixture Regression, and Control Lyapunov Functions.
 
-This code comes with two pre-recorded demos available in the data directory, i.e., [data](scripts/data). The main file is [demo.py](/scripts/demo.py) which executes the CLF corrected trajectories on the robot. The left image below denote a demonstrations of the robot drawing the letter `S` from three different initial conditions, and converging to an attractor at the origin; while the right image denote the Gaussian Mixture Regression-based CLF that corrects the trajectory in a piecewise manner as we feed the algothm the data.
+This code comes with two pre-recorded demos available in the data directory, i.e., [data](scripts/data). The main file is [demo.py](/scripts/demo.py) which executes the CLF corrected trajectories on the robot. The left image below denote a demonstrations of the robot drawing the letter `S` from three different initial conditions, and converging to an attractor at the origin; while the right image denote the Gaussian Mixture Regression-based CLF that corrects the trajectory in a piecewise manner as we feed the algorithm the data.
 
 #### S-Shaped Planar (Task-Space) Demos and Motion Corrections.
 
@@ -56,19 +56,13 @@ W-shaped Demo Corrections:
 
 ### Setup.
 
-Dependencies:
-
-+ scipy
-
-+ numpy
-
-+ matplotlib
+Dependencies: Scipy; Numpy; Matplotlib.
 
 All of these can be installed with
 
-```
-  pip install -r requirements.txt
-```
+  ```
+    pip install -r requirements.txt
+  ```
 
 And that about wraps up setting up!
 
@@ -95,10 +89,6 @@ And that about wraps up setting up!
     python scripts\demo.py -pz .1 --silent --model s -tn 20000                                               
   ```
 
-#### Jupyter Notebook Interactive Example
-
-Please find examples in the file [clf_demos.ipynb](/notes/clf_demos.ipynb).
-
 #### Options
 
 + `--silent/-si`: Optimize the Lyapunov function in silent mode.
@@ -114,6 +104,11 @@ Please find examples in the file [clf_demos.ipynb](/notes/clf_demos.ipynb).
 + `--traj_num/-tn`: Length of time to simulate trajectory corrections.
 
 + `--rho0/-rh`: Coeff. of class-Kappa function.
+
+#### Jupyter Notebook Interactive Example
+
+Please find examples in the file [clf_demos.ipynb](/notes/clf_demos.ipynb).
+
 
 ### FAQS
 
