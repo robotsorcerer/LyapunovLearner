@@ -106,7 +106,7 @@ And that about wraps up setting up!
   ```
     python scripts\demo.py -pz .1 --silent --model s -tn 20000                                               
   ```
-  
+
 #### Jupyter Notebook Interactive Example
 
 Please find examples in the file [clf_demos.ipynb](/notes/clf_demos.ipynb).
@@ -124,9 +124,9 @@ Please find examples in the file [clf_demos.ipynb](/notes/clf_demos.ipynb).
 
   - This code leverages a control Lyapunov function in deriving the control laws used to stabilize spurious regions of attractors that a Gaussian mixture regression may generate;
 
-+ This code is pretty much easy to follow and adapt for any dynamical system. Matter-of-factly, I used it in learning the dynamics of the Torobo 7-DOF arm in 2018 when I worked in Tokyo.
++ This code is pretty much easy to follow and adapt for any dynamical system. Matter-of-factly, I used it in learning the dynamics of the Torobo 7-DOF arm in Tokyo ca Summer 2018.
 
-+ What is different between this implementation and the matlab implementation?
++ What is different between this and the matlab implementation?
 
   -  Well, for starters, a cleaner implementation of the Gaussian mixture models/regressors used in estimating dynamics along every trajectory sample.
 
