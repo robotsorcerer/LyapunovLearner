@@ -33,19 +33,17 @@ S-shaped demos from three different initial conditions.
   <img src="/matlab/Doc/s_corrections.gif" height="400px" width="350px">
 </div>
 
-W-shaped Demo Corrections:
-
 W-shaped demos from three different initial conditions.
 
 <div align="center">
  <img src="/scripts/docs/demos_w.jpg" height="400px" width="350px">
-  <img src="/matlab/Doc/w_corrections.gif" height="400px" width="350px">
+  <img src="/matlab/Doc/w_corrections.gif" height="380px" width="350px">
 </div>
 
 #### S-Stabilized Trajectories.
 
 <div align="center">
- <img src="/scripts/docs/demos_s.jpg" height="400px" width="350px">
+ <img src="/scripts/docs/demos_s.jpg" height="380px" width="350px">
   <img src="/scripts/docs/corrected_traj_s.jpg" height="400px" width="350px">
 </div>
 
