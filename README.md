@@ -44,7 +44,7 @@ W-shaped demos from three different initial conditions.
 
 <div align="center">
  <img src="/scripts/docs/demos_s.jpg" height="400px" width="350px">
-  <img src="/scripts/docs/corrected_traj_s.jpg" height="400px" width="350px">
+  <img src="/scripts/docs/corrected_traj_s.jpg" height="400px" width="380px">
 </div>
 
 <!-- #### S-Shaped Planar (Task-Space) Demos and Motion Corrections
