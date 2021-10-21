@@ -39,7 +39,6 @@ parser.add_argument('--model', '-md', type=str, default='w', help='s|w ==> which
 parser.add_argument('--off_priors', '-op', action='store_true', default=True, help='use KZ\'s offline priors or use ours')
 parser.add_argument('--visualize', '-vz', action='store_true', default=True, help='visualize ROAs?' )
 args = parser.parse_args()
-print('args ', args)
 
 
 if args.silent:
@@ -93,7 +92,7 @@ def main(Vxf0, options):
 		viz.draw()
 
 	rho0 = args.rho0
-	kappa0 = args.kappa0 #0.1
+	kappa0 = args.kappa0
 
 	# get gmm params
 	if args.off_priors:
@@ -112,8 +111,7 @@ def main(Vxf0, options):
 	gmr_handle = lambda x: GMR(priors, mu, sigma, x, traj, traj_derivs)
 	stab_handle = lambda x: stabilizer(x, gmr_handle, Vxf, rho0, kappa0, **stab_args) #, priors, mu, sigma
 
-	# if args.traj_nums:
-	# Hatrdcoding this since I know what to expect from the prerecorded demos
+	# Hardcoding this since I know what to expect from the prerecorded demos
 	if args.model =='s':
 		args.traj_nums = 20e3
 	elif args.model == 'w':

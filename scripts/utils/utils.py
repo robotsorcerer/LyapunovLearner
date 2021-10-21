@@ -1,3 +1,11 @@
+__author__ 		= "Lekan Molu"
+__copyright__ 	= "Lekan Molu, One Hell of a Lyapunov Solver"
+__credits__  	= "Rachel Thomson (MIT), Pérez-Dattari, Rodrigo (TU Delft)"
+__license__ 	= "MIT"
+__maintainer__ 	= "Lekan Molu"
+__email__ 		= "patlekno@icloud.com"
+__status__ 		= "Completed"
+
 import numpy as np
 import scipy.linalg as LA
 import sys

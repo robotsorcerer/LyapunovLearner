@@ -1,10 +1,10 @@
 __author__ 		= "Lekan Molu"
-__copyright__ 	= "2018, One Hell of a Lyapunov Solver"
-__credits__  	= "Rachel Thompson (MIT), Jethro Tan (PFN)"
+__copyright__ 	= "Lekan Molu, One Hell of a Lyapunov Solver"
+__credits__  	= "Rachel Thomson (MIT), Pérez-Dattari, Rodrigo (TU Delft)"
 __license__ 	= "MIT"
 __maintainer__ 	= "Lekan Molu"
 __email__ 		= "patlekno@icloud.com"
-__status__ 		= "Testing"
+__status__ 		= "Completed"
 
 import sys
 import numpy as np

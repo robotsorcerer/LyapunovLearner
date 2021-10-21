@@ -1,3 +1,11 @@
+__author__ 		= "Lekan Molu"
+__copyright__ 	= "Lekan Molu, One Hell of a Lyapunov Solver"
+__credits__  	= "Rachel Thomson (MIT), Pérez-Dattari, Rodrigo (TU Delft)"
+__license__ 	= "MIT"
+__maintainer__ 	= "Lekan Molu"
+__email__ 		= "patlekno@icloud.com"
+__status__ 		= "Completed"
+
 import logging, time
 import numpy as np
 import numpy.random as npr
@@ -6,7 +14,7 @@ import scipy.linalg as LA
 from scipy.optimize import minimize, linprog, NonlinearConstraint, BFGS
 from gmm import gmm_2_parameters, parameters_2_gmm, \
                 shape_DS, gmr_lyapunov
-# log_level = logger.logdebug
+                
 logger = logging.getLogger(__name__)
 
 
