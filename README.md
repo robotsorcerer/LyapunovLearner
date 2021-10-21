@@ -12,7 +12,7 @@ One may find the MATLAB version of this implementation in the [matlab](/matlab) 
 
 <!-- (https://bitbucket.org/khansari/clfdm/src/master/demo_CLFDM_Learning.m). -->
 
-+ Khansari-Zadeh's has a subtle example that illustrates the advantages of SEDS over DMPs, LWPRs, GMRs etc in his [2014 Autonomous Systems paper](/scripts/docs/AUS.pdf), and reproduced below:
++ Khansari-Zadeh has a subtle example that illustrates the advantages of SEDS over DMPs, LWPRs, GMRs etc in his [2014 Autonomous Systems paper](/scripts/docs/AUS.pdf), and reproduced below:
 
 <div align="center">
  <img src="/scripts/docs/seds_gmr.jpg" height="680px" width="600">
