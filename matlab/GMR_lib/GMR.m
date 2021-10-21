@@ -1,6 +1,6 @@
-function [y, Sigma_y, beta] = GMR(Priors, Mu, Sigma, x, in, out)
+function [y, Sigma_y, beta] = regress_gauss_mix(Priors, Mu, Sigma, x, in, out)
 %
-% This function performs Gaussian Mixture Regression (GMR), using the
+% This function performs Gaussian Mixture Regression (regress_gauss_mix), using the
 % parameters of a Gaussian Mixture Model (GMM). Given partial input data,
 % the algorithm computes the expected distribution for the resulting
 % dimensions. By providing temporal values as inputs, it thus outputs a
@@ -56,7 +56,7 @@ nbStates = size(Sigma,3);
 %% Compute the influence of each GMM component, given input x
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 for i=1:nbStates
-    pdf = gaussPDF(x, Mu(in,i), Sigma(in,in,i));
+    pdf = get_pdf(x, Mu(in,i), Sigma(in,in,i));
   Pxi(:,i) = Priors(i).*pdf;
 end
 beta = Pxi./repmat(sum(Pxi,2)+realmin,1,nbStates);
@@ -86,7 +86,7 @@ end
 % %% Compute the influence of each GMM component, given input x
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % for i=1:nbStates
-%   Pxi(:,i) = gaussPDF(x, Mu(in,i), Sigma(in,in,i));
+%   Pxi(:,i) = get_pdf(x, Mu(in,i), Sigma(in,in,i));
 % end
 % beta = (Pxi./repmat(sum(Pxi,2)+realmin,1,nbStates))';
 % %% Compute expected output distribution, given input x

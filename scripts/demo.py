@@ -15,7 +15,7 @@ import logging
 import numpy as np
 import matplotlib.pyplot as plt
 from gmm.gmm import GMM
-from gmm.gaussian_reg import GMR
+from gmm.gaussian_reg import regress_gauss_mix
 
 from os.path import join, dirname, abspath
 sys.path.append(dirname(dirname(abspath(__file__) ) ) )
@@ -65,7 +65,7 @@ def main(Vxf0, options):
 	"Learn Lyapunov Function Strictly from Data"
 	while cost.success:
 		info('Optimizing the lyapunov function')
-		Vxf, J = cost.learnEnergy(Vxf0, data, options)
+		Vxf, J = cost.optimize_lyapunov(Vxf0, data, options)
 		old_l = Vxf0['L']
 		Vxf0['L'] += 1
 		print('Constraints violated. increasing the size of L from {} --> {}'.format(old_l, Vxf0['L']))
@@ -84,8 +84,9 @@ def main(Vxf0, options):
 		                labels=['Trajs', 'Dt(Trajs)']*2, alphas = [.15]*4,
 		                fontdict=fontdict)
 
+		Xinit = data[:Vxf['d'], demoIdx[0, :-1]]
 		level_args = dict(disp=True, levels = [], save=True)
-		viz.init_demos(save=True)
+		viz.init_demos(Xinit, save=True)
 		# Optimize and plot the level sets of the Lyapunov function
 		viz.savedict["savename"]="level_sets_w.jpg"
 		handles = viz.level_sets(Vxf, cost, **level_args)
@@ -106,9 +107,8 @@ def main(Vxf0, options):
 	traj = list(range(Vxf['d']))
 	traj_derivs = np.arange(Vxf['d'], 2 * Vxf['d'])
 	# print(f'demoIdx: {demoIdx}')
-	Xinit = data[:Vxf['d'], demoIdx[0, :-1]]
 	stab_args = {'time_varying': False, 'cost': cost}
-	gmr_handle = lambda x: GMR(priors, mu, sigma, x, traj, traj_derivs)
+	gmr_handle = lambda x: regress_gauss_mix(priors, mu, sigma, x, traj, traj_derivs)
 	stab_handle = lambda x: stabilizer(x, gmr_handle, Vxf, rho0, kappa0, **stab_args) #, priors, mu, sigma
 
 	# Hardcoding this since I know what to expect from the prerecorded demos

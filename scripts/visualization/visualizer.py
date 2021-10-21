@@ -102,19 +102,23 @@ class Visualizer():
 		self._ax.legend(loc='upper left')#, bbox_to_anchor=(0, 1.15))
 		self._ax.grid('on')
 
-	def init_demos(self, save=False):
+	def init_demos(self, Xinit, save=False):
 		data = self.data
 		if not self._init:
 			self.init(data)
 
 		fig = plt.figure(figsize=self.winsize)
 		ax1 = fig.add_subplot(1, 1, 1)
-		demo_handle, = ax1.plot(data[0, :], data[1, :], 'r.', label='Demos')
+
+		for j in range(Xinit.shape[-1]):
+		    ax1.plot(Xinit[0, j], Xinit[1, j], 'ko', markersize=20,  linewidth=2.5)
+
+		demo_handle, = ax1.plot(data[0, :], data[1, :], 'm.', label='Demos')
 		demo_handle, = ax1.plot([0],[0],'g*',markersize=25,linewidth=3)
 		ax1.grid('on')
 		ax1.legend(loc='upper right')
-		ax1.set_xlabel('Trajs', fontdict=self._fontdict)
-		ax1.set_ylabel('Dt(Trajs)', fontdict=self._fontdict)
+		ax1.set_xlabel('$\\xi$', fontdict=self._fontdict)
+		ax1.set_ylabel('$\\dot{\\xi}$', fontdict=self._fontdict)
 		ax1.set_title('WAM Robot Task Space Demos', fontdict=self._fontdict)
 
 		if save:
@@ -149,7 +153,7 @@ class Visualizer():
 		X, Y = np.meshgrid(x, y, indexing='ij')
 		xi_stacked = np.stack([np.ravel(X), np.ravel(Y)])
 
-		V, dV = cost_obj.computeEnergy(xi_stacked, np.array(()), Vxf, nargout=2)
+		V, dV = cost_obj.compute_lyapunov(xi_stacked, np.array(()), Vxf, nargout=2)
 
 		if not np.any(levels):
 			levels = np.arange(0, np.log(np.max(V)), 0.5)
@@ -181,8 +185,8 @@ class Visualizer():
 			self._plots.append(h2)
 			ax.set_title('Learned Lyapunov Function\'s ROA', fontdict=self._fontdict)
 
-			ax.set_xlabel('Trajectory', fontsize=12, fontweight='bold')
-			ax.set_ylabel('Dt(Trajectory)', fontsize=12, fontweight='bold')
+			ax.set_xlabel('$\\xi$', fontsize=12, fontweight='bold')
+			ax.set_ylabel('$\\dot{\\xi}$', fontsize=12, fontweight='bold')
 
 			ax.xaxis.set_tick_params(labelsize=self._labelsize)
 			ax.yaxis.set_tick_params(labelsize=self._labelsize)
@@ -217,7 +221,6 @@ class Visualizer():
 		f = plt.figure(figsize=(self.winsize))
 		plt.clf()
 		f.tight_layout()
-		# self.fontdict = {'fontsize':16, 'fontweight':'bold'}
 
 		# _labelsize = 18
 		nbSPoint = x_hist.shape[-1]
@@ -241,7 +244,7 @@ class Visualizer():
 		ax.xaxis.set_tick_params(labelsize=self._labelsize)
 		ax.yaxis.set_tick_params(labelsize=self._labelsize)
 
-		ax.legend(loc='upper left') #, bbox_to_anchor=(-1, .5))
+		ax.legend(loc='upper left')
 		ax.set_title(f'Corrected Trajectories in the Interval: [{t_hist[0]:.2f}, {t_hist[-1]:.2f}] secs', fontdict=self._fontdict)
 
 		if save:
@@ -249,20 +252,3 @@ class Visualizer():
 						bbox_inches='tight',facecolor='None')
 
 		plt.show()
-
-
-
-# plt.ion()
-# handles.extend([h1, h2])
-# plt.pause(args.pause_time)
-
-# import time
-# def update_plots_preoptimized(handles, N):
-# 	for j in range(N):
-# 		time.sleep(.1)
-# 		for h in handles:
-# 			h.figure.canvas.draw_idle()
-#
-# 		h.figure.canvas.flush_events()
-#
-# update_plots_preoptimized(handles, 20)

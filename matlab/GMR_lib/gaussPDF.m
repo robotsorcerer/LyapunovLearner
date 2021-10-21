@@ -1,4 +1,4 @@
-function prob = gaussPDF(Data, Mu, Sigma)
+function prob = get_pdf(Data, Mu, Sigma)
 %
 % This function computes the Probability Density Function (PDF) of a
 % multivariate Gaussian represented by means and covariance matrix.

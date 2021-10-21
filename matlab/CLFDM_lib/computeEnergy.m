@@ -1,7 +1,7 @@
-function [V Vdot] = computeEnergy(X,Xd,Vxf)
+function [V Vdot] = compute_lyapunov(X,Xd,Vxf)
 % Syntax:
 %
-%       [V Vdot] = computeEnergy(X,Xd,Vxf)
+%       [V Vdot] = compute_lyapunov(X,Xd,Vxf)
 %
 % This function computes the energy value at query point(s) X, given the energy
 % (Lyapunov) function Vxf. When Xd is passed as an empty variable, it also
@@ -18,7 +18,7 @@ function [V Vdot] = computeEnergy(X,Xd,Vxf)
 %              If Xd = [], then Vdot = dV/dx is given as the output
 %
 %   o Vxf:     A structure variable representing the energy function. This
-%              structure should follow the format explained in learnEnergy.m
+%              structure should follow the format explained in optimize_lyapunov.m
 %
 % Outputs ----------------------------------------------------------------
 %
@@ -66,7 +66,7 @@ if Vxf.SOS
         V = V - Vxf.p0;
     end
 else
-    [V dV] = GMR_Lyapunov(X, Vxf.Priors, Vxf.Mu, Vxf.P);
+    [V dV] = regress_gauss_mix_Lyapunov(X, Vxf.Priors, Vxf.Mu, Vxf.P);
 end
 
 if nargout > 1
@@ -84,7 +84,7 @@ if nDemo>1
 end
 
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [V, Vx] = GMR_Lyapunov(x, Priors, Mu, P)
+function [V, Vx] = regress_gauss_mix_Lyapunov(x, Priors, Mu, P)
 
 nbData = size(x,2);
 d = size(x,1);

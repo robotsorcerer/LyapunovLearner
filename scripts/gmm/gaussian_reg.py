@@ -10,7 +10,7 @@ import numpy as np
 import sys
 from utils.utils import realmin
 
-def gaussPDF(data, mu, sigma):
+def get_pdf(data, mu, sigma):
     """
      This function computes the Probability Density Function (PDF) of a
      multivariate Gaussian represented by means and covariance matrix.
@@ -29,26 +29,21 @@ def gaussPDF(data, mu, sigma):
     global realmin
     num_vars, num_data = data.shape
 
-    #print('data: ', data, 'mu: ', mu)
     diff = data.T - np.tile(mu.T, [num_data, 1])
-    #print('diff: ', diff, 'mu: ', mu)
     prob = np.sum( (diff@np.linalg.inv(sigma))*diff, axis=1)
-    #print('prob: ', prob) # this is corect
 
     if not isinstance(sigma, np.ndarray):
         temp = np.abs(sigma) + realmin
     else:
         temp = np.abs(np.linalg.det(sigma)) + realmin
     butt = np.sqrt(((2*np.pi)**num_vars)*temp)
-    #print('butt: ', butt) # butt is correct
     prob = np.divide(np.exp(-0.5 * prob), butt)
-    #print('prob: ', prob) # this is corect
 
     return prob
 
-def GMR(priors, mu, sigma, x, traj, traj_deri):
+def regress_gauss_mix(priors, mu, sigma, x, traj, traj_deri):
     """
-     This function performs Gaussian Mixture Regression (GMR), using the
+     This function performs Gaussian Mixture Regression (regress_gauss_mix), using the
      parameters of a Gaussian Mixture Model (GMM). Given partial input data,
      the algorithm computes the expected distribution for the resulting
      dimensions. By providing temporal values as inputs, it thus outputs a
@@ -99,7 +94,7 @@ def GMR(priors, mu, sigma, x, traj, traj_deri):
     for i in range(num_clusters):
         mu_loc, sigma_loc = mu[np.ix_(*[traj, [i]])].squeeze(), \
                         sigma[np.ix_(*[traj, traj, [i]])].squeeze()
-        pdf = gaussPDF(x, mu_loc, sigma_loc)
+        pdf = get_pdf(x, mu_loc, sigma_loc)
         Pxi[:,i] = priors[i] * pdf
     butt = np.tile(np.expand_dims(np.sum(Pxi, axis=1), 1)+realmin, [1, num_clusters])
     beta = np.divide(Pxi, butt)
@@ -129,7 +124,7 @@ def GMR(priors, mu, sigma, x, traj, traj_deri):
     #########################################################################
     temp0 = sigma[np.ix_(*[traj_deri, traj_deri, [0]])].squeeze() - \
             sigma[np.ix_(*[traj_deri, traj, [0]])].squeeze()@\
-            np.linalg.inv(sigma[np.ix_(*[traj, traj, [0]])].squeeze())
+                    np.linalg.inv(sigma[np.ix_(*[traj, traj, [0]])].squeeze())
 
     sigma_y_tmp = np.empty(temp0.shape +(1,num_clusters))
     sigma_y_tmp[:,:,0, 0]  = temp0
@@ -142,4 +137,5 @@ def GMR(priors, mu, sigma, x, traj, traj_deri):
                         [len(traj_deri), len(traj_deri), 1, 1]) * \
                         np.tile(sigma_y_tmp, [1, 1, init_conds, 1])
         sigma_y = np.sum(sigma_y_tmp2, axis=3)
+        
     return y, sigma_y, beta

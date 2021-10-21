@@ -20,7 +20,7 @@ function [Xd u] = DS_stabilizer(X,fn_handle,Vxf,rho0,kappa0,varargin)
 %                f(x).
 %
 %   o Vxf:     A structure variable representing the energy function. This
-%              structure should follow the format explained in learnEnergy.m
+%              structure should follow the format explained in optimize_lyapunov.m
 %
 %   o rho0, kappa0: These parameters impose minimum acceptable rate of decrease
 %                   in the energy function during the motion. It computes
@@ -90,7 +90,7 @@ else
     end
 end
 
-[V,Vx] = computeEnergy(X,[],Vxf)
+[V,Vx] = compute_lyapunov(X,[],Vxf)
 
 norm_Vx = sum(Vx.^2,1);
 norm_x = sum(X.^2,1);
@@ -109,7 +109,7 @@ end
 if ~isempty(varargin)
     dt = varargin{1};
     xn = X + Xd*dt;
-    Vn = computeEnergy(xn,[],Vxf);
+    Vn = compute_lyapunov(xn,[],Vxf);
     ind = (Vn >= V);
     i = 0;
     while any(ind) && i<10
@@ -117,7 +117,7 @@ if ~isempty(varargin)
 %         alpha = (V(ind)-dt*rho(ind))./Vn(ind);
         Xd(:,ind) = repmat(alpha,d,1).*Xd(:,ind) - repmat(alpha.*sum(Xd(:,ind).*Vx(:,ind),1)./norm_Vx(ind),d,1).*Vx(:,ind);
         xn = X + Xd*dt;
-        Vn = computeEnergy(xn,[],Vxf);
+        Vn = compute_lyapunov(xn,[],Vxf);
         ind = (Vn >= V);
 %         ind = (Vn > V - dt*rho);
         i = i + 1;

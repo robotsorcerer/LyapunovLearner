@@ -15,7 +15,7 @@ def matlength(x):
   "find the max of a numpy matrix dims"
   return np.max(x.shape)
 
-def gmm_2_parameters(Vxf, options):
+def stack_gmm_params(Vxf, options):
     """
         Transforms optimization parameters into a column vector
     """
@@ -37,16 +37,11 @@ def gmm_2_parameters(Vxf, options):
 
     return p0
 
-def parameters_2_gmm(popt, d, L, options):
+def gauss_params_to_lyapunov(p, d, L, options):
     """
-        Transforms the column of parameters into
-         Priors, Mu, and P.
-     """
-    return shape_DS(popt, d, L, options)
-
-def shape_DS(p, d, L, options):
-    """
-        Transform the column of parameters into Priors, Mu, and P
+        Transform the column of Gaussian
+        parameters into Gaussian Priors, Mu,
+        and symmetric positive definite, P.
     """
     P = np.zeros((d, d, L + 1))
     optimizePriors = options['optimizePriors']
@@ -78,7 +73,22 @@ def shape_DS(p, d, L, options):
                SOS=0)
     return Vxf
 
-def gmr_lyapunov(x, Priors, Mu, P):
+def gauss_regress_to_lyapunov(x, Priors, Mu, P):
+    """
+        Compute the Lyapunov Function from the
+        Gaussian Mixture Regression Parameters.
+
+        Given a dynamical system xdot = Ax, the Lyapunov
+        function candidate is V(x) = x^T Px, where P is
+        symmetric positive definite matrix.
+
+        The time-derivative of V(x(t)) along the system trajectories
+        is \dot{V} = \dot{x}^T P x + x^T P \dot{x}
+                   = x^T (A^T P + PA) x
+                   = -x^T Q x < 0.
+                   Q is SPD.
+                   The Lyapunov equation is A^TP + PA = -Q.
+    """
     nbData = x.shape[1]
     d = x.shape[0]
     L = P.shape[2]-1

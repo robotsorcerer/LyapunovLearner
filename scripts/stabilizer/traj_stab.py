@@ -34,7 +34,7 @@ def stabilizer(X, gmr_handle, Vxf, rho0, kappa0, **kwargs):
                         f(x).
 
            o Vxf:     A structure variable representing the energy function. This
-                      structure should follow the format explained in learnEnergy.m
+                      structure should follow the format explained in optimize_lyapunov.m
 
            o rho0, kappa0: These parameters impose minimum acceptable rate of decrease
                            in the energy function during the motion. It computes
@@ -89,10 +89,10 @@ def stabilizer(X, gmr_handle, Vxf, rho0, kappa0, **kwargs):
             X = X[d,:]
             Xd, _, _ = gmr_handle(t,X)
         else:
-            debug('Unknown GMR function handle!')
+            debug('Unknown regress_gauss_mix function handle!')
             return
 
-    V, Vx = cost.computeEnergy(X, np.array(()), Vxf)
+    V, Vx = cost.compute_lyapunov(X, np.array(()), Vxf)
 
     norm_Vx = np.sum(Vx**2, axis=0)
     norm_x = np.sum(X**2, axis=0)
@@ -113,7 +113,7 @@ def stabilizer(X, gmr_handle, Vxf, rho0, kappa0, **kwargs):
     if 'dt' in kwargs:
         dt = kwargs['dt']
         Xn = X + np.dot(Xd, dt)
-        Vn = cost.computeEnergy(Xn, np.array(()), Vxf)
+        Vn = cost.compute_lyapunov(Xn, np.array(()), Vxf)
         ind = (Vn >= V)
         i = 0
 
@@ -123,7 +123,7 @@ def stabilizer(X, gmr_handle, Vxf, rho0, kappa0, **kwargs):
                         np.tile(alpha * np.sum(Xd[np.ix_(*indices)] * \
                         Vx[np.ix_(*indices)], axis=0)/norm_Vx[ind], [d, 1])*Vx[np.ix_(*indices)]
             Xn = x + np.dot(Xd, dt)
-            Vn = cost.computeEnergy(Xn, np.array(()), Vxf)
+            Vn = cost.compute_lyapunov(Xn, np.array(()), Vxf)
             ind = Vn >= V
             i = i + 1
 
