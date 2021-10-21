@@ -11,7 +11,7 @@ import numpy as np
 import numpy.random as npr
 import scipy as sp
 import scipy.linalg as LA
-from scipy.optimize import minimize, linprog, NonlinearConstraint, BFGS
+from scipy.optimize import minimize, NonlinearConstraint, BFGS
 from gmm import stack_gmm_params, gauss_params_to_lyapunov, gauss_regress_to_lyapunov
 
 logger = logging.getLogger(__name__)
@@ -115,7 +115,7 @@ class Cost(object):
 
         if L > 0 and options['optimizePriors']:
             idx = slice((L+1)*d, (L+1)*d+L+1)
-            c[idx] = np.expand_dims(-Vxf['Priors'], 1) #np.reshape(-Vxf['Priors'], [L + 1, 1])
+            c[idx] = np.expand_dims(-Vxf['Priors'], 1)
 
         return c.reshape([len(c)])
 

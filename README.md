@@ -112,6 +112,10 @@ Please find the example in the file [clf_demos.ipynb](/notes/clf_demos.ipynb).
 
 ### FAQS
 
++ Why Gaussian and Weighted Regression and not Neural Networks
+
+Gaussian mixtures and locally-weighted regression are efficient and accurate, as opposed to neural networks which are computationally intensive and approximate at best. For real-world autonomous systems, we cannot afford _any_ under-approximation of our system dynamics; otherwise, we'll enjoy the complimentary ride that travels on the superhighway of disgrace to hell.
+
 + Why Consider this CLF correction scheme for stabilizing trajectories over `statistical learning` methods or `dynamic movement primitives`?
 
   -    Dynamic Movement Primitives are do not do well when it comes to learning multiple demos;
@@ -130,9 +134,9 @@ Please find the example in the file [clf_demos.ipynb](/notes/clf_demos.ipynb).
 
 ### Methods
 
-  - Through a clever re-parameterization of robot trajectories, by a so-called weighted sum of asymmetric quadratic functions (WSAQF), and nonlinear optimization, we learn stable Lyapunov attractors for the dynamics of a robot's reaching motion, such that we are guaranteed to settle to non-spurious and stable attractors after optimization;
++ Through a clever re-parameterization of robot trajectories, by a so-called weighted sum of asymmetric quadratic functions (WSAQF), and nonlinear optimization, we learn stable Lyapunov attractors for the dynamics of a robot's reaching motion, such that we are guaranteed to settle to non-spurious and stable attractors after optimization;
 
-  - This code leverages a control Lyapunov function in deriving the control laws used to stabilize spurious regions of attractors that a Gaussian mixture regression may generate;
++ This code leverages a control Lyapunov function in deriving the control laws used to stabilize spurious regions of attractors that a Gaussian mixture regression may generate;
 
 + This code is pretty much easy to follow and adapt for any dynamical system. Matter-of-factly, I used it in learning the dynamics of the Torobo 7-DOF arm in Tokyo ca Summer 2018.
 

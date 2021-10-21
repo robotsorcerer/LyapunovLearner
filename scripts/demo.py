@@ -86,11 +86,13 @@ def main(Vxf0, options):
 
 		Xinit = data[:Vxf['d'], demoIdx[0, :-1]]
 		level_args = dict(disp=True, levels = [], save=True)
+		viz.savedict["savename"]=f"demos_{args.model}.jpg"
 		viz.init_demos(Xinit, save=True)
 		# Optimize and plot the level sets of the Lyapunov function
-		viz.savedict["savename"]="level_sets_w.jpg"
+		viz.savedict["savename"]=f"level_sets_{args.model}.jpg"
 		handles = viz.level_sets(Vxf, cost, **level_args)
 		viz.draw()
+	plt.ioff()
 
 	rho0 = args.rho0
 	kappa0 = args.kappa0
@@ -130,7 +132,6 @@ def main(Vxf0, options):
 	t_hist = np.stack(traj_corr.t_hist)
 	xT = traj_corr.XT
 
-	plt.ioff()
 	plt.close('all')
 	f = plt.figure(figsize=(16, 9))
 	plt.clf()
@@ -164,7 +165,7 @@ def main(Vxf0, options):
 	ax.set_title(f'Corrected Trajectories in the Interval: [{t_hist[0]:.2f}, {t_hist[-1]:.2f}] secs', fontdict=_fontdict)
 
 	savepath=join("scripts", "docs")
-	f.savefig(join(savepath, f'corrected_traj_{traj_corr.model}.jpg'),
+	f.savefig(join(savepath, f'corrected_traj_{args.model}.jpg'),
 					bbox_inches='tight',facecolor='None')
 
 	plt.show()
