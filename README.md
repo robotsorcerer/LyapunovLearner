@@ -114,25 +114,23 @@ Please find examples in the file [clf_demos.ipynb](/notes/clf_demos.ipynb).
 
 + Why Consider this CLF correcction mechanism for stabilizing trajectories over Statistical Learning Methods or Dynamic Movement Primitives?
 
-  -    Dynamic Movement Primitives are typically laden with disadvantages with learning multiple demos;
+  -    Dynamic Movement Primitives are typically laden with the disadvantages associated with learning multiple demos;
 
-  -   Statistical Learning approaches, on the other hand, really do not have a guaranteed way of ensuring learned dynamics are Lyapunov stable;
+  -   Statistical Learning approaches, on the other hand, really do not have a guaranteed way of ensuring the learned dynamics are Lyapunov stable;
 
-  - Through a clever re-parameterization of robot trajectories, by so-called weighted sum of asymmetric quadratic functions (WSAQF), and nonlinear optimization, we learn stable attractors for the dynamics of a robot's motion, such that we are guaranteed to settle to correct attractors during optimization;
+  - Through a clever re-parameterization of robot trajectories, by a so-called weighted sum of asymmetric quadratic functions (WSAQF), and nonlinear optimization, we learn stable attractors for the dynamics of a robot's reaching motion, such that we are guaranteed to settle to correct attractors during optimization;
 
-  - This code leverages a control Lyapunov function in deriving the control laws used to stabilize spurious learned trajectories;
+  - This code leverages a control Lyapunov function in deriving the control laws used to stabilize spurious regions of attractors that a Gaussian mixture regression may generate;
 
 + This code is pretty much easy to follow and adapt for any dynamical system. Matter-of-factly, I used it in learning the dynamics of the Torobo 7-DOF arm in 2018 when I worked in Tokyo.
 
 + What is different between this implementation and Khansari-Zadeh's implementation?
 
-  -  Well, for starters, a cleaner implementation of the Gaussian mixture models used in estimating dynamics along every trajectory sample.
+  -  Well, for starters, a cleaner implementation of the Gaussian mixture models/regressors used in estimating dynamics along every trajectory sample.
 
-  - A straightforward nonlinear optimization of the CLF cost
+  - A straightforward nonlinear optimization of the CLF cost that handles _both inequality and equality constraints._
 
-  - Better handling of constraints.
-
-  - Written in python and easy to port to other open-source robot libraries.
+  - Written in python and easy to port to other open-source robot libraries, as opposed to .
 
 ### TODOs
 
@@ -140,6 +138,7 @@ Please find examples in the file [clf_demos.ipynb](/notes/clf_demos.ipynb).
 
 + Add options for plotting different level sets for the Lyapunov Function.
 
++ Fix bug in WSAQF when `L` is started above `1` for a demo.
 
 ### Citation
 
@@ -152,6 +151,6 @@ If you use `LyapunovLearner` in your work, please cite it:
   title = {{Learning Control Lyapunov Functions}},
   year = {2021},
   howpublished = {\url{https://github.com/lakehanne/LyapunovLearner}},
-  note = {Accessed February 10, 2020}
+  note = {Accessed October 20, 2021}
 }
 ```
