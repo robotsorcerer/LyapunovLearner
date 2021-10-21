@@ -24,9 +24,9 @@ For recorded WAM robot end-effector trajectories on a 2D plane (there are two pr
 
 The left image below denotes a demonstration of the robot drawing the letter `S` from three different initial conditions, and converging to an attractor at the origin; while the right image denotes the Gaussian Mixture Regression-based CLF that corrects the trajectories in a piecewise manner as we feed the algorithm the data.
 
-### Stable Trajectory Corrections
+### Learning Stable Trajectories Demos
 
-S-shaped Demo Corrections:
+S-shaped demos from three different initial conditions.
 
 <div align="center">
  <img src="/scripts/docs/demos_s.jpg" height="400px" width="350px">
@@ -35,12 +35,14 @@ S-shaped Demo Corrections:
 
 W-shaped Demo Corrections:
 
+W-shaped demos from three different initial conditions.
+
 <div align="center">
  <img src="/scripts/docs/demos_w.jpg" height="400px" width="350px">
   <img src="/matlab/Doc/w_corrections.gif" height="400px" width="350px">
 </div>
 
-#### S-Shaped Planar (Task-Space) Demos and Motion Corrections.
+#### S-Stabilized Trajectories.
 
 <div align="center">
  <img src="/scripts/docs/demos_s.jpg" height="400px" width="350px">
@@ -83,12 +85,6 @@ And that about wraps up setting up!
 
   where angle brackets denote defaults.
 
-#### Example python usage [with options]:
-
-  ```
-    python scripts\demo.py -pz .1 --silent --model s -tn 20000                                               
-  ```
-
 #### Options
 
 + `--silent/-si`: Optimize the control Lyapunov function in silent mode.
@@ -105,6 +101,12 @@ And that about wraps up setting up!
 
 + `--rho0/-rh`: Coefficient of class-Kappa function.
 
+#### Example python usage [with options]:
+
+  ```
+    python scripts\demo.py -pz .1 --silent --model s -tn 20000                                               
+  ```
+  
 #### Jupyter Notebook Interactive Example
 
 Please find examples in the file [clf_demos.ipynb](/notes/clf_demos.ipynb).
