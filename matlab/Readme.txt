@@ -26,7 +26,7 @@ Please send your feedbacks or questions to:
 
 
 This source code include two matlab functions: 'demo_Plot_Results.m' and 
-'demo_CLFDM_Learning.m', and 4 subdirectories: 'CLFDM_lib', 'GMR_lib', 
+'demo_CLFDM_Learning.m', and 4 subdirectories: 'CLFDM_lib', 'regress_gauss_mix_lib', 
 'ExampleModels', and 'Doc'.
 
 demo_CLFDM_Learning: a matlab script illustrating how to use CLFDM_lib to learn
@@ -35,7 +35,7 @@ demo_CLFDM_Learning: a matlab script illustrating how to use CLFDM_lib to learn
 CLFDM_lib: contains code which implements CLFDM. See the document 'Doc/SEDS_Slides.pdf' 
            for further details about this library.
 
-GMR_lib: A library for Gaussian Mixture Model. We use this library just for illustrative
+regress_gauss_mix_lib: A library for Gaussian Mixture Model. We use this library just for illustrative
          purpose. Feel free to use any library that you want for encoding the motion.
 
 ExampleModels: contains two handwriting motions recorded from Tablet-PC.
@@ -44,4 +44,4 @@ Doc: It includes Khansari_Billard_RAS2014.pdf, which is the original paper on CL
 
 When running the demos, it is assumed that your current directory is the
 CLFDM_package directory. Otherwise, you should manually add both the 'CLFDM_lib'
-and 'GMR_lib' directories to the matab path.
+and 'regress_gauss_mix_lib' directories to the matab path.

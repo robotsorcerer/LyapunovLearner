@@ -15,7 +15,7 @@ import logging
 import numpy as np
 import matplotlib.pyplot as plt
 from gmm.gmm import GMM
-from gmm.gaussian_reg import GMR
+from gmm.gaussian_reg import regress_gauss_mix
 
 from os.path import join, dirname, abspath
 sys.path.append(dirname(dirname(abspath(__file__) ) ) )
@@ -39,7 +39,6 @@ parser.add_argument('--model', '-md', type=str, default='w', help='s|w ==> which
 parser.add_argument('--off_priors', '-op', action='store_true', default=True, help='use KZ\'s offline priors or use ours')
 parser.add_argument('--visualize', '-vz', action='store_true', default=True, help='visualize ROAs?' )
 args = parser.parse_args()
-print('args ', args)
 
 
 if args.silent:
@@ -66,7 +65,7 @@ def main(Vxf0, options):
 	"Learn Lyapunov Function Strictly from Data"
 	while cost.success:
 		info('Optimizing the lyapunov function')
-		Vxf, J = cost.learnEnergy(Vxf0, data, options)
+		Vxf, J = cost.optimize_lyapunov(Vxf0, data, options)
 		old_l = Vxf0['L']
 		Vxf0['L'] += 1
 		print('Constraints violated. increasing the size of L from {} --> {}'.format(old_l, Vxf0['L']))
@@ -85,15 +84,18 @@ def main(Vxf0, options):
 		                labels=['Trajs', 'Dt(Trajs)']*2, alphas = [.15]*4,
 		                fontdict=fontdict)
 
+		Xinit = data[:Vxf['d'], demoIdx[0, :-1]]
 		level_args = dict(disp=True, levels = [], save=True)
-		viz.init_demos(save=True)
+		viz.savedict["savename"]=f"demos_{args.model}.jpg"
+		viz.init_demos(Xinit, save=True)
 		# Optimize and plot the level sets of the Lyapunov function
-		viz.savedict["savename"]="level_sets_w.jpg"
+		viz.savedict["savename"]=f"level_sets_{args.model}.jpg"
 		handles = viz.level_sets(Vxf, cost, **level_args)
 		viz.draw()
+	plt.ioff()
 
 	rho0 = args.rho0
-	kappa0 = args.kappa0 #0.1
+	kappa0 = args.kappa0
 
 	# get gmm params
 	if args.off_priors:
@@ -107,13 +109,11 @@ def main(Vxf0, options):
 	traj = list(range(Vxf['d']))
 	traj_derivs = np.arange(Vxf['d'], 2 * Vxf['d'])
 	# print(f'demoIdx: {demoIdx}')
-	Xinit = data[:Vxf['d'], demoIdx[0, :-1]]
 	stab_args = {'time_varying': False, 'cost': cost}
-	gmr_handle = lambda x: GMR(priors, mu, sigma, x, traj, traj_derivs)
+	gmr_handle = lambda x: regress_gauss_mix(priors, mu, sigma, x, traj, traj_derivs)
 	stab_handle = lambda x: stabilizer(x, gmr_handle, Vxf, rho0, kappa0, **stab_args) #, priors, mu, sigma
 
-	# if args.traj_nums:
-	# Hatrdcoding this since I know what to expect from the prerecorded demos
+	# Hardcoding this since I know what to expect from the prerecorded demos
 	if args.model =='s':
 		args.traj_nums = 20e3
 	elif args.model == 'w':
@@ -132,7 +132,6 @@ def main(Vxf0, options):
 	t_hist = np.stack(traj_corr.t_hist)
 	xT = traj_corr.XT
 
-	plt.ioff()
 	plt.close('all')
 	f = plt.figure(figsize=(16, 9))
 	plt.clf()
@@ -166,7 +165,7 @@ def main(Vxf0, options):
 	ax.set_title(f'Corrected Trajectories in the Interval: [{t_hist[0]:.2f}, {t_hist[-1]:.2f}] secs', fontdict=_fontdict)
 
 	savepath=join("scripts", "docs")
-	f.savefig(join(savepath, f'corrected_traj_{traj_corr.model}.jpg'),
+	f.savefig(join(savepath, f'corrected_traj_{args.model}.jpg'),
 					bbox_inches='tight',facecolor='None')
 
 	plt.show()

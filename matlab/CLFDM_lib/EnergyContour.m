@@ -70,9 +70,9 @@ y = linspace(D(3),D(4),ny);
 x = [X(:) Y(:)]';
 
 if b_plot_stream
-    [V dV] = computeEnergy(x,[],Vxf);
+    [V dV] = compute_lyapunov(x,[],Vxf);
 else
-    V = computeEnergy(x,[],Vxf);
+    V = compute_lyapunov(x,[],Vxf);
 end
 
 if isempty(countour_levels)

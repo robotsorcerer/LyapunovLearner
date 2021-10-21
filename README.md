@@ -1,24 +1,50 @@
 ### One Hell of a Lyapunov Learner.
 
-This code largely implements Learning CLFs using the SEDS paper by Khansari-Zadeh. See original code in [matlab](/matlab)
+This code implements Learning Control Lyapunov Functions, or CLFs, by leveraging the _Stable Estimation of Dynamic Systems_ paper from Aude Billard's group at EPFL. For details, please consult
+
+```
+   S.M. Khansari-Zadeh and A. Billard (2014), "Learning Control Lyapunov Function
+   to Ensure Stability of Dynamical System-based Robot Reaching Motions."
+   Robotics and Autonomous Systems, vol. 62, num 6, p. 752-765.
+```
+
+One may find the MATLAB version of this implementation in the [matlab](/matlab) subfolder.
 
 <!-- (https://bitbucket.org/khansari/clfdm/src/master/demo_CLFDM_Learning.m). -->
 
-+ Khansari-Zadeh's has a subtle example that illustrates the advantages of SEDS over DMPs, LWPRs, GMRs etc in his [2014 Autonomous Systems paper](/scripts/docs/AUS.pdf), and reproduced below:
+Khansari-Zadeh has a subtle example that illustrates the advantages of SEDS over DMPs, LWPRs, regress_gauss_mixs etc in his [2014 Autonomous Systems paper](/scripts/docs/AUS.pdf), and reproduced below:
 
 <div align="center">
  <img src="/scripts/docs/seds_gmr.jpg" height="680px" width="600">
 </div>
 
-### Example Results on a Robot's Task Space Trajectories.
+### Learning Stable Task-Space Trajectories.
 
-+ For the pre-recorded trajectories (demos) of the end-effector points in a 2D plane for the WAM robot (see the `*mat` files in the folder [scripts/data/](/scripts/data/)), if we run the [demo.py](/scripts/demo.py) file with the `w` model (resp. with the `s` model), we should have trajectory demos converging to a region of attractor at the origin. The left images in the figure denote the demonstrations, while the right images denote the control-Lyapunov Function and Gaussian Mixture Regression corrected trajectories. Pretty cool, init?
+For recorded WAM robot end-effector trajectories on a 2D plane (there are two pre-recorded demos available in the [data](scripts/data) directory), the task is to stabilize pre-recorded trajectories using a combo of GMMs, Gaussian Mixture Regression, and Control Lyapunov Functions -- all learned from data.
 
-#### S-Shaped Planar (Task-Space) Demos and Motion Corrections
+The left image below denotes a demonstration of the robot drawing the letter `S` from three different initial conditions, and converging to an attractor at the origin; while the right image denotes the Gaussian Mixture Regression-based CLF that corrects the trajectories in a piecewise manner as we feed the algorithm the data.
+
+### Learning Stable Trajectories Demos
+
+S-shaped demos from three different initial conditions.
 
 <div align="center">
  <img src="/scripts/docs/demos_s.jpg" height="400px" width="350px">
-  <img src="/scripts/docs/corrected_traj_s.jpg" height="400px" width="350px">
+  <img src="/matlab/Doc/s_corrections.gif" height="380px" width="380px">
+</div>
+
+W-shaped demos from three different initial conditions.
+
+<div align="center">
+ <img src="/scripts/docs/demos_w.jpg" height="400px" width="350px">
+  <img src="/matlab/Doc/w_corrections.gif" height="380px" width="380px">
+</div>
+
+#### S-Stabilized Trajectories.
+
+<div align="center">
+ <img src="/scripts/docs/demos_s.jpg" height="400px" width="350px">
+  <img src="/scripts/docs/corrected_traj_s.jpg" height="400px" width="380px">
 </div>
 
 <!-- #### S-Shaped Planar (Task-Space) Demos and Motion Corrections
@@ -28,98 +54,113 @@ This code largely implements Learning CLFs using the SEDS paper by Khansari-Zade
   <img src="/scripts/docs/corrected_traj_w.jpg" height="400px" width="350px">
 </div> -->
 
-Correcting the trajectories with Control Lyapunov Function, we will obtain the following:
-
-<div align="center">
- <img src="/matlab/Doc/w_corrections.gif" height="400px" width="350px">
-  <img src="/matlab/Doc/s_corrections.gif" height="400px" width="350px">
-</div>
-
 ### Setup.
 
-Dependencies:
+Dependencies: Scipy | Numpy | Matplotlib.
 
-+ scipy
+Installed with
 
-+ numpy
+  ```
+    pip install -r requirements.txt .
+  ```
 
-+ matplotlib
-
-All of these can be installed with
-
-```
-  pip install -r requirements.txt
-```
-
-And that about wraps up setting up!
+And that about wraps up setting stuff up!
 
 
 ### Usage
 
-Basic Usage:
+#### Basic Python Usage:
 
 ```
   python scripts/demo.py
 ```
 
-Advanced Usage [with Options]:
+#### Python Usage [with options]:
 
   ```
-    python scripts/demo.py [--silent|-si] [--model|-md] <s|w>  [--pause|-pz] <2> [--visualize|-vz] [--kappa0|-kp] <.1> [--rho0|-rh] <1.0>
+    python scripts/demo.py [--silent|-si] [--model|-md] <s|w>  [--pause|-pz] <2> [--visualize|-vz] [--kappa0|-kp] <.1> [--rho0|-rh] <1.0> [--traj_num|-tn] <20e3>
   ```
 
   where angle brackets denote defaults.
 
 #### Options
 
-+ `--silent/-si`: Optimize the Lyapunov function in silent mode.
++ `--silent/-si`: Optimize the control Lyapunov function in silent mode.
 
 + `--model/-md`: Which saved model to use? `w` or `s`.
 
-+ `--visualize/-vz`: Do we want to visualize the regions of attraction of the Lyapunov dynamics as we are updating the system on screen?
++ `--visualize/-vz`: Do we want to visualize the regions of attractor (ROA) of the Lyapunov dynamics?
 
-+ `--pause_time/-pz`: Time between updating the stabilization of the dynamical system on the pyplot display screen.
++ `--pause_time/-pz`: Time between updating the stabilization of the dynamical system's reaching motions on the `pyplot` display screen.
 
-+ `--kappa0/-kp`: exponential coeff. in class-Kappa function.
++ `--kappa0/-kp`: Exponential coefficient in the class-Kappa function that guarantees `V` is positive outside the equilibrium point/region (see paper referenced above for details).
 
-+ `--rho0/-rh`: coeff. of class-Kappa function.
++ `--traj_num/-tn`: Length of time to simulate trajectory corrections.
+
++ `--rho0/-rh`: Coefficient of class-Kappa function (see paper referenced above for details).
+
+#### Example python usage [with options]:
+
+  ```
+    python scripts\demo.py -pz .1 --silent --model s -tn 20000                                               
+  ```
+
+#### Jupyter Notebook Interactive Example
+
+Please find the example in the file [clf_demos.ipynb](/notes/clf_demos.ipynb).
+
 
 ### FAQS
 
-+ Why Consider this CLF correcction mechanism for stabilizing trajectories over Statistical Learning Methods or Dynamic Movement Primitives?
++ Why Gaussian and Weighted Regression and not Neural Networks
 
-  -    Dynamic Movement Primitives are typically laden with disadvantages with learning multiple demos;
+Gaussian mixtures and locally-weighted regression are efficient and accurate, as opposed to neural networks which are computationally intensive and approximate at best. For real-world autonomous systems, we cannot afford _any_ under-approximation of our system dynamics; otherwise, we'll enjoy the complimentary ride that travels on the superhighway of disgrace to hell.
 
-  -   Statistical Learning approaches, on the other hand, really do not have a guaranteed way of ensuring learned dynamics are Lyapunov stable;
++ Why Consider this CLF correction scheme for stabilizing trajectories over `statistical learning` methods or `dynamic movement primitives`?
 
-  - Through a clever re-parameterization of robot trajectories, by so-called weighted sum of asymmetric quadratic functions (WSAQF), and nonlinear optimization, we learn stable attractors for the dynamics of a robot's motion, such that we are guaranteed to settle to correct attractors during optimization;
+  -    Dynamic Movement Primitives are do not do well when it comes to learning multiple demos;
 
-  - This code leverages a control Lyapunov function in deriving the control laws used to stabilize spurious learned trajectories;
+  -   Statistical Learning approaches, on the other hand, really do not have a guaranteed way of ensuring the learned dynamics are Lyapunov stable;
 
-+ This code is pretty much easy to follow and adapt for any dynamical system. Matter-of-factly, I used it in learning the dynamics of the Torobo 7-DOF arm in 2018 when I worked in Tokyo.
++ What is different between this and the matlab implementation?
 
-+ What is different between this implementation and Khansari-Zadeh's implementation?
+  -  Well, for starters, a cleaner implementation of the Gaussian mixture models/regressors used in estimating dynamics along every trajectory sample.
 
-  -  Well, for starters, a cleaner implementation of the Gaussian mixture models used in estimating dynamics along every trajectory sample.
+  - A straightforward CLF learner.
+
+  - A straightforward nonlinear optimization of the CLF cost that handles both _inequality and equality_  constraints.
+
+  - Written in python and easy to port to other open-source robot libraries.
+
+### Methods
+
++ Through a clever re-parameterization of robot trajectories, by a so-called weighted sum of asymmetric quadratic functions (WSAQF), and nonlinear optimization, we learn stable Lyapunov attractors for the dynamics of a robot's reaching motion, such that we are guaranteed to settle to non-spurious and stable attractors after optimization;
+
++ This code leverages a control Lyapunov function in deriving the control laws used to stabilize spurious regions of attractors that a Gaussian mixture regression may generate;
+
++ This code is pretty much easy to follow and adapt for any dynamical system. Matter-of-factly, I used it in learning the dynamics of the Torobo 7-DOF arm in Tokyo ca Summer 2018.
 
 ### TODOs
 
-+ Add quivers to level sets plot.
++ Add quivers to Lyapunov Function's level sets plot.
 
 + Add options for plotting different level sets for the Lyapunov Function.
 
++ Intelligently initialize the Lyapunov Function so optimization iterations do not take such a long time to converge.
+
++ Add real-time trajectory plotter as the CLF stabilizes the trajectories during demo executions.
+
++ Fix bug in WSAQF when `L` is started above `1` for a demo.
 
 ### Citation
 
-If you used `LyapunovLearner` in your work, please cite it:
-
-
+If you use `LyapunovLearner` in your work, please cite it:
 ```tex
 @misc{LyapunovLearner,
   author = {Ogunmolu, Olalekan and Thompson, Rachel Skye and Pérez-Dattari, Rodrigo},
   title = {{Learning Control Lyapunov Functions}},
   year = {2021},
   howpublished = {\url{https://github.com/lakehanne/LyapunovLearner}},
-  note = {Accessed February 10, 2020}
+  note = {Accessed October 20, 2021}
 }
 ```

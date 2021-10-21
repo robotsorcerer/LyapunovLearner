@@ -1,3 +1,11 @@
+__author__ 		= "Lekan Molu"
+__copyright__ 	= "Lekan Molu, One Hell of a Lyapunov Solver"
+__credits__  	= "Rachel Thomson (MIT), Pérez-Dattari, Rodrigo (TU Delft)"
+__license__ 	= "MIT"
+__maintainer__ 	= "Lekan Molu"
+__email__ 		= "patlekno@icloud.com"
+__status__ 		= "Completed"
+
 import numpy as np
 import logging
 import time
@@ -12,6 +20,10 @@ eps = sys.float_info.epsilon
 # order_type = FLAGS.order #'F' or C for default C order
 order_type = 'C'
 
+"""
+   Copyright (c) Lekan Molux. https://scriptedonachip.com
+   2021.
+"""
 class Bundle(object):
     def __init__(self, dicko):
         for var, val in dicko.items():

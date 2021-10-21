@@ -1,3 +1,11 @@
+__author__ 		= "Lekan Molu"
+__copyright__ 	= "Lekan Molu, One Hell of a Lyapunov Solver"
+__credits__  	= "Rachel Thomson (MIT), Pérez-Dattari, Rodrigo (TU Delft)"
+__license__ 	= "MIT"
+__maintainer__ 	= "Lekan Molu"
+__email__ 		= "patlekno@icloud.com"
+__status__ 		= "Testing"
+
 import numpy as np
 import scipy.linalg as LA
 import matplotlib.pyplot as plt
@@ -11,15 +19,15 @@ def plotGMM(mu, sigma, color, display_mode, *args):
 
      This function plots a representation of the components (means and
      covariance amtrices) of a Gaussian Mixture Model (GMM) or a
-     Gaussian Mixture Regression (GMR).
+     Gaussian Mixture Regression (regress_gauss_mix).
 
      Inputs -----------------------------------------------------------------
        o mu:           D x K array representing the centers of the K GMM components.
        o sigma:        D x D x K array representing the covariance matrices of the
                        K GMM components.
        o color:        Color used for the representation
-       o display_mode: Display mode (1 is used for a GMM, 2 is used for a GMR
-                       with a 2D representation and 3 is used for a GMR with a
+       o display_mode: Display mode (1 is used for a GMM, 2 is used for a regress_gauss_mix
+                       with a 2D representation and 3 is used for a regress_gauss_mix with a
                        1D representation).
 
      Copyright (c) 2006 Sylvain Calinon, LASA Lab, EPFL, CH-1015 Lausanne,

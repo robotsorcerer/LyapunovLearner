@@ -1,4 +1,4 @@
-function [Vxf J] = learnEnergy(Vxf0,Data,options)
+function [Vxf J] = optimize_lyapunov(Vxf0,Data,options)
 %
 % CLFDM software package: version 1.0, released on 23 March 2015
 %
@@ -6,7 +6,7 @@ function [Vxf J] = learnEnergy(Vxf0,Data,options)
 % demonstrations.
 %
 % Syntax:
-%       [Vxf J] = learnEnergy(Vxf0,Data,options)
+%       [Vxf J] = optimize_lyapunov(Vxf0,Data,options)
 %
 % to also pass a structure of desired options.
 %
@@ -193,10 +193,10 @@ if L == -1
     Vxf.P = reshape(p,Vxf.n*d,Vxf.n*d);
     Vxf.SOS = 1;
 else
-    Vxf = shape_DS(p,d,L,options);
+    Vxf = gauss_params_to_lyapunov(p,d,L,options);
 end
 
-[~, Vx] = computeEnergy(x,[],Vxf);
+[~, Vx] = compute_lyapunov(x,[],Vxf);
 Vdot = sum(Vx.*xd,1); %derivative of J w.r.t. xd
 norm_Vx = sqrt(sum(Vx.*Vx,1));
 norm_xd = sqrt(sum(xd.*xd,1));
@@ -223,7 +223,7 @@ if L == -1 %SOS
     c  = zeros(Vxf.n*d,1);
     ceq = [];
 else
-    Vxf = shape_DS(p,d,L,options);
+    Vxf = gauss_params_to_lyapunov(p,d,L,options);
     if L > 0
         c  = zeros((L+1)*d+(L+1)*options.optimizePriors,1); %+options.variableSwitch
         if options.upperBoundEigenValue
@@ -257,7 +257,7 @@ if L > 0 && options.optimizePriors
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function Vxf = shape_DS(p,d,L,options)
+function Vxf = gauss_params_to_lyapunov(p,d,L,options)
 % transforming the column of parameters into Priors, Mu, and P
 P = zeros(d,d,L+1);
 
@@ -325,7 +325,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Vxf = Parameters_2_GMM(popt,d,L,options)
 % transforming the column of parameters into Priors, Mu, and P
-Vxf = shape_DS(popt,d,L,options);
+Vxf = gauss_params_to_lyapunov(popt,d,L,options);
 
 % if options.normalization
 %     for k=1:K

@@ -8,7 +8,18 @@ __status__ 		= "Completed"
 
 import scipy.io as sio
 
-def load_saved_mat_file(x): #, **kwargs):
+def load_saved_mat_file(x):
+    """
+        Loads a matlab file from a subdirectory.
+
+        Inputs:
+            x: path to data on HDD
+
+            
+       Copyright (c) Lekan Molux. https://scriptedonachip.com
+       2021.
+    """
+
     matFile = sio.loadmat(x)
 
     data = matFile['Data']

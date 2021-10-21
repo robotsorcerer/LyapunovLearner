@@ -1,12 +1,10 @@
-from __future__ import print_function
-
 __author__ 		= "Lekan Molu"
 __copyright__ 	= "Lekan Molu, One Hell of a Lyapunov Solver"
 __credits__  	= "Rachel Thomson (MIT), Pérez-Dattari, Rodrigo (TU Delft)"
 __license__ 	= "MIT"
 __maintainer__ 	= "Lekan Molu"
 __email__ 		= "patlekno@icloud.com"
-__status__ 		= "Testing"
+__status__ 		= "Completed"
 
 import numpy as np
 import logging
@@ -14,44 +12,45 @@ logger = logging.getLogger(__name__)
 
 
 def matlength(x):
-  # find the max of a numpy matrix dims
+  "find the max of a numpy matrix dims"
   return np.max(x.shape)
 
-def gmm_2_parameters(Vxf, options):
-    # transforming optimization parameters into a column vector
-    # Correct implementation
+def stack_gmm_params(Vxf, options):
+    """
+        Transforms optimization parameters into a column vector
+    """
     d = Vxf['d']
     if Vxf['L'] > 0:
         if options['optimizePriors']:
-            p0 = np.vstack((np.expand_dims(np.ravel(Vxf['Priors']), axis=1),  # will be a x 1
+            p0 = np.vstack((np.expand_dims(np.ravel(Vxf['Priors']), axis=1),
                             np.expand_dims(Vxf['Mu'][:, 1:], axis=1).reshape(Vxf['L'] * d, 1)))
         else:
-            p0 = Vxf['Mu'][:, 1:].reshape(Vxf['L'] * d, 1)  # print(p0) # p0 will be 4x1
+            p0 = Vxf['Mu'][:, 1:].reshape(Vxf['L'] * d, 1)
     else:
         p0 = np.array(())
 
     for k in range(Vxf['L']):
         p0 = np.vstack((p0, Vxf['P'][:, :, k].reshape(d ** 2, 1)))
+
     # For some weird reason, I cannot identify this bug so I manually add the last L+1 term outside the loop
     p0 = np.vstack((p0, Vxf['P'][:, :, Vxf['L']].reshape(d ** 2, 1)))
+
     return p0
 
-def parameters_2_gmm(popt, d, L, options):
-    # transforming the column of parameters into Priors, Mu, and P
-    return shape_DS(popt, d, L, options)
-
-def shape_DS(p, d, L, options):
+def gauss_params_to_lyapunov(p, d, L, options):
     """
-        Transform the column of parameters into Priors, Mu, and P
+        Transform the column of Gaussian
+        parameters into Gaussian Priors, Mu,
+        and symmetric positive definite, P.
     """
     P = np.zeros((d, d, L + 1))
     optimizePriors = options['optimizePriors']
-    if L == 0: # L should never be zero
+    if L == 0:
         Priors = 1
         Mu = np.zeros((d, 1))
         i_c = 0
     else:
-        if optimizePriors:  # options['optimizePriors']:
+        if optimizePriors:
             Priors = p[:L+1]
             i_c = L+1
         else:
@@ -64,12 +63,9 @@ def shape_DS(p, d, L, options):
         p_ind = p[p_idx].reshape(d, L)
         Mu = np.hstack((mu_term1, p_ind))
         i_c+=(d*L)
-        # correct
 
-    #print(p)
     for k in range(L):
         p_ind = np.arange(i_c+k*d**2, i_c+(k+1)*d**2, dtype=np.intp)
-        # correct
         P[:,:,k] = p[np.ix_(p_ind)].reshape(d, d)
     Vxf = dict(Priors=Priors,
                Mu=Mu,
@@ -77,26 +73,22 @@ def shape_DS(p, d, L, options):
                SOS=0)
     return Vxf
 
-def gmm_2_parameters(Vxf, options):
-    # transforming optimization parameters into a column vector
-    # Correct implementation
-    d = Vxf['d']
-    if Vxf['L'] > 0:
-        if options['optimizePriors']:
-            p0 = np.vstack((np.expand_dims(np.ravel(Vxf['Priors']), axis=1),  # will be a x 1
-                            np.expand_dims(Vxf['Mu'][:, 1:], axis=1).reshape(Vxf['L'] * d, 1)))
-        else:
-            p0 = Vxf['Mu'][:, 1:].reshape(Vxf['L'] * d, 1)  # print(p0) # p0 will be 4x1
-    else:
-        p0 = np.array(())
+def gauss_regress_to_lyapunov(x, Priors, Mu, P):
+    """
+        Compute the Lyapunov Function from the
+        Gaussian Mixture Regression Parameters.
 
-    for k in range(Vxf['L']):
-        p0 = np.vstack((p0, Vxf['P'][:, :, k].reshape(d ** 2, 1)))
-    # For some weird reason, I cannot identify this bug so I manually add the last L+1 term outside the loop
-    p0 = np.vstack((p0, Vxf['P'][:, :, Vxf['L']].reshape(d ** 2, 1)))
-    return p0
+        Given a dynamical system xdot = Ax, the Lyapunov
+        function candidate is V(x) = x^T Px, where P is
+        symmetric positive definite matrix.
 
-def gmr_lyapunov(x, Priors, Mu, P):
+        The time-derivative of V(x(t)) along the system trajectories
+        is \dot{V} = \dot{x}^T P x + x^T P \dot{x}
+                   = x^T (A^T P + PA) x
+                   = -x^T Q x < 0.
+                   Q is SPD.
+                   The Lyapunov equation is A^TP + PA = -Q.
+    """
     nbData = x.shape[1]
     d = x.shape[0]
     L = P.shape[2]-1

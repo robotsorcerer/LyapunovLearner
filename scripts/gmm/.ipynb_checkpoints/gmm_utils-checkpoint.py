@@ -18,7 +18,7 @@ def matlength(x):
   return np.max(x.shape)
 
 
-def gaussPDF(data, mu, sigma):
+def get_pdf(data, mu, sigma):
     if data.ndim == 1:
         nbVar, nbdata = 1, len(data)
     else:
@@ -37,7 +37,7 @@ def gaussPDF(data, mu, sigma):
     return prob
 
 
-def GMR(Priors, Mu, Sigma, x, inp, out, nargout=3):
+def regress_gauss_mix(Priors, Mu, Sigma, x, inp, out, nargout=3):
     nbData   = x.shape[-1] if x.ndim > 1 else 1
     nbVar    = Mu.shape[0]
     nbStates = Sigma.shape[2]//2
@@ -49,7 +49,7 @@ def GMR(Priors, Mu, Sigma, x, inp, out, nargout=3):
                   Sigma.shape, x.shape, nbVar))
     for i in range(nbStates):
         # print('Sigma[inp,inp,i]: ', Sigma[inp,inp,i].shape)
-        gaussOutput = gaussPDF(x, Mu[inp,i], Sigma[inp,inp,i])
+        gaussOutput = get_pdf(x, Mu[inp,i], Sigma[inp,inp,i])
         Pxi[:,i] = Priors[i] * gaussOutput
 
     # print('Pxi: {} Pxi tiled: {} '.format(Pxi.shape, \
@@ -87,7 +87,7 @@ def GMR(Priors, Mu, Sigma, x, inp, out, nargout=3):
     return y, Sigma_y, beta
 
 
-def gmm_2_parameters(Vxf, options):
+def stack_gmm_params(Vxf, options):
     # transforming optimization parameters into a column vector
     d = Vxf['d']
     if Vxf['L'] > 0:
@@ -107,10 +107,10 @@ def gmm_2_parameters(Vxf, options):
 
 def parameters_2_gmm(popt, d, L, options):
     # transforming the column of parameters into Priors, Mu, and P
-    return shape_DS(popt, d, L, options)
+    return gauss_params_to_lyapunov(popt, d, L, options)
 
 
-def shape_DS(p, d, L, options):
+def gauss_params_to_lyapunov(p, d, L, options):
     # transforming the column of parameters into Priors, Mu, and P
     P = np.zeros((L + 1, d, d))
     optimizePriors = options['optimizePriors']
@@ -142,7 +142,7 @@ def shape_DS(p, d, L, options):
     return Vxf
 
 
-def gmr_lyapunov(x, Priors, Mu, P):
+def gauss_regress_to_lyapunov(x, Priors, Mu, P):
     # print('x.shape: ', x.shape)
     nbData = x.shape[1]
     d = x.shape[0]

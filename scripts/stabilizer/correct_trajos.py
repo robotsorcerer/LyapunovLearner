@@ -14,7 +14,7 @@ from utils.gen_utils import *
 from numpy import all, abs
 from matplotlib import pyplot as plt
 import matplotlib.gridspec as gridspec
-from visualization.realtime_plotter import RealTimePlotter
+# from visualization.realtime_plotter import RealTimePlotter
 
 def run_demo(demo_func):
     demo_thread = threading.Thread(target=demo_func)
@@ -126,9 +126,9 @@ def CorrectTrajectories(x0,xT,stab_handle,kwargs):
 		fig = plt.figure(figsize=options.winsize)
 		gs = gridspec.GridSpec(1, 1)
 
-		realtime_plotter = RealTimePlotter(fig, gs[0],
-						labels=['$X_1$', '$X_2$', '$X_3$'], nbSPoint=nbSPoint,
-			 			alphas=[.15, .15, .15], time_window=10)
+		# realtime_plotter = RealTimePlotter(fig, gs[0],
+		# 				labels=['$X_1$', '$X_2$', '$X_3$'], nbSPoint=nbSPoint,
+		# 	 			alphas=[.15, .15, .15], time_window=10)
 
 		# f = plt.figure(figsize=options.winsize)
 		# plt.clf()
@@ -193,11 +193,11 @@ def CorrectTrajectories(x0,xT,stab_handle,kwargs):
 		x_hist.append(x)
 		xd_hist.append(xd)
 
-		# update(x, XT)
-		if options.plot:
-			realtime_plotter._time_window = t
-			run_demo(realtime_plotter.update(x, xT))
-			time.sleep(options.pause_time)
+		# # update(x, XT)
+		# if options.plot:
+		# 	realtime_plotter._time_window = t
+		# 	run_demo(realtime_plotter.update(x, xT))
+		# 	time.sleep(options.pause_time)
 
 		# ax = f.gca()
 		# ax.grid('on')

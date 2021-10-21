@@ -1,10 +1,10 @@
 __author__ 		= "Lekan Molu"
-__copyright__ 	= "2018, One Hell of a Lyapunov Solver"
-__credits__  	= "Rachel Thompson (MIT), Jethro Tan (PFN)"
+__copyright__ 	= "Lekan Molu, One Hell of a Lyapunov Solver"
+__credits__  	= "Rachel Thomson (MIT), Pérez-Dattari, Rodrigo (TU Delft)"
 __license__ 	= "MIT"
 __maintainer__ 	= "Lekan Molu"
 __email__ 		= "patlekno@icloud.com"
-__status__ 		= "Testing"
+__status__ 		= "Completed"
 
 import sys
 import numpy as np
@@ -34,7 +34,7 @@ def stabilizer(X, gmr_handle, Vxf, rho0, kappa0, **kwargs):
                         f(x).
 
            o Vxf:     A structure variable representing the energy function. This
-                      structure should follow the format explained in learnEnergy.m
+                      structure should follow the format explained in optimize_lyapunov.m
 
            o rho0, kappa0: These parameters impose minimum acceptable rate of decrease
                            in the energy function during the motion. It computes
@@ -65,27 +65,12 @@ def stabilizer(X, gmr_handle, Vxf, rho0, kappa0, **kwargs):
                        information, you do NOT need to add it to the output
                        velocity!
 
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        %%%         Copyright (c) 2014 Mohammad Khansari, LASA Lab, EPFL,       %%%
-        %%%          CH-1015 Lausanne, Switzerland, http://lasa.epfl.ch         %%%
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-         The program is free for non-commercial academic use. Please contact the
-         author if you are interested in using the software for commercial purposes.
-         The software must not be modified or distributed without prior permission
-         of the authors. Please acknowledge the authors in any academic publications
-         that have made use of this code or part of it. Please use this BibTex
-         reference:
-
          S.M. Khansari-Zadeh and A. Billard (2014), "Learning Control Lyapunov Function
          to Ensure Stability of Dynamical System-based Robot Reaching Motions."
          Robotics and Autonomous Systems, vol. 62, num 6, p. 752-765.
 
-         To get latest update of the software please visit
-                                  http://cs.stanford.edu/people/khansari/
-
-         Please send your feedbacks or questions to:
-                                  khansari_at_cs.stanford.edu
+         Copyright (c) Lekan Molux. https://scriptedonachip.com
+         2021.
     """
     if not 'cost' in kwargs:
         error('User must supply the Control Lyapunov Function Cost.')
@@ -104,10 +89,10 @@ def stabilizer(X, gmr_handle, Vxf, rho0, kappa0, **kwargs):
             X = X[d,:]
             Xd, _, _ = gmr_handle(t,X)
         else:
-            debug('Unknown GMR function handle!')
+            debug('Unknown regress_gauss_mix function handle!')
             return
 
-    V, Vx = cost.computeEnergy(X, np.array(()), Vxf)
+    V, Vx = cost.compute_lyapunov(X, np.array(()), Vxf)
 
     norm_Vx = np.sum(Vx**2, axis=0)
     norm_x = np.sum(X**2, axis=0)
@@ -128,7 +113,7 @@ def stabilizer(X, gmr_handle, Vxf, rho0, kappa0, **kwargs):
     if 'dt' in kwargs:
         dt = kwargs['dt']
         Xn = X + np.dot(Xd, dt)
-        Vn = cost.computeEnergy(Xn, np.array(()), Vxf)
+        Vn = cost.compute_lyapunov(Xn, np.array(()), Vxf)
         ind = (Vn >= V)
         i = 0
 
@@ -138,7 +123,7 @@ def stabilizer(X, gmr_handle, Vxf, rho0, kappa0, **kwargs):
                         np.tile(alpha * np.sum(Xd[np.ix_(*indices)] * \
                         Vx[np.ix_(*indices)], axis=0)/norm_Vx[ind], [d, 1])*Vx[np.ix_(*indices)]
             Xn = x + np.dot(Xd, dt)
-            Vn = cost.computeEnergy(Xn, np.array(()), Vxf)
+            Vn = cost.compute_lyapunov(Xn, np.array(()), Vxf)
             ind = Vn >= V
             i = i + 1
 

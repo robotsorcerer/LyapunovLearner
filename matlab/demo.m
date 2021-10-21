@@ -11,12 +11,12 @@ close all;
 modelNames = {'w','Sshape'};
 modelNumber = 2; %choose either 1 or 2 to select a different example
 
-%% Putting CLFDM and GMR library in the MATLAB Path
+%% Putting CLFDM and regress_gauss_mix library in the MATLAB Path
 if isempty(regexp(path,['CLFDM_lib' pathsep], 'once'))
     addpath([pwd, '/CLFDM_lib']);    % add SEDS dir to path
 end
-if isempty(regexp(path,['GMR_lib' pathsep], 'once'))
-    addpath([pwd, '/GMR_lib']);    % add GMR dir to path
+if isempty(regexp(path,['regress_gauss_mix_lib' pathsep], 'once'))
+    addpath([pwd, '/regress_gauss_mix_lib']);    % add regress_gauss_mix dir to path
 end
 
 %% User Parameters and Setting
@@ -85,7 +85,7 @@ else
 end
 
 % Solving the optimization
-Vxf = learnEnergy(Vxf0,Data,options);
+Vxf = optimize_lyapunov(Vxf0,Data,options);
 
 %% Plotting the result
 fig = figure;
@@ -124,8 +124,8 @@ kappa0 = 0.1;
 
 in = 1:Vxf.d;
 out = Vxf.d+1:2*Vxf.d;
-fn_handle_GMR = @(x) GMR(Priors_EM, Mu_EM, Sigma_EM, x, in,out);
-fn_handle = @(x) DS_stabilizer(x,fn_handle_GMR,Vxf,rho0,kappa0);
+fn_handle_regress_gauss_mix = @(x) regress_gauss_mix(Priors_EM, Mu_EM, Sigma_EM, x, in,out);
+fn_handle = @(x) DS_stabilizer(x,fn_handle_regress_gauss_mix,Vxf,rho0,kappa0);
 
 [x xd]=Simulation(x0_all,[],fn_handle,opt_sim); %running the simulator
 
