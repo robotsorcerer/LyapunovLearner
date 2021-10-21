@@ -12,7 +12,7 @@ One may find the MATLAB version of this implementation in the [matlab](/matlab) 
 
 <!-- (https://bitbucket.org/khansari/clfdm/src/master/demo_CLFDM_Learning.m). -->
 
-+ Khansari-Zadeh has a subtle example that illustrates the advantages of SEDS over DMPs, LWPRs, GMRs etc in his [2014 Autonomous Systems paper](/scripts/docs/AUS.pdf), and reproduced below:
+Khansari-Zadeh has a subtle example that illustrates the advantages of SEDS over DMPs, LWPRs, GMRs etc in his [2014 Autonomous Systems paper](/scripts/docs/AUS.pdf), and reproduced below:
 
 <div align="center">
  <img src="/scripts/docs/seds_gmr.jpg" height="680px" width="600">
@@ -20,23 +20,9 @@ One may find the MATLAB version of this implementation in the [matlab](/matlab) 
 
 ### Learning Stable Task-Space Trajectories.
 
-KZ recorded WAM robot end-effector trajectories on a 2D plane. The task is to stabilize pre-recorded trajectories using a combo of GMMs, Gaussian Mixture Regression, and Control Lyapunov Functions.
+For recorded WAM robot end-effector trajectories on a 2D plane (there are two pre-recorded demos available in the data directory: [data](scripts/data)), the task is to stabilize pre-recorded trajectories using a combo of GMMs, Gaussian Mixture Regression, and Control Lyapunov Functions -- all learned from data.
 
-This code comes with two pre-recorded demos available in the data directory: [data](scripts/data). The file [demo.py](/scripts/demo.py) executes Gaussian-learned CLFs which corrects trajectories on the robot's demos. The left image below denotes a demonstration of the robot drawing the letter `S` from three different initial conditions, and converging to an attractor at the origin; while the right image denotes the Gaussian Mixture Regression-based CLF that corrects the trajectories in a piecewise manner as we feed the algorithm the data.
-
-#### S-Shaped Planar (Task-Space) Demos and Motion Corrections.
-
-<div align="center">
- <img src="/scripts/docs/demos_s.jpg" height="400px" width="350px">
-  <img src="/scripts/docs/corrected_traj_s.jpg" height="400px" width="350px">
-</div>
-
-<!-- #### S-Shaped Planar (Task-Space) Demos and Motion Corrections
-
-<div align="center">
- <img src="/scripts/docs/demos_w.jpg" height="400px" width="350px">
-  <img src="/scripts/docs/corrected_traj_w.jpg" height="400px" width="350px">
-</div> -->
+The left image below denotes a demonstration of the robot drawing the letter `S` from three different initial conditions, and converging to an attractor at the origin; while the right image denotes the Gaussian Mixture Regression-based CLF that corrects the trajectories in a piecewise manner as we feed the algorithm the data.
 
 ### Stable Trajectory Corrections
 
@@ -53,6 +39,20 @@ W-shaped Demo Corrections:
  <img src="/scripts/docs/demos_w.jpg" height="400px" width="350px">
   <img src="/matlab/Doc/w_corrections.gif" height="400px" width="350px">
 </div>
+
+#### S-Shaped Planar (Task-Space) Demos and Motion Corrections.
+
+<div align="center">
+ <img src="/scripts/docs/demos_s.jpg" height="400px" width="350px">
+  <img src="/scripts/docs/corrected_traj_s.jpg" height="400px" width="350px">
+</div>
+
+<!-- #### S-Shaped Planar (Task-Space) Demos and Motion Corrections
+
+<div align="center">
+ <img src="/scripts/docs/demos_w.jpg" height="400px" width="350px">
+  <img src="/scripts/docs/corrected_traj_w.jpg" height="400px" width="350px">
+</div> -->
 
 ### Setup.
 
@@ -141,6 +141,8 @@ Please find examples in the file [clf_demos.ipynb](/notes/clf_demos.ipynb).
 + Add options for plotting different level sets for the Lyapunov Function.
 
 + Intelligently initialize the Lyapunov Function so optimization iterations do not take such a long time to converge.
+
++ Add real-time trajectory plotter as the CLF stabilizes the trajectories during demo executions.
 
 + Fix bug in WSAQF when `L` is started above `1` for a demo.
 
