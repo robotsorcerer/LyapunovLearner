@@ -1,6 +1,6 @@
 ### One Hell of a Lyapunov Learner.
 
-This code largely implements Learning CLFs using the SEDS paper by Khansari-Zadeh:
+This code largely implements Learning Control Lyapunoc Functions, or CLFs, based on the _Stable Estimation of Dynamic Systems_ paper from Aude Billard's group at EPFL. It is a textbook implementation of
 
 ```
    S.M. Khansari-Zadeh and A. Billard (2014), "Learning Control Lyapunov Function
