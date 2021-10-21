@@ -21,6 +21,8 @@ class Cost(object):
                 success: Boolean indicating if optimization constraints got violated
                 Nfeval: Number of function evals required for optimization to
                 be rendered successful.
+
+            Author: Lekan Molux, and Rodrigo Perez Dattari, October 2021
         """
         self.Nfeval = Nfeval
         self.success = success   # b

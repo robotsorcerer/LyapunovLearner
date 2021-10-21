@@ -12,6 +12,10 @@ eps = sys.float_info.epsilon
 # order_type = FLAGS.order #'F' or C for default C order
 order_type = 'C'
 
+"""
+   Copyright (c) Lekan Molux. https://scriptedonachip.com
+   2021.
+"""
 class Bundle(object):
     def __init__(self, dicko):
         for var, val in dicko.items():

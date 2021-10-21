@@ -16,7 +16,7 @@ def gaussPDF(data, mu, sigma):
        o prob:  1 x N array representing the probabilities for the
                 N datapoints.
 
-     Copyright (c) 2021 Lekan Molux, Microsoft Corp
+     Copyright (c) Lekan Molux. 2021.
     """
     global realmin
     num_vars, num_data = data.shape
@@ -64,8 +64,6 @@ def GMR(priors, mu, sigma, x, traj, traj_deri):
        o sigma_y: Q x Q x N array representing the N expected covariance
                   matrices retrieved.
 
-     Copyright (c) 2021 Lekan Molux, Microsoft Corp
-
      @article{Calinon06SMC,
        title="On Learning, Representing and Generalizing a Task in a Humanoid
          Robot",
@@ -77,6 +75,7 @@ def GMR(priors, mu, sigma, x, traj, traj_deri):
        volume="36",
        number="5"
      }
+     Copyright (c) Lekan Molux. 2021.
     """
 
     init_conds = x.shape[1]

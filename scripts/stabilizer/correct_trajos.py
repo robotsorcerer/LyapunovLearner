@@ -79,7 +79,8 @@ def CorrectTrajectories(x0,xT,stab_handle,kwargs):
 	   o xT:      A matrix recording the change in the target position. Useful
 				  only when 'tcp' or 'tdp' perturbations applied.
 
-	Lekan Molux, MSFT Corp.
+	   Copyright (c) Lekan Molux. https://scriptedonachip.com
+	   2021.
 	"""
 	## parsing inputs
 	if not kwargs:

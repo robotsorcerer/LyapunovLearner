@@ -65,27 +65,12 @@ def stabilizer(X, gmr_handle, Vxf, rho0, kappa0, **kwargs):
                        information, you do NOT need to add it to the output
                        velocity!
 
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        %%%         Copyright (c) 2014 Mohammad Khansari, LASA Lab, EPFL,       %%%
-        %%%          CH-1015 Lausanne, Switzerland, http://lasa.epfl.ch         %%%
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-         The program is free for non-commercial academic use. Please contact the
-         author if you are interested in using the software for commercial purposes.
-         The software must not be modified or distributed without prior permission
-         of the authors. Please acknowledge the authors in any academic publications
-         that have made use of this code or part of it. Please use this BibTex
-         reference:
-
          S.M. Khansari-Zadeh and A. Billard (2014), "Learning Control Lyapunov Function
          to Ensure Stability of Dynamical System-based Robot Reaching Motions."
          Robotics and Autonomous Systems, vol. 62, num 6, p. 752-765.
 
-         To get latest update of the software please visit
-                                  http://cs.stanford.edu/people/khansari/
-
-         Please send your feedbacks or questions to:
-                                  khansari_at_cs.stanford.edu
+         Copyright (c) Lekan Molux. https://scriptedonachip.com
+         2021.
     """
     if not 'cost' in kwargs:
         error('User must supply the Control Lyapunov Function Cost.')

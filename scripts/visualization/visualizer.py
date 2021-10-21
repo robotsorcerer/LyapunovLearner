@@ -19,16 +19,28 @@ class Visualizer():
 				savedict=None, labels=None, data=None,
 				alphas=None):
 		"""
-			Ad-hoc visualizer for grids, grid partitions
-			and HJI solutions
+			Ad-hoc visualizer for Lyapunov Function's Level Sets
+			and demos, and corrected trajectories.
 
-			fig: pyplot figure. If not passed, it's created
-			ax: subfig of fig on which to plot figure
-			winsize: size of pyplot window (default is (16,9))
-			labelsize: size of plot x/y labels
-			linewidth: width of 2D lines
-			fontdict: fontweight and size for visualization
-			block: whether to block screen after plot or not
+			Inputs:
+				fig: pyplot figure. If not passed, it's created.
+
+				winsize: size of pyplot window (default is (16,9)).
+
+				labelsize: size of plot x/y labels.
+
+				linewidth: width of 2D lines.
+
+				fontdict: fontweight and size for visualization.
+
+				savedict: Hashable specifying path and filenames to save with.
+						Keys:
+						  save: True/False -- Whether to save th eplotted trajos.
+						  savepath: path with which to save the chart.
+						  savename: name of the file.
+
+			 Copyright (c) Lekan Molux. https://scriptedonachip.com
+		     2021.
 		"""
 		if winsize:
 			self._fig = plt.figure(figsize=winsize)
