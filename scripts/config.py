@@ -40,7 +40,7 @@ options = {
     Stabilization Options: After estimating the trajos, we now must
     stabilize those trajos at each time step.
 """
-ds_options = {
+stab_options = {
     'traj_nums': 10000, # Why did KZ choose this?
     'dt': 0.01,
     'tol': 1,

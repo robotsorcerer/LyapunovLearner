@@ -9,17 +9,12 @@ __status__ 		= "Completed"
 
 import time
 import copy
-import threading
 from utils.gen_utils import *
 from numpy import all, abs
 from matplotlib import pyplot as plt
 import matplotlib.gridspec as gridspec
+from visualization.traj_plotter import TrajPlotter
 # from visualization.realtime_plotter import RealTimePlotter
-
-def run_demo(demo_func):
-    demo_thread = threading.Thread(target=demo_func)
-    demo_thread.daemon = True
-    demo_thread.start()
 
 
 def CorrectTrajectories(x0,xT,stab_handle,kwargs):
@@ -121,59 +116,17 @@ def CorrectTrajectories(x0,xT,stab_handle,kwargs):
 
 	i=0
 
-	if options.plot:
-		# Initialize Figure
-		fig = plt.figure(figsize=options.winsize)
-		gs = gridspec.GridSpec(1, 1)
-
-		# realtime_plotter = RealTimePlotter(fig, gs[0],
-		# 				labels=['$X_1$', '$X_2$', '$X_3$'], nbSPoint=nbSPoint,
-		# 	 			alphas=[.15, .15, .15], time_window=10)
-
-		# f = plt.figure(figsize=options.winsize)
-		# plt.clf()
-		# f.tight_layout()
-
-		# gs = gridspec.GridSpec(1, 1, f)
-		# ax = plt.subplot(gs[0])
-
-		plt.rcParams['toolbar'] = 'None'
-		for key in plt.rcParams:
-			if key.startswith('keymap.'):
-				plt.rcParams[key] = ''
-
-		# f.canvas.draw()
-		# f.canvas.flush_events()
-		# plots = [ax.plot([], [], 'ko', \
-		# 			markersize=2, label='Trajs', \
-		# 			linewidth=7.5)[0]]
+	# if options.plot:
+	# 	# Initialize Figure
+	# 	fig = plt.figure(figsize=options.winsize)
+	# 	gs = gridspec.GridSpec(1, 1, figure=fig)
+	#
+	# 	traj_plotter = TrajPlotter(fig, gs[0],
+	# 					labels=['$\\xi$'], alphas=[.15],
+	#                     time_window=20)
 	#
 	x_hist, xd_hist, t_hist = [x], [xd], [t]
-	#
-	# def update(x, xT):
-	#
-	# 	# x = np.ravel(x)
-	#
-	# 	# ax = f.gca()
-	# 	# ax.grid('on')
-	# 	ax_loc = plots[0]
-	# 	ax_loc.set_data(xT[0], xT[1]) #, 'g*',markersize=10,linewidth=1.5)
-	# 	for j in range(nbSPoint):
-	# 		ax_loc.set_data(x[0,j], x[1, j])
-	#
-	# 	# ax_loc.set_xlabel('X', fontdict=fontdict)
-	# 	# ax_loc.set_ylabel('Y', fontdict=fontdict)
-	# 	# ax_loc.legend(loc='best')
-	# 	# ax_loc.set_title(f'Corrected Trajectories/Demo at time: {t:.3f}', fontdict=fontdict)
-	# 	# plt.pause(options.pause_time)
-	#
-	# 	draw(f, ax)
-	#
-	# def draw(fig, ax):
-	# 	ax.draw_artist(ax.patch)
-	# 	for plot in plots:
-	# 		ax.draw_artist(plot)
-	# 	fig.canvas.flush_events()
+	traj_plotter = kwargs.traj_plotter
 
 	while True:
 		#Finding xd using stab_handle.
@@ -187,31 +140,17 @@ def CorrectTrajectories(x0,xT,stab_handle,kwargs):
 		x = x + xd*options.dt
 		t = t + options.dt
 
-		# print(f't: {t}, {options.dt}, x: {x}')
-
 		t_hist.append(t)
 		x_hist.append(x)
 		xd_hist.append(xd)
 
-		# # update(x, XT)
-		# if options.plot:
-		# 	realtime_plotter._time_window = t
-		# 	run_demo(realtime_plotter.update(x, xT))
-		# 	time.sleep(options.pause_time)
 
-		# ax = f.gca()
-		# ax.grid('on')
-		# ax.plot(xT[0], xT[1], 'g*',markersize=10,linewidth=1.5)
-		# for j in range(nbSPoint):
-		# 	ax.set_data(x[0,j], x[1, j],  'ko', \
-		# 				markersize=2, label='Trajs', \
-		# 				linewidth=7.5)
-		#
-		# ax.set_xlabel('X', fontdict=options.fontdict)
-		# ax.set_ylabel('Y', fontdict=options.fontdict)
-		# ax.legend(loc='best')
-		# ax.set_title(f'Corrected Trajectories/Demo at time: {t:.3f}', fontdict=options.fontdict)
-		# plt.pause(options.pause_time)
+		for j in range(x.shape[-1]):
+			xi, xi_dot = x[0, j], xd[1, j]
+		# print(xi, xi_dot)
+		traj_plotter.update([xi], [xi_dot])
+		time.sleep(5e-3)
+
 
 		if (i > 3) and all(all(abs(xd_hist[:-3])<options.tol) or i>options.i_max-2):
 			i += 1
@@ -227,12 +166,7 @@ def CorrectTrajectories(x0,xT,stab_handle,kwargs):
 				info(f'Simulation stopped since it reaches the maximum number of allowed iterations {i}')
 				info(f'Exiting without convergence!!! Increase the parameter ''options.i_max'' to handle this error.')
 			break
-		# del t_new, x_new, xd
 		i += 1
-
-	# traj_corr = Bundle(dict(x=x, xd=xd, xdot=xd, t_hist=t_hist, \
-	# 				 x_hist=x_hist, xd_hist=xd_hist))
-
 	traj_corr = Bundle(dict(XT=XT, t_hist=t_hist, \
 					 x_hist=x_hist, xd_hist=xd_hist))
 
@@ -247,7 +181,7 @@ def  check_options(options=None):
 	if not isfield(options,'i_max'): # maximum number of iterations
 		options.i_max = options.traj_nums
 	if not isfield(options,'tol'): # convergence tolerance
-		options.tol = 0.001
+		options.tol = 0.01
 	if isfield(options,'plot') and options.plot: # shall simulator plot the figure
 		options.winsize = (12, 7)
 		options.labelsize=18
