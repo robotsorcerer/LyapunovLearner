@@ -30,7 +30,8 @@ S-shaped demos from three different initial conditions.
 
 <div align="center">
  <img src="/scripts/docs/demos_s.jpg" height="400px" width="350px">
-  <img src="/matlab/Doc/s_corrections.gif" height="380px" width="380px">
+ <img src="/scripts/docs/obs-sped.gif" height="400px" width="350px">
+  <!-- <img src="/matlab/Doc/s_corrections.gif" height="380px" width="380px"> -->
 </div>
 
 W-shaped demos from three different initial conditions.

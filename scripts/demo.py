@@ -1,5 +1,5 @@
 __author__ 		= "Lekan Molu"
-__copyright__ 	= "2018, One Hell of a Lyapunov Learner"
+__copyright__ 	= "2021, One Hell of a Lyapunov Learner"
 __credits__  	= "Rachel Thomson (MIT), Pérez-Dattari, Rodrigo (TU Delft)"
 __license__ 	= "MIT"
 __maintainer__ 	= "Lekan Molu"
@@ -33,7 +33,7 @@ from utils.dataloader import load_saved_mat_file
 from stabilizer.correct_trajos import CorrectTrajectories
 
 parser = argparse.ArgumentParser(description='Learning SEDs')
-parser.add_argument('--pause_time', '-pz', type=float, default=1e-5, help='pause time between successive updates of plots' )
+parser.add_argument('--pause_time', '-pz', type=float, default=1e-4, help='pause time between successive updates of plots' )
 parser.add_argument('--traj_nums', '-tn', type=int, default=10000, help='max # of trajectory stabilizations corrections before quitting' )
 parser.add_argument('--rho0', '-rh', type=float, default=1.0, help='coeff. of class-Kappa function' )
 parser.add_argument('--kappa0', '-kp', type=float, default=.1, help='exponential coeff. in class-Kappa function' )
@@ -123,7 +123,7 @@ def main(Vxf0, options):
 	stab_options['plot'] = True
 	stab_options = Bundle(stab_options)
 
-	fig = plt.figure(figsize=(12, 7))
+	fig = plt.figure(figsize=(16, 9))
 	gs = gridspec.GridSpec(1, 1, figure=fig)
 	plt.ion()
 

@@ -1,10 +1,11 @@
-"""
-Realtime Plotter
+__author__ 		= "Lekan Molu"
+__copyright__ 	= "2021, One Hell of a Lyapunov Learner"
+__credits__  	= "Rachel Thomson (MIT), Pérez-Dattari, Rodrigo (TU Delft)"
+__license__ 	= "MIT"
+__maintainer__ 	= "Lekan Molu"
+__email__ 		= "patlekno@icloud.com"
+__status__ 		= "Completed"
 
-The Realtime Plotter expects to be constantly given values to plot in realtime.
-It assumes the values are an array and plots different indices at different
-colors according to the spectral colormap.
-"""
 import time
 import numpy as np
 import matplotlib.pylab as plt
@@ -14,9 +15,15 @@ from visualization.util import buffered_axis_limits
 
 
 class TrajPlotter(object):
-
 	def __init__(self, fig, gs, fontdict=None, pause_time=1e-3, \
 					labels=None, x0=None):
+		"""
+			Class TrajPlotter:
+
+			This class expects to be constantly given values to plot in realtime.
+			It assumes the values are an array and plots different indices at different
+			colors according to the spectral colormap.
+		"""
 		self._fig = fig
 		self._gs = gridspec.GridSpec(1, 1, self._fig)
 		plt.ion()
@@ -29,6 +36,11 @@ class TrajPlotter(object):
 		self._labelsize = 16
 		self.pause_time = pause_time
 
+		plt.rcParams['toolbar'] = 'None'
+		for key in plt.rcParams:
+			if key.startswith('keymap.'):
+				plt.rcParams[key] = ''
+
 		if self._labels:
 			self.init(x0.shape[-1])
 
@@ -39,7 +51,6 @@ class TrajPlotter(object):
 		"""
 		Initialize plots based off the length of the data array.
 		"""
-		self._t = 0
 		self._data_len = data_len
 		self._xi = np.empty((0, data_len))
 		self._xi_dot = np.empty((0, data_len))
@@ -48,11 +59,11 @@ class TrajPlotter(object):
 
 		# Plot it
 		cm = plt.get_cmap('viridis')
-		colors = ['red', 'magenta', 'orange']
+		colors = ['blue', 'magenta', 'purple']
 		self._plots = [np.nan for _ in range(self.Xinit.shape[-1])]
 		for i in range(D):
 			self._plots[i] = [self._ax.plot(self.Xinit[0, i], self.Xinit[1, i], 'o', color=colors[i], markersize=10)[0]]
-			self._plots[i] += [self._ax.plot([], [], color=colors[i], linewidth=2.5, label=f'Corrected Traj {i+1}')[0]]
+			self._plots[i] += [self._ax.plot([], [], color=colors[i], linewidth=2.5, label=f'Traj $\\xi_0^{i+1}$')[0]]
 
 		# Show me the attractor
 		self.targ, = self._ax.plot([0],[0],'g*',markersize=15,linewidth=3, label='Target')
@@ -80,23 +91,28 @@ class TrajPlotter(object):
 		assert xi.shape[1] == self._data_len, f'xi of shape {xi.shape}has to be of shape {self._data_len}'
 		assert xi_dot.shape[1] == self._data_len, f'xi_dot of shape {xi_dot.shape} has to be of shape {self._data_len}'
 
-		self._t += 1
 		self._xi = np.append(self._xi, xi[0].reshape(1, D), axis=0)
 		self._xi_dot = np.append(self._xi_dot, xi[1].reshape(1, D), axis=0)
 
-		cm = plt.get_cmap('ocean')
-
 		idx=0
+		xlims, ylims = [np.nan for _ in range(len(self._plots))], [np.nan for _ in range(len(self._plots))]
+
 		for traj_plotter in self._plots:
 			traj_plotter[-1].set_data(self._xi[:, idx], self._xi_dot[:, idx]) #
 
 			x_min, x_max =np.amin(self._xi[:, idx]), np.amax(self._xi[:, idx])
-			self._ax.set_xlim(buffered_axis_limits(x_min, x_max, buffer_factor=1.25))
-
 			y_min, y_max = np.amin(self._xi_dot[:, idx]), np.amax(self._xi_dot[:, idx])
-			self._ax.set_ylim(buffered_axis_limits(y_min, y_max, buffer_factor=1.25))
+
+			xlims[idx] = (x_min, x_max)
+			ylims[idx] = (y_min, y_max)
 
 			idx+=1
+
+		x_min = min([tup[0] for tup in xlims]); y_min = min([tup[0] for tup in ylims])
+		x_max = min([tup[1] for tup in xlims]); y_max = min([tup[1] for tup in ylims])
+
+		self._ax.set_xlim(buffered_axis_limits(x_min, x_max, buffer_factor=1.25))
+		self._ax.set_ylim(buffered_axis_limits(y_min, y_max, buffer_factor=1.25))
 
 		self.draw()
 		time.sleep(self.pause_time)
