@@ -22,11 +22,10 @@ Khansari-Zadeh has a subtle example that illustrates the advantages of SEDS over
 
 For recorded WAM robot end-effector trajectories on a 2D plane (there are two pre-recorded demos available in the [data](scripts/data) directory), the task is to stabilize pre-recorded trajectories using a combo of GMMs, Gaussian Mixture Regression, and Control Lyapunov Functions -- all learned from data.
 
-The left image below denotes a demonstration of the robot drawing the letter `S` from three different initial conditions, and converging to an attractor at the origin; while the right image denotes the Gaussian Mixture Regression-based CLF that corrects the trajectories in a piecewise manner as we feed the algorithm the data.
-
 ### Learning Stable Trajectories
 
-S-shaped demos and reconstructions from three different initial conditions.
+S-shaped demos and reconstructions from three different initial conditions. The left image below denotes a demonstration of the robot drawing the letter `S` from three different initial conditions, and converging to an attractor at the origin; while the right image denotes the Gaussian Mixture Regression-based CLF that corrects the trajectories in a piecewise manner as we feed the algorithm the data.
+
 You can find the [python animation here](/scripts/docs/s-python.gif). I can't somehow find a good video grabber for pyplot frames in order to display a quality demo reproduction here.
 
 <div align="center">
