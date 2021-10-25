@@ -1,0 +1,9 @@
+[flake8]
+exclude	=
+    *.pyc,
+    lib,
+    bin,
+    local,
+    torobo_forward.py,
+    slow_kinematics.py
+max-line-length = 119

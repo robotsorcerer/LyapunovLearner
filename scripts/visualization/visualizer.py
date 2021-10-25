@@ -40,7 +40,7 @@ class Visualizer():
 						  savename: name of the file.
 
 			 Copyright (c) Lekan Molux. https://scriptedonachip.com
-		     2021.
+			 2021.
 		"""
 		if winsize:
 			self._fig = plt.figure(figsize=winsize)
@@ -110,13 +110,16 @@ class Visualizer():
 		fig = plt.figure(figsize=self.winsize)
 		ax1 = fig.add_subplot(1, 1, 1)
 
-		for j in range(Xinit.shape[-1]):
-		    ax1.plot(Xinit[0, j], Xinit[1, j], 'ko', markersize=20,  linewidth=2.5)
+		cm = plt.get_cmap('ocean')
+		for j in range(Xinit.shape[-1]-1):
+			color = cm(2.0 * j / Xinit.shape[-1])
+			ax1.plot(Xinit[0, j], Xinit[1, j], 'ko', markersize=10,  linewidth=2.5)
+		ax1.plot(Xinit[0, Xinit.shape[-1]-1], Xinit[1, Xinit.shape[-1]-1], 'ko', markersize=10,  linewidth=2.5, label='Init Conditions')
 
 		demo_handle, = ax1.plot(data[0, :], data[1, :], 'm.', label='Demos')
-		demo_handle, = ax1.plot([0],[0],'g*',markersize=25,linewidth=3)
+		demo_handle, = ax1.plot([0],[0],'g*',markersize=25,linewidth=3, label='Target')
 		ax1.grid('on')
-		ax1.legend(loc='upper right')
+		ax1.legend(loc='best')
 		ax1.set_xlabel('$\\xi$', fontdict=self._fontdict)
 		ax1.set_ylabel('$\\dot{\\xi}$', fontdict=self._fontdict)
 		ax1.set_title('WAM Robot Task Space Demos', fontdict=self._fontdict)
@@ -200,7 +203,7 @@ class Visualizer():
 
 			if save:
 				self._fig.savefig(join(self.savedict["savepath"],self.savedict["savename"]),
-		                    bbox_inches='tight',facecolor='None')
+							bbox_inches='tight',facecolor='None')
 
 		return handles
 
@@ -233,9 +236,9 @@ class Visualizer():
 		ax.plot(xT[0], xT[1], 'g*',markersize=20,linewidth=1.5, label='Target Attractor')
 
 		for j in range(nbSPoint):
-		    color = cm(1.0 * j / nbSPoint)
-		    ax.plot(Xinit[0, j], Xinit[1, j], 'ko', markersize=20,  linewidth=2.5)
-		    ax.plot(x_hist[:, 0, j], x_hist[:, 1, j], color=colors[j], markersize=2,\
+			color = cm(1.0 * j / nbSPoint)
+			ax.plot(Xinit[0, j], Xinit[1, j], 'ko', markersize=20,  linewidth=2.5)
+			ax.plot(x_hist[:, 0, j], x_hist[:, 1, j], color=colors[j], markersize=2,\
 				linewidth=2.5, label=f'CLF Corrected Traj {j}')
 
 		ax.set_xlabel('$\\xi$', fontdict=self._fontdict)

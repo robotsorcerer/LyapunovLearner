@@ -19,15 +19,25 @@ logger = logging.getLogger(__name__)
 
 class Cost(object):
 
-    def __init__(self, nDemo = 1, success=True, Nfeval = 0, verbose=True):
+    def __init__(self, nDemo = 1, success=True, Nfeval = 0, \
+                    verbose=True, method='L-BFGS-B', hessian=BFGS()):
         """
             Class that estimates lyapunov energy function
 
             Inputs:
                 nDemo: Number of Demos for the robot
+
                 success: Boolean indicating if optimization constraints got violated
+
                 Nfeval: Number of function evals required for optimization to
                 be rendered successful.
+
+                method: what optimization method to use
+                    'L-BFGS-B': Use Limited BFG, a workhorse
+                  or 'trust-constr': Rodrigo's preference
+
+                hessian: method for computing the hessian matrix
+                        'cs' or BFGS()
 
             Author: Lekan Molux, and Rodrigo Perez Dattari, October 2021
         """
@@ -35,6 +45,8 @@ class Cost(object):
         self.success = success   # b
         self.nDemo = nDemo
         self.disp_optim_progress=verbose
+        self.method = method
+        self.hessian = hessian
 
     def matVecNorm(self, x):
         return np.sqrt(np.sum(x**2, axis=0))
@@ -73,18 +85,33 @@ class Cost(object):
         self.Nfeval += 1
 
     def optimize(self, obj_handle, constraint_ineq, constraint_eq, p0):
+        # keep_feasible = [True  for _ in range()]
         nonl_cons_ineq = NonlinearConstraint(constraint_ineq, -np.inf, 0, jac='3-point', hess=BFGS())
         nonl_cons_eq = NonlinearConstraint(constraint_eq, 0, 0, jac='3-point', hess=BFGS())
 
         logger.debug('Optimizing the lyapunov function')
         solution = minimize(obj_handle,
                             np.reshape(p0, [len(p0)]),
-                            hess=BFGS(),
+                            hess=self.hessian,
                             constraints=[nonl_cons_eq, nonl_cons_ineq],
                             method='trust-constr',
                             options={'disp': self.disp_optim_progress, 'initial_constr_penalty': 1.5},
                             callback=self.callback_opt)
-
+        # solution = minimize(
+        #             obj_handle,
+        #             x0=p0.squeeze(),
+        #             method=self.method, # BFGS
+        #             jac='cs',
+        #             hess=self.hessian,
+        #             callback=self.callback_opt,
+        #             constraints=[nonl_cons_eq, nonl_cons_ineq],
+        #             options = {'disp': self.disp_optim_progress,
+        #                 'maxiter': 1500,  #Change this to say 15000 during testing
+        #                 'maxfun': 10000, # max # of obj function evals; # change to 10000 during testing
+        #                 'maxls': 20,  # max line search param
+        #                 'ftol': 1e-4, # make it faster
+        #                 }
+        #             )
         return solution.x, solution.fun
 
     def eigen_inequality_constraints(self, p, d, L, options):

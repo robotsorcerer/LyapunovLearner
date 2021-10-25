@@ -136,7 +136,7 @@ Gaussian mixtures and locally-weighted regression are efficient and accurate, as
 
 + Through a clever re-parameterization of robot trajectories, by a so-called weighted sum of asymmetric quadratic functions (WSAQF), and nonlinear optimization, we learn stable Lyapunov attractors for the dynamics of a robot's reaching motion, such that we are guaranteed to settle to non-spurious and stable attractors after optimization;
 
-+ This code leverages a control Lyapunov function in deriving the control laws used to stabilize spurious regions of attractors that a Gaussian mixture regression may generate;
++ This code leverages a control Lyapunov function in deriving the control laws used to stabilize spurious regions of attractors, and eradicate limit cycles that e.g. expectation-maximization may generate;
 
 + This code is pretty much easy to follow and adapt for any dynamical system. Matter-of-factly, I used it in learning the dynamics of the Torobo 7-DOF arm in Tokyo ca Summer 2018.
 

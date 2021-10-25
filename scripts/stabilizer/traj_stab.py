@@ -76,7 +76,6 @@ def stabilizer(X, gmr_handle, Vxf, rho0, kappa0, **kwargs):
         error('User must supply the Control Lyapunov Function Cost.')
     cost = kwargs['cost']
 
-    # print('X ', X)
     d = Vxf['d']
     if X.shape[0] == 2*d:
         Xd = X[d:2*d, :]
@@ -125,6 +124,6 @@ def stabilizer(X, gmr_handle, Vxf, rho0, kappa0, **kwargs):
             Xn = x + np.dot(Xd, dt)
             Vn = cost.compute_lyapunov(Xn, np.array(()), Vxf)
             ind = Vn >= V
-            i = i + 1
+            i += 1
 
     return Xd, u
