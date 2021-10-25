@@ -38,15 +38,15 @@ W-shaped demos from three different initial conditions.
 
 <div align="center">
  <img src="/scripts/docs/demos_w.jpg" height="400px" width="350px">
-  <img src="/matlab/Doc/w_corrections.gif" height="380px" width="380px">
+  <img src="/matlab/Doc/w_corrections.gif" height="400px" width="350px">
 </div>
 
-#### S-Stabilized Trajectories.
+<!-- #### S-Stabilized Trajectories.
 
 <div align="center">
  <img src="/scripts/docs/demos_s.jpg" height="400px" width="350px">
   <img src="/scripts/docs/corrected_traj_s.jpg" height="400px" width="380px">
-</div>
+</div> -->
 
 <!-- #### S-Shaped Planar (Task-Space) Demos and Motion Corrections
 
@@ -148,8 +148,6 @@ Gaussian mixtures and locally-weighted regression are efficient and accurate, as
 + Add options for plotting different level sets for the Lyapunov Function.
 
 + Intelligently initialize the Lyapunov Function so optimization iterations do not take such a long time to converge.
-
-+ Add real-time trajectory plotter as the CLF stabilizes the trajectories during demo executions.
 
 + Fix bug in WSAQF when `L` is started above `1` for a demo.
 
