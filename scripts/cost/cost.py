@@ -90,28 +90,28 @@ class Cost(object):
         nonl_cons_eq = NonlinearConstraint(constraint_eq, 0, 0, jac='3-point', hess=BFGS())
 
         logger.debug('Optimizing the lyapunov function')
-        # solution = minimize(obj_handle,
-        #                     np.reshape(p0, [len(p0)]),
-        #                     hess=self.hessian,
-        #                     constraints=[nonl_cons_eq, nonl_cons_ineq],
-        #                     method='trust-constr',
-        #                     options={'disp': self.disp_optim_progress, 'initial_constr_penalty': 1.5},
-        #                     callback=self.callback_opt)
-        solution = minimize(
-                    obj_handle,
-                    x0=p0.squeeze(),
-                    method=self.method, # BFGS
-                    jac='cs',
-                    hess=self.hessian,
-                    callback=self.callback_opt,
-                    constraints=[nonl_cons_eq, nonl_cons_ineq],
-                    options = {'disp': self.disp_optim_progress,
-                        'maxiter': 1500,  #Change this to say 15000 during testing
-                        'maxfun': 10000, # max # of obj function evals; # change to 10000 during testing
-                        'maxls': 20,  # max line search param
-                        'ftol': 1e-4, # make it faster
-                        'maxfev': None}
-                    )
+        solution = minimize(obj_handle,
+                            np.reshape(p0, [len(p0)]),
+                            hess=self.hessian,
+                            constraints=[nonl_cons_eq, nonl_cons_ineq],
+                            method='trust-constr',
+                            options={'disp': self.disp_optim_progress, 'initial_constr_penalty': 1.5},
+                            callback=self.callback_opt)
+        # solution = minimize(
+        #             obj_handle,
+        #             x0=p0.squeeze(),
+        #             method=self.method, # BFGS
+        #             jac='cs',
+        #             hess=self.hessian,
+        #             callback=self.callback_opt,
+        #             constraints=[nonl_cons_eq, nonl_cons_ineq],
+        #             options = {'disp': self.disp_optim_progress,
+        #                 'maxiter': 1500,  #Change this to say 15000 during testing
+        #                 'maxfun': 10000, # max # of obj function evals; # change to 10000 during testing
+        #                 'maxls': 20,  # max line search param
+        #                 'ftol': 1e-4, # make it faster
+        #                 }
+        #             )
         return solution.x, solution.fun
 
     def eigen_inequality_constraints(self, p, d, L, options):

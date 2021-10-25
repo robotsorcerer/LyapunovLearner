@@ -96,18 +96,25 @@ realtime_plotter = RealtimePlotter(fig, gs[3],
 
 
 def demo_traj_plotter():
-    x_hist = np.arange(600*2*3).reshape(600, 2, 3)
+    x_hist = np.array(([
+                        [9, 10, 11],
+                        [9, 10, 11],
+                        ]))
+    print('x_hist ', x_hist.shape)
     idx, i, j = 0, 0, 0
     while idx < x_hist.shape[0]:
-        for j in range(x_hist.shape[-1]):
-            xi, xidot = x_hist[idx, 0, j], x_hist[idx, 1, j]
+        xi, xidot = x_hist[idx, 0, :], x_hist[idx, 1, :]
         traj_plotter.update([xi], [xidot])
         time.sleep(5e-3)
         idx += 1
 
+xo =  np.array(([
+                    [9, 10, 11],
+                    [9, 10, 11],
+                    ]))
 traj_plotter = TrajPlotter(fig, gs[3],
         labels=['xi'], #, 'xidot'],
-        alphas=[0.15], time_window=50)
+        alphas=[0.15]*3, time_window=50, x0=xo)
 run_demo(demo_traj_plotter)
 
 # # Mean Plotter

@@ -116,23 +116,14 @@ def CorrectTrajectories(x0,xT,stab_handle,kwargs):
 
 	i=0
 
-	# if options.plot:
-	# 	# Initialize Figure
-	# 	fig = plt.figure(figsize=options.winsize)
-	# 	gs = gridspec.GridSpec(1, 1, figure=fig)
-	#
-	# 	traj_plotter = TrajPlotter(fig, gs[0],
-	# 					labels=['$\\xi$'], alphas=[.15],
-	#                     time_window=20)
-	#
+	if options.plot:
+		traj_plotter = kwargs.traj_plotter
 	x_hist, xd_hist, t_hist = [x], [xd], [t]
-	traj_plotter = kwargs.traj_plotter
 
 	while True:
 		#Finding xd using stab_handle.
 		x_tilde = x - XT
 		temp, u = stab_handle(x_tilde)
-		# print(f'temp: {temp}') # xd: {xd.shape}, d: {d}, npSPoint: {nbSPoint}')
 		xd = temp.reshape(d,nbSPoint)
 
 		#############################################################################
@@ -144,12 +135,7 @@ def CorrectTrajectories(x0,xT,stab_handle,kwargs):
 		x_hist.append(x)
 		xd_hist.append(xd)
 
-
-		for j in range(x.shape[-1]):
-			xi, xi_dot = x[0, j], xd[1, j]
-		# print(xi, xi_dot)
-		traj_plotter.update([xi], [xi_dot])
-		time.sleep(5e-3)
+		traj_plotter.update(x, xd)
 
 
 		if (i > 3) and all(all(abs(xd_hist[:-3])<options.tol) or i>options.i_max-2):
@@ -167,6 +153,7 @@ def CorrectTrajectories(x0,xT,stab_handle,kwargs):
 				info(f'Exiting without convergence!!! Increase the parameter ''options.i_max'' to handle this error.')
 			break
 		i += 1
+
 	traj_corr = Bundle(dict(XT=XT, t_hist=t_hist, \
 					 x_hist=x_hist, xd_hist=xd_hist))
 
@@ -176,12 +163,16 @@ def CorrectTrajectories(x0,xT,stab_handle,kwargs):
 def  check_options(options=None):
 	if not options:
 		options = Bundle({})
+
 	if not isfield(options,'dt'): # integration time step
 		options.dt = 0.02
+
 	if not isfield(options,'i_max'): # maximum number of iterations
 		options.i_max = options.traj_nums
+
 	if not isfield(options,'tol'): # convergence tolerance
-		options.tol = 0.01
+		options.tol = 0.2
+
 	if isfield(options,'plot') and options.plot: # shall simulator plot the figure
 		options.winsize = (12, 7)
 		options.labelsize=18

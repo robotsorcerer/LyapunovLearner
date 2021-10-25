@@ -33,11 +33,11 @@ from utils.dataloader import load_saved_mat_file
 from stabilizer.correct_trajos import CorrectTrajectories
 
 parser = argparse.ArgumentParser(description='Learning SEDs')
-parser.add_argument('--pause_time', '-pz', type=float, default=0.3, help='pause time between successive updates of plots' )
+parser.add_argument('--pause_time', '-pz', type=float, default=1e-5, help='pause time between successive updates of plots' )
 parser.add_argument('--traj_nums', '-tn', type=int, default=10000, help='max # of trajectory stabilizations corrections before quitting' )
 parser.add_argument('--rho0', '-rh', type=float, default=1.0, help='coeff. of class-Kappa function' )
 parser.add_argument('--kappa0', '-kp', type=float, default=.1, help='exponential coeff. in class-Kappa function' )
-parser.add_argument('--model', '-md', type=str, default='w', help='s|w ==> which model to use in training the data?' )
+parser.add_argument('--model', '-md', type=str, default='s', help='s|w ==> which model to use in training the data?' )
 parser.add_argument('--off_priors', '-op', action='store_true', help='use KZ\'s offline priors or use ours')
 parser.add_argument('--silent', '-si', action='store_true', default=True, help='silent debug print outs' )
 parser.add_argument('--visualize', '-vz', action='store_true', default=True, help='visualize ROAs?' )
@@ -112,29 +112,24 @@ def main(Vxf0, options):
 	"Now stabilize the learned dynamics"
 	traj = list(range(Vxf['d']))
 	traj_derivs = np.arange(Vxf['d'], 2 * Vxf['d'])
-	# print(f'demoIdx: {demoIdx}')
 	stab_args = {'time_varying': False, 'cost': cost}
 	gmr_handle = lambda x: regress_gauss_mix(priors, mu, sigma, x, traj, traj_derivs)
 	stab_handle = lambda x: stabilizer(x, gmr_handle, Vxf, rho0, kappa0, **stab_args) #, priors, mu, sigma
 
-	# Hardcoding this since I know what to expect from the prerecorded demos
-	# if args.model =='s':
-	# 	args.traj_nums = 20e3
-	# elif args.model == 'w':
-	# 	args.traj_nums = 50e3
-	plt.ioff()
 
 	global stab_options
 	stab_options['traj_nums'] = args.traj_nums
 	stab_options['pause_time'] = args.pause_time
+	stab_options['plot'] = True
 	stab_options = Bundle(stab_options)
 
 	fig = plt.figure(figsize=(12, 7))
 	gs = gridspec.GridSpec(1, 1, figure=fig)
+	plt.ion()
 
-	traj_plotter = TrajPlotter(fig, gs[0],
-					labels=['$\\xi$'], fontdict=fontdict, #alphas=[.15]*Xinit.shape[-1],
-					time_window=20, x0=Xinit)
+	traj_plotter = TrajPlotter(fig, gs[0], pause_time=args.pause_time,
+					labels=['$\\xi$'], fontdict=fontdict,
+					 x0=Xinit)
 
 	stab_options.traj_plotter=traj_plotter
 	correct_trajos = threading.Thread(target=lambda: \
@@ -146,58 +141,6 @@ def main(Vxf0, options):
 
 	plt.ioff()
 	plt.show()
-	# traj_corr = CorrectTrajectories(Xinit, [], stab_handle, Bundle(stab_options))
-
-	# if args.visualize:
-	# 	traj_corr.Xinit = Xinit
-	# 	traj_corr.model = args.model
-	# 	viz.corrected_trajos(traj_corr, save=True)
-
-	# x_hist = np.stack(traj_corr.x_hist)
-	# xd_hist = np.stack(traj_corr.xd_hist)
-	# t_hist = np.stack(traj_corr.t_hist)
-	# xT = traj_corr.XT
-	#
-	# plt.close('all')
-	# plt.ion()
-	# f = plt.figure(figsize=(16, 9))
-	# plt.clf()
-	# f.tight_layout()
-	# _fontdict = {'fontsize':16, 'fontweight':'bold'}
-	#
-	# _labelsize = 18
-	# nbSPoint = x_hist.shape[-1]
-	# plt.close('all')
-	# cm = plt.get_cmap('ocean')
-	# ax = f.gca()
-	# ax.grid('on')
-	# colors =['r', 'magenta', 'cyan']
-	#
-	# # plot the target attractors
-	# ax.plot(xT[0], xT[1], 'g*',markersize=20,linewidth=1.5, label='Target Attractor')
-	#
-	# for i in range
-	# for j in range(nbSPoint):
-	#     color = cm(1.0 * j / nbSPoint)
-	#     ax.plot(Xinit[0, j], Xinit[1, j], 'ko', markersize=20,  linewidth=2.5)
-	#     ax.plot(x_hist[:, 0, j], x_hist[:, 1, j], color=colors[j], markersize=2,\
-	# 		linewidth=2.5, label=f'CLF Corrected Traj {j}')
-	#
-	# ax.set_xlabel('$\\xi$', fontdict=_fontdict)
-	# ax.set_ylabel('$\\dot{\\xi}$', fontdict=_fontdict)
-	#
-	# ax.xaxis.set_tick_params(labelsize=_labelsize)
-	# ax.yaxis.set_tick_params(labelsize=_labelsize)
-	#
-	# ax.legend(loc='upper left') #, bbox_to_anchor=(-1, .5))
-	# ax.set_title(f'Corrected Trajectories in the Interval: [{t_hist[0]:.2f}, {t_hist[-1]:.2f}] secs', fontdict=_fontdict)
-	#
-	# savepath=join("scripts", "docs")
-	# f.savefig(join(savepath, f'corrected_traj_{args.model}.jpg'),
-	# 				bbox_inches='tight',facecolor='None')
-	#
-	# plt.show()
-
 
 if __name__ == '__main__':
 		global options

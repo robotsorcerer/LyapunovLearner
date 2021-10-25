@@ -44,7 +44,7 @@ stab_options = {
     'traj_nums': 10000, # Why did KZ choose this?
     'dt': 0.01,
     'tol': 1,
-    'plot': False,
+    'plot': False
     }
 
 # These for the Torobo Robot
