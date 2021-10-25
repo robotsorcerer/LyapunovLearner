@@ -45,7 +45,7 @@ W-shaped demos from three different initial conditions.
 
 Dependencies: Scipy | Numpy | Matplotlib.
 
-Installed with
+Install as follows:
 
   ```
     pip install -r requirements.txt .
@@ -65,7 +65,7 @@ And that about wraps up setting stuff up!
 #### Python Usage [with options]:
 
   ```
-    python scripts/demo.py [--silent|-si] [--model|-md] <s|w>  [--pause|-pz] <2> [--visualize|-vz] [--kappa0|-kp] <.1> [--rho0|-rh] <1.0> [--traj_num|-tn] <20e3>
+    python scripts/demo.py [--silent|-si] [--model|-md] <s|w>  [--pause|-pz] <1e-4> [--visualize|-vz] [--kappa0|-kp] <.1> [--rho0|-rh] <1.0> [--traj_num|-tn] <20e3>
   ```
 
   where angle brackets denote defaults.
@@ -77,6 +77,8 @@ And that about wraps up setting stuff up!
 + `--model/-md`: Which saved model to use? `w` or `s`.
 
 + `--visualize/-vz`: Do we want to visualize the regions of attractor (ROA) of the Lyapunov dynamics?
+
++ `--off_priors/-op`: Do we want to use the offline computed priors with KZ's Expectimax algo implementation?
 
 + `--pause_time/-pz`: Time between updating the stabilization of the dynamical system's reaching motions on the `pyplot` display screen.
 

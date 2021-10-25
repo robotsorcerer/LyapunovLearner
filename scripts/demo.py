@@ -32,7 +32,7 @@ from visualization.visualizer import Visualizer
 from utils.dataloader import load_saved_mat_file
 from stabilizer.correct_trajos import CorrectTrajectories
 
-parser = argparse.ArgumentParser(description='Learning SEDs')
+parser = argparse.ArgumentParser(description='Learning CLFs')
 parser.add_argument('--pause_time', '-pz', type=float, default=1e-4, help='pause time between successive updates of plots' )
 parser.add_argument('--traj_nums', '-tn', type=int, default=10000, help='max # of trajectory stabilizations corrections before quitting' )
 parser.add_argument('--rho0', '-rh', type=float, default=1.0, help='coeff. of class-Kappa function' )
@@ -72,9 +72,9 @@ def main(Vxf0, options):
 		Vxf, J = cost.optimize_lyapunov(Vxf0, data, options)
 		old_l = Vxf0['L']
 		Vxf0['L'] += 1
-		print('Constraints violated. increasing the size of L from {} --> {}'.format(old_l, Vxf0['L']))
+		info('Constraints violated. increasing the size of L from {} --> {}'.format(old_l, Vxf0['L']))
 		if cost.success:
-			print('optimization succeeded without violating constraints')
+			info('optimization succeeded without violating constraints')
 			break
 
 	if args.visualize:
