@@ -1,11 +1,11 @@
-"""
-Textbox
+__author__ 		= "Lekan Molu"
+__copyright__ 	= "Lekan Molu, One Hell of a Lyapunov Solver"
+__credits__  	= "Rachel Thomson (MIT), Pérez-Dattari, Rodrigo (TU Delft)"
+__license__ 	= "MIT"
+__maintainer__ 	= "Lekan Molu"
+__email__ 		= "patlekno@icloud.com"
+__status__ 		= "Completed"
 
-A Textbox represents the standard textbox. It has basic capabilities for
-setting the text, appending text, or changing the background color.
-If a log filename is given, all text displayed by the Textbox is also placed
-within the log file.
-"""
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
@@ -17,6 +17,14 @@ class Textbox:
     def __init__(self, fig, gs, log_filename=None, max_display_size=10,
         border_on=False, bgcolor=mpl.rcParams['figure.facecolor'], bgalpha=1.0,
         fontsize=12, font_family='sans-serif'):
+        """
+        Textbox
+
+        A Textbox represents the standard textbox. It has basic capabilities for
+        setting the text, appending text, or changing the background color.
+        If a log filename is given, all text displayed by the Textbox is also placed
+        within the log file.
+        """
         self._fig = fig
         self._gs = gridspec.GridSpec(1, 1, self._fig)
         self._ax = plt.subplot(self._gs[0])

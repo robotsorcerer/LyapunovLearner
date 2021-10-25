@@ -1,12 +1,11 @@
-"""
-Plotter 3D
+__author__ 		= "Lekan Molu"
+__copyright__ 	= "Lekan Molu, One Hell of a Lyapunov Solver"
+__credits__  	= "Rachel Thomson (MIT), Pérez-Dattari, Rodrigo (TU Delft)"
+__license__ 	= "MIT"
+__maintainer__ 	= "Lekan Molu"
+__email__ 		= "patlekno@icloud.com"
+__status__ 		= "Completed"
 
-The Plotter 3D plots data in 3D. It has options for setting a title and legend,
-plotting 3D points or 3D Gaussians, and clipping data based off axis limits.
-
-This is used to plot the 3D trajectories, including the trajectory samples,
-policy samples, and the linear Gaussian controllers.
-"""
 import numpy as np
 import matplotlib.pylab as plt
 import matplotlib.gridspec as gridspec
@@ -14,6 +13,15 @@ from mpl_toolkits.mplot3d import Axes3D
 
 class Plotter3D:
     def __init__(self, fig, gs, num_plots, rows=None, cols=None):
+        """
+        Plotter 3D
+
+            The Plotter 3D plots data in 3D. It has options for setting a title and legend,
+            plotting 3D points or 3D Gaussians, and clipping data based off axis limits.
+
+            This is used to plot the 3D trajectories, including the trajectory samples,
+            policy samples, and the linear Gaussian controllers.
+        """
         if cols is None:
             cols = int(np.floor(np.sqrt(num_plots)))
         if rows is None:

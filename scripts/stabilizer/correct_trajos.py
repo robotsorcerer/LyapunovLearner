@@ -14,7 +14,6 @@ from numpy import all, abs
 from matplotlib import pyplot as plt
 import matplotlib.gridspec as gridspec
 from visualization.traj_plotter import TrajPlotter
-# from visualization.realtime_plotter import RealTimePlotter
 
 
 def CorrectTrajectories(x0,xT,stab_handle,kwargs):

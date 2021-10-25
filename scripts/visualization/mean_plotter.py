@@ -1,12 +1,11 @@
-"""
-Mean Plotter
+__author__ 		= "Lekan Molu"
+__copyright__ 	= "Lekan Molu, One Hell of a Lyapunov Solver"
+__credits__  	= "Rachel Thomson (MIT), Pérez-Dattari, Rodrigo (TU Delft)"
+__license__ 	= "MIT"
+__maintainer__ 	= "Lekan Molu"
+__email__ 		= "patlekno@icloud.com"
+__status__ 		= "Completed"
 
-The Mean Plotter plots data along with its mean. The data is plotted as dots
-whereas the mean is a connected line.
-
-This is used to plot the mean cost after each iteration, along with the initial
-costs for each sample and condition.
-"""
 import numpy as np
 import matplotlib.pylab as plt
 import matplotlib.gridspec as gridspec
@@ -17,6 +16,16 @@ from visualization.util import buffered_axis_limits
 class MeanPlotter:
 
     def __init__(self, fig, gs, label='mean', color='black', alpha=1.0, min_itr=10):
+        """
+        Mean Plotter
+
+            The Mean Plotter plots data along with its mean. The data is plotted as dots
+            whereas the mean is a connected line.
+
+            This is used to plot the mean cost after each iteration, along with the initial
+            costs for each sample and condition.
+        """
+
         self._fig = fig
         self._gs = gridspec.GridSpec(1, 1, figure=self._fig)
         self._ax = plt.subplot(self._gs[0])

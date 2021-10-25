@@ -1,15 +1,4 @@
-"""
-GUI Demos
 
-Demos how to use the six different GUI elements:
-
-Action Panel
-Textbox
-Image Visualizer
-Realtime Plotter
-Mean Plotter
-Plotter 3D
-"""
 import time
 import random
 import threading

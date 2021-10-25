@@ -26,12 +26,13 @@ The left image below denotes a demonstration of the robot drawing the letter `S`
 
 ### Learning Stable Trajectories Demos
 
-S-shaped demos from three different initial conditions.
+
+S-shaped demos and reconstructions from three different initial conditions.
+Caveat: [here's a sleekier matlab video animation](/matlab/Doc/s_corrections.gif).
 
 <div align="center">
  <img src="/scripts/docs/demos_s.jpg" height="400px" width="350px">
  <img src="/scripts/docs/s-python.gif" height="400px" width="350px">
-  <!-- <img src="/matlab/Doc/s_corrections.gif" height="380px" width="380px"> -->
 </div>
 
 W-shaped demos from three different initial conditions.
@@ -40,20 +41,6 @@ W-shaped demos from three different initial conditions.
  <img src="/scripts/docs/demos_w.jpg" height="400px" width="350px">
   <img src="/matlab/Doc/w_corrections.gif" height="400px" width="350px">
 </div>
-
-<!-- #### S-Stabilized Trajectories.
-
-<div align="center">
- <img src="/scripts/docs/demos_s.jpg" height="400px" width="350px">
-  <img src="/scripts/docs/corrected_traj_s.jpg" height="400px" width="380px">
-</div> -->
-
-<!-- #### S-Shaped Planar (Task-Space) Demos and Motion Corrections
-
-<div align="center">
- <img src="/scripts/docs/demos_w.jpg" height="400px" width="350px">
-  <img src="/scripts/docs/corrected_traj_w.jpg" height="400px" width="350px">
-</div> -->
 
 ### Setup.
 

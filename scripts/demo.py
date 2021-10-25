@@ -139,6 +139,7 @@ def main(Vxf0, options):
 	correct_trajos.daemon = True
 	correct_trajos.start()
 
+	plt.savefig()
 	plt.ioff()
 	plt.show()
 
