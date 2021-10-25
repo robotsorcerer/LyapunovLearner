@@ -28,7 +28,7 @@ def buffered_axis_limits(amin, amax, buffer_factor=1.0):
     amin = np.floor(amin/precision) * precision
     amax = np.ceil (amax/precision) * precision
     return (amin, amax)
-	
+
 
 class TrajPlotter(object):
 	def __init__(self, fig, gs, fontdict=None, pause_time=1e-3, \
