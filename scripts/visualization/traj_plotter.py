@@ -57,7 +57,7 @@ class TrajPlotter(object):
 			if key.startswith('keymap.'):
 				plt.rcParams[key] = ''
 
-		if self._labels:
+		if np.any(self.Xinit):
 			self.init(x0.shape[-1])
 
 		self._fig.canvas.draw()
@@ -124,8 +124,8 @@ class TrajPlotter(object):
 
 			idx+=1
 
-		x_min = min([tup[0] for tup in xlims]); y_min = min([tup[0] for tup in ylims])
-		x_max = min([tup[1] for tup in xlims]); y_max = min([tup[1] for tup in ylims])
+		x_min = min(0, min([tup[0] for tup in xlims])); y_min = min(0, min([tup[0] for tup in ylims]))
+		x_max = max(0, max([tup[1] for tup in xlims])); y_max = max(0, max([tup[1] for tup in ylims]))
 
 		self._ax.set_xlim(buffered_axis_limits(x_min, x_max, buffer_factor=1.25))
 		self._ax.set_ylim(buffered_axis_limits(y_min, y_max, buffer_factor=1.25))
