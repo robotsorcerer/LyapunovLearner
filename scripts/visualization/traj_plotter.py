@@ -110,10 +110,10 @@ class TrajPlotter(object):
 		self._xi = np.append(self._xi, xi[0].reshape(1, D), axis=0)
 		self._xi_dot = np.append(self._xi_dot, xi[1].reshape(1, D), axis=0)
 
-		idx=0
+		# idx=0
 		xlims, ylims = [np.nan for _ in range(len(self._plots))], [np.nan for _ in range(len(self._plots))]
 
-		for traj_plotter in self._plots:
+		for idx, traj_plotter in enumerate(self._plots):
 			traj_plotter[-1].set_data(self._xi[:, idx], self._xi_dot[:, idx]) #
 
 			x_min, x_max =np.amin(self._xi[:, idx]), np.amax(self._xi[:, idx])
@@ -122,7 +122,7 @@ class TrajPlotter(object):
 			xlims[idx] = (x_min, x_max)
 			ylims[idx] = (y_min, y_max)
 
-			idx+=1
+			# idx+=1
 
 		x_min = min(0, min([tup[0] for tup in xlims])); y_min = min(0, min([tup[0] for tup in ylims]))
 		x_max = max(0, max([tup[1] for tup in xlims])); y_max = max(0, max([tup[1] for tup in ylims]))
