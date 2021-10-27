@@ -28,7 +28,7 @@ S-shaped demos and reconstructions from three different initial conditions. The 
 
 <div align="center">
  <img src="/scripts/docs/demos_s.jpg" height="400px" width="350px">
- <img src="/scripts/docs/s_corrected_video.gif" height="440px" width="440px">
+ <img src="/scripts/docs/s_corrected_video.gif" height="440px" width="420px">
 </div>
 
 W-shaped demos from three different initial conditions.
