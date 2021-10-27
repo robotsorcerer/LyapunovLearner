@@ -27,7 +27,7 @@ For recorded WAM robot end-effector trajectories on a 2D plane (there are two pr
 S-shaped demos and reconstructions from three different initial conditions. The left image below denotes a demonstration of the robot drawing the letter `S` from three different initial conditions, and converging to an attractor at the origin; while the right image denotes the Gaussian Mixture Regression-based CLF that corrects the trajectories in a piecewise manner as we feed the algorithm the data.
 
 <div align="center">
- <img src="/scripts/docs/demos_s.jpg" height="400px" width="350px">
+ <img src="/scripts/docs/demos_s.jpg" height="400px" width="320px">
  <img src="/scripts/docs/s_corrected_video.gif" height="440px" width="420px">
 </div>
 
