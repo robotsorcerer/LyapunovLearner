@@ -156,7 +156,7 @@ class Visualizer():
 		X, Y = np.meshgrid(x, y, indexing='ij')
 		xi_stacked = np.stack([np.ravel(X), np.ravel(Y)])
 
-		V, dV = cost_obj.compute_lyapunov(xi_stacked, np.array(()), Vxf, nargout=2)
+		V, dV = cost_obj.compute_lyapunov(xi_stacked, np.array(()), Vxf)
 
 		if not np.any(levels):
 			levels = np.arange(0, np.log(np.max(V)), 0.5)

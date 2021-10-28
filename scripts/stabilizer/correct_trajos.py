@@ -119,6 +119,7 @@ def CorrectTrajectories(x0,xT,stab_handle,kwargs):
 		traj_plotter = kwargs.traj_plotter
 	x_hist, xd_hist, t_hist = [x], [xd], [t]
 
+	x_cmp = np.tile(xT, [3])
 	while True:
 		#Finding xd using stab_handle.
 		x_tilde = x - XT
@@ -136,20 +137,20 @@ def CorrectTrajectories(x0,xT,stab_handle,kwargs):
 
 		traj_plotter.update(x, xd)
 
-
-		if (i > 3) and all(all(abs(xd_hist[:-3])<options.tol) or i>options.i_max-2):
+		# print(x.shape, x_cmp.shape)
+		if (i > 3) and np.allclose(x, x_cmp, rtol=1.0):
 			i += 1
 
-			info(f'Traj Correction Iteration {i}')
+			info(f'Stopping Traj Correction at Iteration {i}.')
 
-			info(f'Final Time: {t:1.2f}')
-			info(f'Final Point: {x}')
-			info(f'Target Position: {xT[:,-1]}')
-			info(f'########################################################')
+			info(f'######################################################################')
+			info(f'Final Time: {t:1.2f} | Final Point: {x} | Target Position: {xT[:,-1]}')
+			info(f'######################################################################')
+			break
 
-			if i>options.i_max-2:
-				info(f'Simulation stopped since it reaches the maximum number of allowed iterations {i}')
-				info(f'Exiting without convergence!!! Increase the parameter ''options.i_max'' to handle this error.')
+		if  (i>options.i_max-2):
+			warn(f'Trajectory corrections exceeded set max iterations {i}')
+			warn(f'Exiting without convergence!!! Increase the parameter ''args.trah_nums'' to handle this error.')
 			break
 		i += 1
 
@@ -164,7 +165,7 @@ def  check_options(options=None):
 		options = Bundle({})
 
 	if not isfield(options,'dt'): # integration time step
-		options.dt = 0.02
+		options.dt = 0.2
 
 	if not isfield(options,'i_max'): # maximum number of iterations
 		options.i_max = options.traj_nums

@@ -101,7 +101,9 @@ def gauss_regress_to_lyapunov(x, Priors, Mu, P):
             V               = Priors[k]*V_k
             Vx              = Priors[k]*((P_cur+P_cur.T)@x)
         else:
-            x_tmp           = x - np.tile(Mu[:, k], [1, nbData])
+            idx             = (np.arange(Mu.shape[0], dtype=np.intp), np.array([k], dtype=np.intp))
+            mure            = np.tile(Mu[np.ix_(*idx)], [1, nbData])
+            x_tmp           = x -  mure
             V_k             = np.sum((P_cur@x_tmp)*x, axis=0)
             V_k[V_k < 0]    = 0
             V               += Priors[k]*(V_k**2)

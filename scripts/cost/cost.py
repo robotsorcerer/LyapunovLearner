@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 class Cost(object):
 
     def __init__(self, nDemo = 1, success=True, Nfeval = 0, \
-                    verbose=True, method='L-BFGS-B', hessian=BFGS()):
+                    verbose=True, method='trust-constr', hessian=BFGS()):
         """
             Class that estimates lyapunov energy function
 
@@ -61,7 +61,7 @@ class Cost(object):
             Vxf = gauss_params_to_lyapunov(p, d, L, options)
             Vxf.update(Vxf)
         #print('Vxf.P in obj', Vxf['P'][:,:,0])
-        _, Vx = self.compute_lyapunov(x, None, Vxf, nargout=2)
+        _, Vx = self.compute_lyapunov(x, None, Vxf)
         Vdot = np.sum(Vx * xd, axis=0)  # derivative of J w.r.t. xd
         norm_Vx = np.sqrt(np.sum(Vx * Vx, axis=0))
         norm_xd = np.sqrt(np.sum(xd * xd, axis=0))
@@ -94,24 +94,9 @@ class Cost(object):
                             np.reshape(p0, [len(p0)]),
                             hess=self.hessian,
                             constraints=[nonl_cons_eq, nonl_cons_ineq],
-                            method='trust-constr',
+                            method=self.method,
                             options={'disp': self.disp_optim_progress, 'initial_constr_penalty': 1.5},
                             callback=self.callback_opt)
-        # solution = minimize(
-        #             obj_handle,
-        #             x0=p0.squeeze(),
-        #             method=self.method, # BFGS
-        #             jac='cs',
-        #             hess=self.hessian,
-        #             callback=self.callback_opt,
-        #             constraints=[nonl_cons_eq, nonl_cons_ineq],
-        #             options = {'disp': self.disp_optim_progress,
-        #                 'maxiter': 1500,  #Change this to say 15000 during testing
-        #                 'maxfun': 10000, # max # of obj function evals; # change to 10000 during testing
-        #                 'maxls': 20,  # max line search param
-        #                 'ftol': 1e-4, # make it faster
-        #                 }
-        #             )
         return solution.x, solution.fun
 
     def eigen_inequality_constraints(self, p, d, L, options):
@@ -164,7 +149,7 @@ class Cost(object):
                 if options['upperBoundEigenValue']:
                     ceq = np.zeros((L + 1, 1))
                 else:
-                    ceq = np.array(())  # zeros(L+1,1);
+                    ceq = np.array(())  
             else:
                 c = np,zeros((d, 1))
                 ceq = (np.ravel(Vxf['P']).T).dot(np.ravel(Vxf['P'])) - 2
@@ -189,6 +174,7 @@ class Cost(object):
         """
         c = -constraint(p)
 
+        print(f'c: {c.shape}, L: {L}, d: {d}')
         if L > 0:
             c_P = c[:L*d].reshape(d, L).T
         else:
@@ -237,7 +223,7 @@ class Cost(object):
             logger.warning('Rerun the optimization w/diff initial; guesses to handle this issue')
             logger.warning('increasing the # of P could help')
 
-    def compute_lyapunov(self, X, Xd, Vxf, nargout=2):
+    def compute_lyapunov(self, X, Xd, Vxf):
         d = X.shape[0]
         # self.nDemo = X.shape[-1]
 
@@ -251,7 +237,6 @@ class Cost(object):
                 V -= Vxf['p0']
         else:
             V, dV = gauss_regress_to_lyapunov(X, Vxf['Priors'], Vxf['Mu'], Vxf['P'])
-        # if nargout > 1:
         if not Xd:
             Vdot = dV
         else:
