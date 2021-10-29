@@ -213,45 +213,4 @@ class Visualizer():
 			self._ax.draw_artist(plot)
 		self._fig.canvas.flush_events()
 
-	def corrected_trajos(self, trajos, save=True):
-		# Plot the corrected trajectories
-		x_hist = np.stack(trajos.x_hist)
-		xd_hist = np.stack(trajos.xd_hist)
-		t_hist = np.stack(trajos.t_hist)
-		xT = trajos.XT
-		Xinit = trajos.Xinit
-
-		f = plt.figure(figsize=(self.winsize))
-		plt.clf()
-		f.tight_layout()
-
-		# _labelsize = 18
-		nbSPoint = x_hist.shape[-1]
-		cm = plt.get_cmap('ocean')
-		ax = f.gca()
-		ax.grid('on')
-		colors =['r', 'magenta', 'cyan']
-
-		# plot the target attractors
-		ax.plot(xT[0], xT[1], 'g*',markersize=20,linewidth=1.5, label='Target Attractor')
-
-		for j in range(nbSPoint):
-			color = cm(1.0 * j / nbSPoint)
-			ax.plot(Xinit[0, j], Xinit[1, j], 'ko', markersize=20,  linewidth=2.5)
-			ax.plot(x_hist[:, 0, j], x_hist[:, 1, j], color=colors[j], markersize=2,\
-				linewidth=2.5, label=f'CLF Corrected Traj {j}')
-
-		ax.set_xlabel('$\\xi$', fontdict=self._fontdict)
-		ax.set_ylabel('$\\dot{\\xi}$', fontdict=self._fontdict)
-
-		ax.xaxis.set_tick_params(labelsize=self._labelsize)
-		ax.yaxis.set_tick_params(labelsize=self._labelsize)
-
-		ax.legend(loc='upper left')
-		ax.set_title(f'Corrected Trajectories in the Interval: [{t_hist[0]:.2f}, {t_hist[-1]:.2f}] secs', fontdict=self._fontdict)
-
-		if save:
-			f.savefig(join(self.savedict["savepath"], f'corrected_traj_{trajos.model}.jpg'),
-						bbox_inches='tight',facecolor='None')
-
-		plt.show()
+	
