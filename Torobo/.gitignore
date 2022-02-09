@@ -1,0 +1,15 @@
+*.pyc
+*.npy
+*.ipynb
+*.csv
+*.mp4
+data
+result
+state.json
+include
+bin
+lib
+local
+man
+share
+pip-selfcheck.json
