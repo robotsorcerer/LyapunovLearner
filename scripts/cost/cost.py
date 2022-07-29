@@ -6,11 +6,11 @@ __maintainer__ 	= "Lekan Molu"
 __email__ 		= "patlekno@icloud.com"
 __status__ 		= "Completed"
 
-import logging, time
 import numpy as np
-import numpy.random as npr
 import scipy as sp
+import logging, time
 import scipy.linalg as LA
+import numpy.random as npr
 from scipy.optimize import minimize, NonlinearConstraint, BFGS
 from gmm import stack_gmm_params, gauss_params_to_lyapunov, gauss_regress_to_lyapunov
 
@@ -60,7 +60,6 @@ class Cost(object):
         else:
             Vxf = gauss_params_to_lyapunov(p, d, L, options)
             Vxf.update(Vxf)
-        #print('Vxf.P in obj', Vxf['P'][:,:,0])
         _, Vx = self.compute_lyapunov(x, None, Vxf, nargout=2)
         Vdot = np.sum(Vx * xd, axis=0)  # derivative of J w.r.t. xd
         norm_Vx = np.sqrt(np.sum(Vx * Vx, axis=0))
@@ -166,7 +165,7 @@ class Cost(object):
                 else:
                     ceq = np.array(())  # zeros(L+1,1);
             else:
-                c = np,zeros((d, 1))
+                c = np.zeros((d, 1))
                 ceq = (np.ravel(Vxf['P']).T).dot(np.ravel(Vxf['P'])) - 2
 
         if L == -1:  # SOS
@@ -246,12 +245,12 @@ class Cost(object):
             Xd = Xd.reshape(d,-1) if np.any(Xd) else Xd
 
         if Vxf['SOS']:
-            V, dV = sos_lyapunov(X, Vxf['P'], Vxf['d'], Vxf['n'])
-            if 'p0' in Vxf:
-                V -= Vxf['p0']
+            raise NotImplementedError("SOS Method is not implemented yet!")
+            # V, dV = sos_lyapunov(X, Vxf['P'], Vxf['d'], Vxf['n'])
+            # if 'p0' in Vxf:
+            #     V -= Vxf['p0']
         else:
             V, dV = gauss_regress_to_lyapunov(X, Vxf['Priors'], Vxf['Mu'], Vxf['P'])
-        # if nargout > 1:
         if not Xd:
             Vdot = dV
         else:
@@ -275,18 +274,18 @@ class Cost(object):
             p0 = np.ravel(p0)
             Vxf0['L'] = -1  # to distinguish sos from other methods
         else:
+            # why did we invert P again?
             for l in range(Vxf0['L']):
                 try:
                     Vxf0['P'][:, :, l] = sp.linalg.solve(Vxf0['P'][:, :, l], np.eye(d))
                 except sp.linalg.LinAlgError as e:
-                    LOGGER.debug('LinAlgError: %s', e)
+                    logger.debug('LinAlgError: %s', e)
 
             # in order to set the first component to be the closest Gaussian to origin
             idx = np.argsort(self.matVecNorm(Vxf0['Mu']), kind='mergesort')
             Vxf0['Mu'] = Vxf0['Mu'][:, idx]
-            Vxf0['P'] = Vxf0['P'][:, :, idx]
-            p0 = stack_gmm_params(Vxf0, options)
-            #correct
+            Vxf0['P']  = Vxf0['P'][:, :, idx]
+            p0         = stack_gmm_params(Vxf0, options)
 
         obj_handle = lambda p: self.obj(p, x, xd, d, Vxf0['L'], Vxf0['w'], options)
         constraint_ineq = lambda p: self.eigen_inequality_constraints(p, d, Vxf0['L'], options)
@@ -299,7 +298,7 @@ class Cost(object):
             Vxf['n']    = Vxf0['n']
             Vxf['P']    = popt.reshape(Vxf['n']*d,Vxf['n']*d)
             Vxf['SOS']  = 1
-            Vxf['p0']   = self.compute_lyapunov(zeros(d,1),[],Vxf)
+            Vxf['p0']   = self.compute_lyapunov(np.zeros((d,1)),[],Vxf)
             self.check_constraints(popt,constraint,d,0,options)
         else:
             # transforming back the optimization parameters into the GMM model

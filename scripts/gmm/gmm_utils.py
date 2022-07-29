@@ -92,11 +92,12 @@ def gauss_regress_to_lyapunov(x, Priors, Mu, P):
     nbData = x.shape[1]
     d = x.shape[0]
     L = P.shape[2]-1
-
+    "L is the number of WSAQFs in KZ's Paper."
     # Compute the influence of each GMM component, given input x
     for k in range(L):
         P_cur               = P[:, :, k]
         if k                == 0:
+            "First term of the WSAQF term in the paper."
             V_k             = np.sum(x * (P_cur@x), axis=0)
             V               = Priors[k]*V_k
             Vx              = Priors[k]*((P_cur+P_cur.T)@x)
