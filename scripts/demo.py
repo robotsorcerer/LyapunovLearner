@@ -35,6 +35,7 @@ from stabilizer.correct_trajos import CorrectTrajectories
 parser = argparse.ArgumentParser(description='Learning CLFs')
 parser.add_argument('--pause_time', '-pz', type=float, default=1e-4, help='pause time between successive updates of plots' )
 parser.add_argument('--traj_nums', '-tn', type=int, default=10000, help='max # of trajectory stabilizations corrections before quitting' )
+parser.add_argument('--num_clusters', '-nc', type=int, default=5, help='Number of clusters to use for GMM' )
 parser.add_argument('--rho0', '-rh', type=float, default=1.0, help='coeff. of class-Kappa function' )
 parser.add_argument('--kappa0', '-kp', type=float, default=.1, help='exponential coeff. in class-Kappa function' )
 parser.add_argument('--model', '-md', type=str, default='s', help='s|w ==> which model to use in training the data?' )
@@ -105,8 +106,8 @@ def main(Vxf0, options):
 	if args.off_priors:
 		mu, sigma, priors = Mu_EM, Sigma_EM, Priors_EM
 	else:
-		gmm = GMM(num_clusters=options['num_clusters'])
-		gmm.update(data.T, K=options['num_clusters'], max_iterations=100)
+		gmm = GMM(num_clusters=args.num_clusters)
+		gmm.update(data.T, K=args.num_clusters, max_iterations=100)
 		mu, sigma, priors = gmm.mu.T, gmm.sigma.T, gmm.logmass.T
 
 	"Now stabilize the learned dynamics"

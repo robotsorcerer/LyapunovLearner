@@ -34,8 +34,8 @@ S-shaped demos and reconstructions from three different initial conditions. The 
 W-shaped demos from three different initial conditions.
 
 <div align="center">
- <img src="/scripts/docs/demos_w.jpg" height="400px" width="350px">
-  <img src="/matlab/Doc/w_corrections.gif" height="400px" width="350px">
+  <img src="/scripts/docs/demos_w.jpg" height="400px" width="350px">
+  <img src="/scripts/docs/w_corrected.gif" height="400px" width="350px">
 </div>
 
 ### Setup.
